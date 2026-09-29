@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบติดตามตัวชี้วัด จังหวัดอ่างทอง</title>
+  <meta name="description" content="ตัวชี้วัดพัฒนาการเด็กปฐมวัย จังหวัดอ่างทอง · โรงพยาบาลอ่างทอง">
+  <script>
+    // Apply the saved theme before first paint (default light).
+    try { if (localStorage.getItem('kpi-health-theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" href="../assets/logo-angthong.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+  <script type="module" src="../assets/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">ข้ามไปเนื้อหา</a>
+  <header class="site-header" id="site-header">
+    <div class="wrap hdr-row"><span class="brand-text"><strong>ระบบติดตามตัวชี้วัด จังหวัดอ่างทอง</strong><span>โรงพยาบาลอ่างทอง</span></span></div>
+  </header>
+  <main class="wrap main" id="main" tabindex="-1">
+    <p class="loading">กำลังโหลดข้อมูล…</p>
+  </main>
+  <footer class="wrap site-footer">แหล่งข้อมูล: HDC / MOPH Open Data · โรงพยาบาลอ่างทอง</footer>
+</body>
+</html>

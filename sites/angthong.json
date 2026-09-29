@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "site": "angthong",
+  "name": "ระบบติดตามตัวชี้วัด จังหวัดอ่างทอง",
+  "org": "โรงพยาบาลอ่างทอง",
+  "logo": "assets/logo-angthong.png",
+  "home": {
+    "path": [
+      {"level": "country",  "code": "TH",   "name": "ประเทศ"},
+      {"level": "region",   "code": "4",    "name": "เขตสุขภาพที่ 4"},
+      {"level": "province", "code": "15",   "name": "อ่างทอง"},
+      {"level": "district", "code": "1501", "name": "เมืองอ่างทอง"}
+    ]
+  },
+  "indicators": ["dspm", "coverage"],
+  "years": [2567, 2568, 2569],
+  "currentYear": 2569,
+  "targets": {
+    "dspm": {
+      "2567": {"value": 85, "note": "เป้าหมายอ้างอิง ยังไม่ยืนยัน"},
+      "2568": {"value": 87},
+      "2569": {"value": 88}
+    },
+    "coverage": {
+      "2568": {"value": 20, "note": "เป้าหมายอ้างอิง ยังไม่ยืนยัน"},
+      "2569": {"value": 30}
+    }
+  },
+  "colorRules": {"warnBand": 5, "smallN": 20},
+  "excel": {
+    "dir": "data/excel_reference/angthong",
+    "exportDate": "2569-09-29",
+    "sourceLabel": "HDC export"
+  }
+}

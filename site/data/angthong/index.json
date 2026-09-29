@@ -1,0 +1,660 @@
+{
+ "schema": 1,
+ "site": "angthong",
+ "name": "ระบบติดตามตัวชี้วัด จังหวัดอ่างทอง",
+ "org": "โรงพยาบาลอ่างทอง",
+ "logo": "assets/logo-angthong.png",
+ "years": [
+  2567,
+  2568,
+  2569
+ ],
+ "currentYear": 2569,
+ "home": {
+  "path": [
+   {
+    "level": "country",
+    "code": "TH",
+    "name": "ประเทศ"
+   },
+   {
+    "level": "region",
+    "code": "4",
+    "name": "เขตสุขภาพที่ 4"
+   },
+   {
+    "level": "province",
+    "code": "15",
+    "name": "อ่างทอง"
+   },
+   {
+    "level": "district",
+    "code": "1501",
+    "name": "เมืองอ่างทอง"
+   }
+  ]
+ },
+ "colorRules": {
+  "warnBand": 5,
+  "smallN": 20
+ },
+ "sourceLabels": {
+  "api": "MOPH Open Data API",
+  "excel": "HDC export"
+ },
+ "indicators": {
+  "dspm": {
+   "id": "dspm",
+   "name_th": "ร้อยละเด็กปฐมวัยพัฒนาการสมวัย (DSPM)",
+   "short": "DSPM",
+   "source": {
+    "table": "s_childdev_specialpp",
+    "bodyTemplate": {
+     "tableName": "s_childdev_specialpp",
+     "year": "{year}",
+     "province": "{province}",
+     "type": "json",
+     "limit": 20000
+    },
+    "needsProvince": true
+   },
+   "levels": [
+    "country",
+    "region",
+    "province",
+    "district"
+   ],
+   "groups": [
+    {
+     "key": "total",
+     "label": "รวมทั้ง 5 กลุ่มอายุ"
+    },
+    {
+     "key": "m9",
+     "label": "อายุ 9 เดือน"
+    },
+    {
+     "key": "m18",
+     "label": "อายุ 18 เดือน"
+    },
+    {
+     "key": "m30",
+     "label": "อายุ 30 เดือน"
+    },
+    {
+     "key": "m42",
+     "label": "อายุ 42 เดือน"
+    },
+    {
+     "key": "m60",
+     "label": "อายุ 60 เดือน"
+    }
+   ],
+   "headline": {
+    "metric": "pct_normal",
+    "num": "normal_total",
+    "den": "target"
+   },
+   "cards": [
+    {
+     "metric": "pct_screened",
+     "label": "คัดกรองพัฒนาการ",
+     "num": "screened",
+     "den": "target"
+    },
+    {
+     "metric": "pct_suspect",
+     "label": "สงสัยพัฒนาการล่าช้า",
+     "num": "suspect_total",
+     "den": "screened"
+    },
+    {
+     "metric": "pct_followed",
+     "label": "ติดตามได้ภายใน 30 วัน",
+     "num": "followed",
+     "den": "suspect_wait30"
+    }
+   ],
+   "table": [
+    {
+     "key": "target",
+     "label": "เป้าหมาย (1)",
+     "type": "int"
+    },
+    {
+     "key": "screened",
+     "label": "คัดกรอง (2)",
+     "type": "int"
+    },
+    {
+     "key": "pct_screened",
+     "label": "ร้อยละคัดกรอง",
+     "type": "pct"
+    },
+    {
+     "key": "normal_first",
+     "label": "สมวัยครั้งแรก (2.1)",
+     "type": "int"
+    },
+    {
+     "key": "pct_normal_first",
+     "label": "ร้อยละสมวัยครั้งแรก",
+     "type": "pct"
+    },
+    {
+     "key": "suspect_wait30",
+     "label": "สงสัยล่าช้า รอกระตุ้น 30 วัน (2.2)",
+     "type": "int"
+    },
+    {
+     "key": "suspect_refer",
+     "label": "สงสัยล่าช้า ส่งต่อทันที (2.3)",
+     "type": "int"
+    },
+    {
+     "key": "suspect_total",
+     "label": "รวมสงสัยล่าช้าทั้งหมด (2.4)",
+     "type": "int"
+    },
+    {
+     "key": "pct_suspect",
+     "label": "ร้อยละสงสัยล่าช้า",
+     "type": "pct"
+    },
+    {
+     "key": "followed",
+     "label": "ติดตามได้ (3)",
+     "type": "int"
+    },
+    {
+     "key": "pct_followed",
+     "label": "ร้อยละติดตามได้",
+     "type": "pct"
+    },
+    {
+     "key": "normal_after",
+     "label": "สมวัยหลังได้รับการส่งเสริม/กระตุ้น (3.1)",
+     "type": "int"
+    },
+    {
+     "key": "delay_after_total",
+     "label": "ไม่สมวัยหลังได้รับการส่งเสริม/กระตุ้น รวม (3.2)",
+     "type": "int"
+    },
+    {
+     "key": "delay_1B202",
+     "label": "1B202 (3.2.1)",
+     "type": "int"
+    },
+    {
+     "key": "delay_1B212",
+     "label": "1B212 (3.2.2)",
+     "type": "int"
+    },
+    {
+     "key": "delay_1B222",
+     "label": "1B222 (3.2.3)",
+     "type": "int"
+    },
+    {
+     "key": "delay_1B232",
+     "label": "1B232 (3.2.4)",
+     "type": "int"
+    },
+    {
+     "key": "delay_1B242",
+     "label": "1B242 (3.2.5)",
+     "type": "int"
+    },
+    {
+     "key": "pending_followup",
+     "label": "รอการติดตาม (4)",
+     "type": "int"
+    },
+    {
+     "key": "lost_followup",
+     "label": "ติดตามไม่ได้ใน 30 วัน (5)",
+     "type": "int"
+    },
+    {
+     "key": "normal_female",
+     "label": "สมวัยเพศหญิง",
+     "type": "int"
+    },
+    {
+     "key": "normal_male",
+     "label": "สมวัยเพศชาย",
+     "type": "int"
+    },
+    {
+     "key": "normal_total",
+     "label": "รวมสมวัย",
+     "type": "int"
+    },
+    {
+     "key": "pct_normal",
+     "label": "ร้อยละสมวัย",
+     "type": "pct"
+    }
+   ],
+   "monthly": true,
+   "targets_key": "dspm"
+  },
+  "coverage": {
+   "id": "coverage",
+   "name_th": "ร้อยละของเด็กปฐมวัยที่มีพัฒนาการล่าช้าเข้าถึงบริการพัฒนาการและสุขภาพจิตที่ได้มาตรฐาน (Coverage)",
+   "short": "Coverage",
+   "source": {
+    "table": "s_child0_5_pshyche_develop_coverage",
+    "bodyTemplate": {
+     "tableName": "s_child0_5_pshyche_develop_coverage",
+     "year": "{year}",
+     "type": "json",
+     "limit": 20000
+    },
+    "needsProvince": false
+   },
+   "levels": [
+    "country",
+    "region",
+    "province"
+   ],
+   "groups": null,
+   "headline": {
+    "metric": "pct_reached_fy",
+    "num": "reached_fy",
+    "den": "expected"
+   },
+   "cards": [
+    {
+     "metric": "pct_reached_cum",
+     "label": "เข้าถึงบริการสะสม",
+     "num": "reached_cum",
+     "den": "expected"
+    },
+    {
+     "metric": "pct_teda4i",
+     "label": "บริการด้วยรหัส TEDA4I",
+     "num": "served_teda4i",
+     "den": "expected"
+    },
+    {
+     "metric": "pct_icd10",
+     "label": "วินิจฉัย ICD-10",
+     "num": "diagnosed_icd10",
+     "den": "expected"
+    }
+   ],
+   "table": [
+    {
+     "key": "population",
+     "label": "เด็กปฐมวัยอายุ 0–5 ปี (คน) (1)",
+     "type": "int"
+    },
+    {
+     "key": "prevalence",
+     "label": "ความชุก (ร้อยละ) (2)",
+     "type": "pct"
+    },
+    {
+     "key": "expected",
+     "label": "จำนวนเด็กปฐมวัยที่คำนวณได้จากอัตราความชุก (คน) (3)=(1)*(2)/100",
+     "type": "int"
+    },
+    {
+     "key": "served_teda4i",
+     "label": "เด็กพัฒนาการล่าช้าที่ได้รับบริการด้วยรหัส TEDA4I (สะสม) (4)",
+     "type": "int"
+    },
+    {
+     "key": "served_icd9",
+     "label": "เด็กพัฒนาการล่าช้าที่ได้รับบริการด้วยรหัสหัตถการ ICD9CM/ICD-10TM (สะสม) (5)",
+     "type": "int"
+    },
+    {
+     "key": "diagnosed_icd10",
+     "label": "เด็กที่ได้รับการวินิจฉัยตาม ICD-10 (สะสม) (6)",
+     "type": "int"
+    },
+    {
+     "key": "reached_cum",
+     "label": "เด็กพัฒนาการล่าช้าสะสมทั้งหมดที่มีทะเบียนบ้านในจังหวัด/AHB (7)=(4)+(5)+(6) ไม่นับซ้ำ",
+     "type": "int"
+    },
+    {
+     "key": "pct_reached_cum",
+     "label": "อัตราการเข้าถึงบริการ สะสม (ร้อยละ) (8)=(7)*100/(3)",
+     "type": "pct"
+    },
+    {
+     "key": "reached_fy",
+     "label": "เด็กพัฒนาการล่าช้าสะสมที่รับบริการปีงบปัจจุบัน (คน) (9)",
+     "type": "int"
+    },
+    {
+     "key": "pct_reached_fy",
+     "label": "อัตราการเข้าถึงบริการ ปีงบประมาณปัจจุบัน (ร้อยละ) (10)=(9)*100/(3)",
+     "type": "pct"
+    },
+    {
+     "key": "out_of_province",
+     "label": "เด็กพัฒนาการล่าช้าที่ทะเบียนบ้านไม่อยู่ในจังหวัด ปีงบประมาณปัจจุบัน (คน) (11)",
+     "type": "int"
+    },
+    {
+     "key": "pct_teda4i",
+     "label": "สัดส่วนเด็กที่ได้รับบริการด้วยรหัส TEDA4I ต่อคาดประมาณ (ร้อยละ) = (4)*100/(3)",
+     "type": "pct"
+    },
+    {
+     "key": "pct_icd10",
+     "label": "สัดส่วนเด็กที่ได้รับการวินิจฉัย ICD-10 ต่อคาดประมาณ (ร้อยละ) = (6)*100/(3)",
+     "type": "pct"
+    }
+   ],
+   "monthly": false,
+   "targets_key": "coverage"
+  }
+ },
+ "targets": {
+  "dspm": {
+   "2567": {
+    "value": 85,
+    "note": "เป้าหมายอ้างอิง ยังไม่ยืนยัน"
+   },
+   "2568": {
+    "value": 87
+   },
+   "2569": {
+    "value": 88
+   }
+  },
+  "coverage": {
+   "2568": {
+    "value": 20,
+    "note": "เป้าหมายอ้างอิง ยังไม่ยืนยัน"
+   },
+   "2569": {
+    "value": 30
+   }
+  }
+ },
+ "tree": {
+  "code": "TH",
+  "level": "country",
+  "name": "ประเทศ",
+  "children": [
+   {
+    "code": "4",
+    "level": "region",
+    "name": "เขตสุขภาพที่ 4",
+    "children": [
+     {
+      "code": "15",
+      "level": "province",
+      "name": "อ่างทอง",
+      "children": [
+       {
+        "code": "1501",
+        "level": "district",
+        "name": "เมืองอ่างทอง"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "datasets": [
+  {
+   "indicator": "coverage",
+   "year": 2567,
+   "level": "country",
+   "scope": "TH",
+   "kind": "level",
+   "file": "coverage_2567_country_TH.json",
+   "asOf": "2567-12-18T14:48",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2567,
+   "level": "region",
+   "scope": "4",
+   "kind": "level",
+   "file": "coverage_2567_region_4.json",
+   "asOf": "2567-12-18T14:48",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2568,
+   "level": "country",
+   "scope": "TH",
+   "kind": "level",
+   "file": "coverage_2568_country_TH.json",
+   "asOf": "2569-01-08T14:24",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2568,
+   "level": "region",
+   "scope": "4",
+   "kind": "level",
+   "file": "coverage_2568_region_4.json",
+   "asOf": "2569-01-08T14:24",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2569,
+   "level": "country",
+   "scope": "TH",
+   "kind": "level",
+   "file": "coverage_2569_country_TH.json",
+   "asOf": "2569-09-29T06:00",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2569,
+   "level": "region",
+   "scope": "4",
+   "kind": "level",
+   "file": "coverage_2569_region_4.json",
+   "asOf": "2569-09-29T06:00",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2569,
+   "level": "province",
+   "scope": "15",
+   "kind": "level",
+   "file": "coverage_2569_province_15.json",
+   "asOf": "2569-09-29T06:00",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2567,
+   "level": "country",
+   "scope": "TH",
+   "kind": "level",
+   "file": "dspm_2567_country_TH.json",
+   "asOf": "2569-09-29",
+   "source": "excel"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2567,
+   "level": "region",
+   "scope": "4",
+   "kind": "level",
+   "file": "dspm_2567_region_4.json",
+   "asOf": "2569-09-29",
+   "source": "excel"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2567,
+   "level": "province",
+   "scope": "15",
+   "kind": "level",
+   "file": "dspm_2567_province_15.json",
+   "asOf": "2567-11-16T08:25",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2567,
+   "level": "district",
+   "scope": "1501",
+   "kind": "level",
+   "file": "dspm_2567_district_1501.json",
+   "asOf": "2567-11-16T08:25",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2568,
+   "level": "country",
+   "scope": "TH",
+   "kind": "level",
+   "file": "dspm_2568_country_TH.json",
+   "asOf": "2569-09-29",
+   "source": "excel"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2568,
+   "level": "region",
+   "scope": "4",
+   "kind": "level",
+   "file": "dspm_2568_region_4.json",
+   "asOf": "2569-09-29",
+   "source": "excel"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2568,
+   "level": "province",
+   "scope": "15",
+   "kind": "level",
+   "file": "dspm_2568_province_15.json",
+   "asOf": "2568-11-16T08:21",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2568,
+   "level": "district",
+   "scope": "1501",
+   "kind": "level",
+   "file": "dspm_2568_district_1501.json",
+   "asOf": "2568-11-16T08:21",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "country",
+   "scope": "TH",
+   "kind": "level",
+   "file": "dspm_2569_country_TH.json",
+   "asOf": "2569-09-29",
+   "source": "excel"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "region",
+   "scope": "4",
+   "kind": "level",
+   "file": "dspm_2569_region_4.json",
+   "asOf": "2569-09-29",
+   "source": "excel"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
+   "scope": "15",
+   "kind": "level",
+   "file": "dspm_2569_province_15.json",
+   "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1501",
+   "kind": "level",
+   "file": "dspm_2569_district_1501.json",
+   "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2567,
+   "level": "province",
+   "scope": "15",
+   "kind": "monthly",
+   "file": "dspm_2567_monthly_15.json",
+   "asOf": "2567-11-16T08:25",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2567,
+   "level": "district",
+   "scope": "1501",
+   "kind": "monthly",
+   "file": "dspm_2567_monthly_1501.json",
+   "asOf": "2567-11-16T08:25",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2568,
+   "level": "province",
+   "scope": "15",
+   "kind": "monthly",
+   "file": "dspm_2568_monthly_15.json",
+   "asOf": "2568-11-16T08:21",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2568,
+   "level": "district",
+   "scope": "1501",
+   "kind": "monthly",
+   "file": "dspm_2568_monthly_1501.json",
+   "asOf": "2568-11-16T08:21",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
+   "scope": "15",
+   "kind": "monthly",
+   "file": "dspm_2569_monthly_15.json",
+   "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1501",
+   "kind": "monthly",
+   "file": "dspm_2569_monthly_1501.json",
+   "asOf": "2569-09-29T09:08",
+   "source": "api"
+  }
+ ]
+}

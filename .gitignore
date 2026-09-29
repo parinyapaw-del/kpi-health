@@ -1,0 +1,12 @@
+# raw API responses are never committed (Q30)
+data/raw_api/
+# OS / editor
+.DS_Store
+Thumbs.db
+# Python
+__pycache__/
+*.pyc
+.venv/
+# temp
+*.tmp
+~$*.xlsx
