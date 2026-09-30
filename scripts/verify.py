@@ -45,6 +45,18 @@ def _count_cmp(plugin, keys):
 SOFT_EXCEL = {("dspm", "country"), ("dspm", "region")}
 
 
+def _day(asof):
+    return (asof or "")[:10]
+
+
+def _stale(ads, xds):
+    """The Excel oracle is a snapshot (sites/<site>.json excel.snapshots[year]); once the API data is newer than
+    that day the numbers legitimately move (open fiscal year, daily refresh) -> value differences become warnings.
+    Structural checks (row sets, names, hasData, cross-level sums) stay hard regardless."""
+    snap = _day(xds.get("asOf"))
+    return bool(snap) and _day(ads.get("asOf")) > snap
+
+
 def _cmp(plugin, a, b, keys, rep, where, soft=None):
     """Compare values a (api/child) vs b (excel/parent); count comparisons; record errors
     (or append them to the `soft` list instead)."""
@@ -154,7 +166,8 @@ def _api_vs_excel(ctx, built, rep):
             rep.err(f"{where}: row sets differ api-only={sorted(set(arows) - set(xrows))} "
                     f"excel-only={sorted(set(xrows) - set(arows))}")
         n0 = rep.comparisons
-        soft = [] if (key[0], key[2]) in SOFT_EXCEL else None
+        stale = _stale(ads, xds)
+        soft = [] if (key[0], key[2]) in SOFT_EXCEL or stale else None
         for c in sorted(set(arows) & set(xrows)):
             a, x = arows[c], xrows[c]
             if a["hasData"] != x["hasData"]:
@@ -167,9 +180,13 @@ def _api_vs_excel(ctx, built, rep):
             _cmp(plugin, ads["total"]["values"], xds["total"]["values"], keys, rep, f"{where} รวม", soft)
         if soft:
             rows = sorted({m.split(": ", 1)[0].removeprefix(where + " ") for m in soft})
+            why = (f"Excel snapshot {_day(xds.get('asOf'))} is older than the API data {_day(ads.get('asOf'))} "
+                   f"(open year moves daily; export new HDC files + set excel.snapshots to re-verify exactly)"
+                   if stale else "known HDC-vs-API difference")
             rep.warn(f"{where}: API != HDC Excel in {len(soft)} values / {len(rows)} rows ({', '.join(rows)}) "
-                     f"- known HDC-vs-API difference, e.g. {soft[0]}")
-        rep.checks.append((f"api==excel  {where}{' (soft)' if soft is not None else ''}", rep.comparisons - n0))
+                     f"- {why}, e.g. {soft[0]}")
+        tag = " (soft: stale snapshot)" if stale else (" (soft)" if soft is not None else "")
+        rep.checks.append((f"api==excel  {where}{tag}", rep.comparisons - n0))
 
 
 def _cross_level(ctx, built, rep):

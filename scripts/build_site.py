@@ -227,7 +227,7 @@ def _resolve_codes(ctx, level: str, scope: str, labels: list[str], path: str):
     return codes
 
 
-def excel_datasets(plugin, ctx, workbooks, excel_export_date):
+def excel_datasets(plugin, ctx, workbooks, snapshots):
     out = {}
     for w in workbooks:
         level = w["level"]
@@ -244,7 +244,8 @@ def excel_datasets(plugin, ctx, workbooks, excel_export_date):
             xl_keys = {g: list(kv) for g, kv in w["rows"][0]["values"].items()}
         else:
             xl_keys = list(w["columns"])
-        out[key] = _mk_dataset(plugin, ctx, w["year"], level, scope, rows, total, excel_export_date, "excel",
+        out[key] = _mk_dataset(plugin, ctx, w["year"], level, scope, rows, total,
+                               (snapshots or {}).get(str(w["year"])), "excel",
                                {"excel_path": w["path"], "xl_keys": xl_keys,
                                 "has_total_row": w["total"] is not None})
     return out
@@ -254,12 +255,12 @@ def excel_datasets(plugin, ctx, workbooks, excel_export_date):
 def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int], log=print) -> dict:
     api, excel, warnings = {}, {}, []
     excel_dir = ROOT / site["excel"]["dir"]
-    export_date = site["excel"].get("exportDate")
+    snapshots = site["excel"].get("snapshots") or {}     # year -> date the HDC Excel files were exported
     registry = build_lookup.load_units()
     for ind in indicators:
         plugin = PLUGINS[ind]
         wbs = [w for w in xlsx_hdc.discover(excel_dir, ind) if w["year"] in years]
-        excel.update(excel_datasets(plugin, ctx, wbs, export_date))
+        excel.update(excel_datasets(plugin, ctx, wbs, snapshots))
         for y in years:
             if ind == "dspm":
                 summ = dspm.load_summary(y)
