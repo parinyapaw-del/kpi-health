@@ -12,6 +12,7 @@ Steps (Pillow only):
  4. Crop fully transparent margins (+2% padding), resize to width 800 (LANCZOS).
 
 Usage (repo root): python3 scripts/process_logo.py [--in data/logo.webp] [--out site/assets/logo-angthong.png]
+Region-4 logo:     python3 scripts/process_logo.py --in data/logo-r4.jpg --out site/assets/logo-r4.png --mode key --width 800
 """
 import argparse
 from collections import deque
@@ -61,11 +62,14 @@ def background_mask(rgb, hole_area):
     return bg
 
 
-def process(src, dst, width=800, pad=0.02, hole_area=60):
+def process(src, dst, width=800, pad=0.02, hole_area=60, mode="border"):
+    """mode="border": light pixels connected to the border (+ specks) become transparent (emblem interiors stay).
+    mode="key": every light pixel is keyed on brightness (for line-art logos such as the region-4 octagon whose
+    white interior must be transparent too)."""
     rgb = Image.open(src).convert("RGB")
     w, h = rgb.size
     px = rgb.load()
-    bg = background_mask(rgb, hole_area)
+    bg = [[True] * w for _ in range(h)] if mode == "key" else background_mask(rgb, hole_area)
     out = Image.new("RGBA", (w, h))
     op = out.load()
     for y in range(h):
@@ -100,5 +104,7 @@ if __name__ == "__main__":
     ap.add_argument("--out", default=str(ROOT / "site/assets/logo-angthong.png"))
     ap.add_argument("--width", type=int, default=800)
     ap.add_argument("--hole-area", type=int, default=60, help="enclosed light specks smaller than this (px) become transparent")
+    ap.add_argument("--mode", choices=["border", "key"], default="border",
+                    help="border = keep enclosed light areas (Angthong emblem); key = all light pixels transparent (region-4 line art)")
     a = ap.parse_args()
-    print("saved", a.out, process(a.src, a.out, a.width, hole_area=a.hole_area))
+    print("saved", a.out, process(a.src, a.out, a.width, hole_area=a.hole_area, mode=a.mode))

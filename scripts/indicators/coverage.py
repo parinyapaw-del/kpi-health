@@ -3,6 +3,10 @@
 API: never send `province` (HTTP 400). 2567/2568 -> 77 rows (by province); 2569 -> 928 rows (by district).
 c_1..c_7, c_9, c_11 = Excel columns (1)..(7),(9),(11); c_8 and c_10 are NOT returned -> computed.
 Cache = the API rows as given (whole country, all.json) + fetchedAt/asOf/rowCount.
+
+Deepest level = district (rows = 1 per district, areacode = <district>0101; the `hospcode` column is not a real
+reporting unit — checked 2026-09-30: the same code appears for districts of different provinces) -> no subdistrict
+level can be built for this indicator (Phase 2 spec §4.2/§4.6 assumed hospcode x areacode rows; not the case).
 """
 from __future__ import annotations
 
@@ -21,7 +25,7 @@ RAWMAP = {"population": "c_1", "prevalence": "c_2", "expected": "c_3", "served_t
           "out_of_province": "c_11"}
 COUNT_KEYS = ["population", "expected", "served_teda4i", "served_icd9", "diagnosed_icd10",
               "reached_cum", "reached_fy", "out_of_province"]
-PCT_KEYS = ["pct_reached_cum", "pct_reached_fy", "pct_teda4i", "pct_icd10"]
+PCT_KEYS = ["pct_reached_cum", "pct_reached_fy", "pct_teda4i", "pct_icd9", "pct_icd10"]
 TABLE_KEYS = [
     ("population", "เด็กปฐมวัยอายุ 0–5 ปี (คน) (1)", "int"),
     ("prevalence", "ความชุก (ร้อยละ) (2)", "pct"),
@@ -35,6 +39,7 @@ TABLE_KEYS = [
     ("pct_reached_fy", "อัตราการเข้าถึงบริการ ปีงบประมาณปัจจุบัน (ร้อยละ) (10)=(9)*100/(3)", "pct"),
     ("out_of_province", "เด็กพัฒนาการล่าช้าที่ทะเบียนบ้านไม่อยู่ในจังหวัด ปีงบประมาณปัจจุบัน (คน) (11)", "int"),
     ("pct_teda4i", "สัดส่วนเด็กที่ได้รับบริการด้วยรหัส TEDA4I ต่อคาดประมาณ (ร้อยละ) = (4)*100/(3)", "pct"),
+    ("pct_icd9", "สัดส่วนเด็กที่ได้รับบริการด้วยรหัสหัตถการ ICD9CM ต่อคาดประมาณ (ร้อยละ) = (5)*100/(3)", "pct"),
     ("pct_icd10", "สัดส่วนเด็กที่ได้รับการวินิจฉัย ICD-10 ต่อคาดประมาณ (ร้อยละ) = (6)*100/(3)", "pct"),
 ]
 ALL_KEYS = [k for k, _, _ in TABLE_KEYS]
@@ -42,18 +47,31 @@ ALL_KEYS = [k for k, _, _ in TABLE_KEYS]
 META = {
     "id": ID,
     "name_th": "ร้อยละของเด็กปฐมวัยที่มีพัฒนาการล่าช้าเข้าถึงบริการพัฒนาการและสุขภาพจิตที่ได้มาตรฐาน (Coverage)",
-    "short": "Coverage",
+    "short": "เข้าถึงบริการ",
     "source": {"table": TABLE,
                "bodyTemplate": {"tableName": TABLE, "year": "{year}", "type": "json", "limit": 20000},
                "needsProvince": False},
     "levels": ["country", "region", "province"],
     "groups": None,
-    "headline": {"metric": "pct_reached_fy", "num": "reached_fy", "den": "expected"},
+    "headline": {"metric": "pct_reached_cum", "num": "reached_cum", "den": "expected",
+                 "sub": {"metric": "pct_reached_fy", "num": "reached_fy", "label": "ปีงบนี้"}},
     "cards": [
-        {"metric": "pct_reached_cum", "label": "เข้าถึงบริการสะสม", "num": "reached_cum", "den": "expected"},
         {"metric": "pct_teda4i", "label": "บริการด้วยรหัส TEDA4I", "num": "served_teda4i", "den": "expected"},
+        {"metric": "pct_icd9", "label": "บริการด้วยรหัสหัตถการ ICD9CM", "num": "served_icd9", "den": "expected"},
         {"metric": "pct_icd10", "label": "วินิจฉัย ICD-10", "num": "diagnosed_icd10", "den": "expected"},
     ],
+    "heatmap": {"columns": [
+        {"key": "pct_reached_cum", "label": "เข้าถึงบริการสะสม (8)", "group": None, "metric": "pct_reached_cum",
+         "num": "reached_cum", "den": "expected", "useTarget": True},
+        {"key": "pct_teda4i", "label": "TEDA4I (4)/(3)", "group": None, "metric": "pct_teda4i",
+         "num": "served_teda4i", "den": "expected", "useTarget": False},
+        {"key": "pct_icd9", "label": "ICD9CM (5)/(3)", "group": None, "metric": "pct_icd9",
+         "num": "served_icd9", "den": "expected", "useTarget": False},
+        {"key": "pct_icd10", "label": "ICD-10 (6)/(3)", "group": None, "metric": "pct_icd10",
+         "num": "diagnosed_icd10", "den": "expected", "useTarget": False},
+    ]},
+    "chart": {"style": "fill", "fillNum": "reached_cum", "fillDen": "expected",
+              "fillLabel": "เข้าถึงบริการสะสม", "baseLabel": "คาดประมาณเด็กพัฒนาการล่าช้า"},
     "table": [{"key": k, "label": l, "type": t} for k, l, t in TABLE_KEYS],
     "monthly": False,
     "targets_key": "coverage",
@@ -66,6 +84,7 @@ def derive(c: dict) -> dict:
     calc = {"pct_reached_cum": pct(d.get("reached_cum"), d.get("expected")),
             "pct_reached_fy": pct(d.get("reached_fy"), d.get("expected")),
             "pct_teda4i": pct(d.get("served_teda4i"), d.get("expected")),
+            "pct_icd9": pct(d.get("served_icd9"), d.get("expected")),
             "pct_icd10": pct(d.get("diagnosed_icd10"), d.get("expected"))}
     for k, v in calc.items():
         if d.get(k) is None:
@@ -146,7 +165,7 @@ def api_views(cache, ctx) -> list[dict]:
         views.append({"level": "region", "scope": reg,
                       "rows": [{"code": p, "values": prov_vals[p]} for p in sorted(prov_vals, key=int)
                                if str(prov_region[p]) == reg]})
-    # district level: only when the table carries every district of the province (2569)
+    # province level (rows = districts): only when the table carries every district of the province (2569+)
     for p in ctx["drill_provinces"]:
         rs = [r for r in rows if r["provcode"] == p]
         by_d: dict = {}
@@ -163,7 +182,8 @@ def check_values(values: dict, where: str) -> list[tuple[str, str]]:
     issues = []
     v = values
     for k, n, d in [("pct_reached_cum", "reached_cum", "expected"), ("pct_reached_fy", "reached_fy", "expected"),
-                    ("pct_teda4i", "served_teda4i", "expected"), ("pct_icd10", "diagnosed_icd10", "expected")]:
+                    ("pct_teda4i", "served_teda4i", "expected"), ("pct_icd9", "served_icd9", "expected"),
+                    ("pct_icd10", "diagnosed_icd10", "expected")]:
         if v.get(n) is None or v.get(d) is None:
             continue
         if v[d] == 0:

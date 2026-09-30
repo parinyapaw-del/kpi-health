@@ -1,22 +1,24 @@
 """DSPM plugin — พัฒนาการเด็กสมวัย (MOPH table s_childdev_specialpp).
 
-API: 1 raw row = hospcode x areacode(8) x monthly.  Cache = (areacode[:6], unit tambon, monthly), every raw
-field summed (all 5 age suffixes).  district = areacode[:4], province = sum, group 'total' = sum of the 5 suffixes.
+API: 1 raw row = hospcode x areacode(8) x monthly.  Cache = (areacode[:6], hospcode, monthly), every raw field summed
+(all 5 age suffixes).  province = sum of the cache, group 'total' = sum of the 5 suffixes.
 
-SUBDISTRICT RULE (differs from spec §3.4, see final report): the HDC "ตำบล" report groups by the tambon of the
-reporting unit (hospcode), not by areacode[:6] of the child's village.  A hospcode's tambon ("unit6") is derived from
-the API data only: the areacode[:6] where that hospcode has the largest target (ties -> lowest code).  Verified
-against the Excel oracle by `kpi.py verify` (hard errors if it ever stops matching).
+UNIT-LOCATION RULE (Phase 2 spec §4.3, extended 2026-09-30): the HDC reports group BOTH the district ("อำเภอ") and the
+subdistrict ("ตำบล") levels by where the reporting unit (hospcode) is LOCATED according to the MOPH GIS registry
+(data/lookup/units.json) — not by the areacode of the child.  Evidence: สระบุรี 2569 Excel gives หนองโดน 296 /
+พระพุทธบาท 1123 = the unit-location totals (รพ.สต.นายาว 01758 is located in พระพุทธบาท but reports 4 children with
+หนองโดน areacodes); the areacode grouping (300 / 1119) does not match.  Units the registry does not know fall back
+to the Phase 1 rule (the areacode[:6] where the unit has its largest target, ties -> lowest code) and are counted as
+`inferredUnits` of the district.  Units whose rows carry areacodes of other districts are listed as `crossDistrict`
+(information only; every unit of the 8 provinces is located inside its API province, so province totals are exact).
 """
 from __future__ import annotations
 
 import json
-import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 from ..loaders import moph_api
-from .common import PCT_TOL, THAI_MONTHS_SHORT, add, close, fmt_asof, pct, ssum
+from .common import PCT_TOL, add, close, fmt_asof, pct, ssum
 
 ID = "dspm"
 TABLE = "s_childdev_specialpp"
@@ -26,6 +28,7 @@ GROUPS = ["total", "m9", "m18", "m30", "m42", "m60"]
 SUFFIX = {"m9": "9", "m18": "18", "m30": "30", "m42": "42", "m60": "60"}
 GROUP_LABEL = {"total": "รวมทั้ง 5 กลุ่มอายุ", "m9": "อายุ 9 เดือน", "m18": "อายุ 18 เดือน",
                "m30": "อายุ 30 เดือน", "m42": "อายุ 42 เดือน", "m60": "อายุ 60 เดือน"}
+HEAT_LABEL = {"total": "รวม", "m9": "9 เดือน", "m18": "18 เดือน", "m30": "30 เดือน", "m42": "42 เดือน", "m60": "60 เดือน"}
 
 # key -> raw field prefix (field = <prefix>_<suffix>)
 RAW = {
@@ -61,8 +64,8 @@ ALL_KEYS = [k for k, _, _ in TABLE_KEYS]
 
 META = {
     "id": ID,
-    "name_th": "ร้อยละเด็กปฐมวัยพัฒนาการสมวัย (DSPM)",
-    "short": "DSPM",
+    "name_th": "ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย 5 ช่วงอายุ (DSPM)",
+    "short": "สมวัย",
     "source": {"table": TABLE,
                "bodyTemplate": {"tableName": TABLE, "year": "{year}", "province": "{province}",
                                 "type": "json", "limit": 20000},
@@ -75,8 +78,11 @@ META = {
         {"metric": "pct_suspect", "label": "สงสัยพัฒนาการล่าช้า", "num": "suspect_total", "den": "screened"},
         {"metric": "pct_followed", "label": "ติดตามได้ภายใน 30 วัน", "num": "followed", "den": "suspect_wait30"},
     ],
+    "heatmap": {"columns": [{"key": g, "label": HEAT_LABEL[g], "group": g, "metric": "pct_normal",
+                             "num": "normal_total", "den": "target", "useTarget": True} for g in GROUPS]},
+    "chart": {"style": "status"},
     "table": [{"key": k, "label": l, "type": t} for k, l, t in TABLE_KEYS],
-    "monthly": True,
+    "monthly": False,
     "targets_key": "dspm",
 }
 
@@ -150,41 +156,30 @@ def cache_path(year: int, province: str = "15") -> Path:
     return ROOT / "data" / "cache" / ID / str(year) / f"{province}.json"
 
 
-def unit_tambon(rows: list[dict]) -> dict:
-    """hospcode -> tambon (areacode[:6]) where the unit has its largest target (ties -> lowest code)."""
-    w: dict = {}
-    for r in rows:
-        t = sum(r.get(f"target_{s}") or 0 for s in SUFFIX.values())
-        k = w.setdefault(r["hospcode"], {})
-        a6 = r["areacode"][:6]
-        k[a6] = k.get(a6, 0) + t
-    return {h: sorted(v.items(), key=lambda kv: (-kv[1], kv[0]))[0][0] for h, v in w.items()}
-
-
-def aggregate(rows: list[dict]) -> tuple[list[str], list[list], dict]:
+def aggregate(rows: list[dict]) -> tuple[list[str], list[list]]:
+    """raw rows -> (fields, [[areacode6, hospcode, monthly, <field sums...>], ...]).
+    hospcode is kept as the string the API gives (e.g. '14O3F' with a letter O exists)."""
     fields = sorted({k for r in rows for k, v in r.items()
                      if k.rsplit("_", 1)[-1] in SUFFIX.values() and isinstance(v, int)})
-    units = unit_tambon(rows)
     agg: dict[tuple, list] = {}
     for r in rows:
-        key = (r["areacode"][:6], units[r["hospcode"]], r["monthly"])
+        key = (r["areacode"][:6], str(r["hospcode"]), r["monthly"])
         a = agg.setdefault(key, [0] * len(fields))
         for i, f in enumerate(fields):
             a[i] += r.get(f) or 0
-    out = [[a6, u6, m] + vals for (a6, u6, m), vals in sorted(agg.items())]
-    return fields, out, units
+    out = [[a6, h, m] + vals for (a6, h, m), vals in sorted(agg.items())]
+    return fields, out
 
 
-def fetch_cache(year: int, province: str, refresh: bool, log=print) -> dict:
-    raw = moph_api.get_raw(TABLE, year, province, refresh=refresh, log=log)
+def cache_from_raw(raw: dict, log=print) -> dict:
     rows = raw["data"]
-    fields, agg, units = aggregate(rows)
+    year, province = int(raw["year"]), str(raw["province"])
+    fields, agg = aggregate(rows)
     gender = any(v for r in rows for k, v in r.items() if k.startswith(("1b260_f_", "1b260_m_")))
-    payload = {"schema": 1, "indicator": ID, "table": TABLE, "year": year, "province": province,
+    payload = {"schema": 2, "indicator": ID, "table": TABLE, "year": year, "province": province,
                "fetchedAt": raw["fetchedAt"], "asOf": max(r["date_com"] for r in rows),
                "rawRowCount": len(rows), "rowCount": len(agg), "genderPopulated": gender,
-               "units": dict(sorted(units.items())),
-               "fields": fields, "rowFormat": ["areacode6", "unit6", "monthly", "<fields...>"], "rows": agg}
+               "fields": fields, "rowFormat": ["areacode6", "hospcode", "monthly", "<fields...>"], "rows": agg}
     p = cache_path(year, province)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -192,25 +187,32 @@ def fetch_cache(year: int, province: str, refresh: bool, log=print) -> dict:
     return payload
 
 
+def fetch_cache(year: int, province: str, refresh: bool, log=print) -> dict:
+    raw = moph_api.get_raw(TABLE, year, province, refresh=refresh, log=log)
+    return cache_from_raw(raw, log=log)
+
+
 def load_cache(year: int, province: str = "15"):
     p = cache_path(year, province)
-    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    if not p.exists():
+        return None
+    c = json.loads(p.read_text(encoding="utf-8"))
+    if c.get("schema", 1) < 2 or c.get("rowFormat", [None])[1] != "hospcode":
+        raise RuntimeError(f"{p.relative_to(ROOT)} is a Phase 1 cache (no hospcode column) - rebuild it: "
+                           f"python3 scripts/kpi.py fetch --year {year} (raw cache) or --refresh")
+    return c
 
 
-# ------------------------------------------------------------------ national summary (country / region levels)
-# The per-province caches of all 77 provinces stay local (~53 MB); only this summary (1 row of raw-field sums per
-# province) is committed, and the country/region levels are built from it.
-def summary_path(year: int) -> Path:
-    return ROOT / "data" / "cache" / ID / str(year) / "provinces.json"
-
-
-def fetch_all(year: int, provinces: list[str], refresh: bool, log=print) -> dict:
-    """Fetch every province cache (sequential: parallel requests get HTTP 429), then write the summary.
-    A province the API answers with 0 rows (Bangkok: not reported to HDC) is recorded as empty, not an error."""
+def fetch_provinces(year: int, provinces: list[str], refresh: bool, log=print) -> list[str]:
+    """Fetch (or rebuild from raw) the caches of `provinces`; returns provinces the API answered with 0 rows."""
     empty = []
     for i, p in enumerate(provinces, 1):
         if not refresh and cache_path(year, p).exists():
-            continue
+            try:
+                load_cache(year, p)
+                continue
+            except RuntimeError:
+                pass                     # Phase 1 cache -> rebuild from raw (or API)
         log(f"  [{i}/{len(provinces)}] province {p}")
         try:
             fetch_cache(year, p, refresh, log=log)
@@ -219,7 +221,26 @@ def fetch_all(year: int, provinces: list[str], refresh: bool, log=print) -> dict
                 raise
             log(f"    province {p}: API returned 0 rows -> empty")
             empty.append(p)
+    return empty
+
+
+# ------------------------------------------------------------------ national summary (country / region levels)
+# The per-province caches of all 77 provinces stay local (~53 MB) except the drill provinces; only this summary
+# (1 row of raw-field sums per province) is committed, and the country/region levels are built from it.
+def summary_path(year: int) -> Path:
+    return ROOT / "data" / "cache" / ID / str(year) / "provinces.json"
+
+
+def fetch_all(year: int, provinces: list[str], refresh: bool, log=print) -> dict:
+    """Fetch every province cache (sequential: parallel requests get HTTP 429), then write the summary.
+    A province the API answers with 0 rows (Bangkok: not reported to HDC) is recorded as empty, not an error."""
+    fetch_provinces(year, provinces, refresh, log=log)
     return write_summary(year, provinces, log=log)
+
+
+def _province_sums(c: dict, fields: list[str]) -> list[int]:
+    s = _sums(c, lambda a6, h, m: "all").get("all", {})
+    return [s.get(f, 0) for f in fields]
 
 
 def write_summary(year: int, provinces: list[str], log=print) -> dict:
@@ -230,8 +251,7 @@ def write_summary(year: int, provinces: list[str], log=print) -> dict:
         if c is None:
             missing.append(p)
             continue
-        s = _sums(c, lambda a6, u6, m: "all").get("all", {})
-        prov[p] = [s.get(f, 0) for f in fields]
+        prov[p] = _province_sums(c, fields)
         asofs.append(c["asOf"])
         fetched.append(c["fetchedAt"])
         gender = gender or c.get("genderPopulated", False)
@@ -242,6 +262,33 @@ def write_summary(year: int, provinces: list[str], log=print) -> dict:
     p.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     log(f"  summary written {p.relative_to(ROOT)}  ({len(prov)} provinces, empty {payload['empty']})")
     return payload
+
+
+def update_summary(year: int, provinces: list[str], log=print):
+    """Patch the committed national summary with fresh caches of `provinces` only (daily run: the other provinces
+    keep their weekly values). Returns None when no summary exists yet (then country/region need --national)."""
+    summ = load_summary(year)
+    if summ is None:
+        return None
+    fields = summ["fields"]
+    changed = []
+    for p in provinces:
+        c = load_cache(year, p)
+        if c is None:
+            continue
+        vals = _province_sums(c, fields)
+        if summ["provinces"].get(p) != vals:
+            changed.append(p)
+        summ["provinces"][p] = vals
+        summ["asOf"] = max(summ["asOf"], c["asOf"])
+        summ["fetchedAt"] = max(summ["fetchedAt"], c["fetchedAt"])
+        summ["genderPopulated"] = summ.get("genderPopulated", False) or c.get("genderPopulated", False)
+        if p in summ["empty"]:
+            summ["empty"].remove(p)
+    summ["provinces"] = dict(sorted(summ["provinces"].items(), key=lambda kv: int(kv[0])))
+    summary_path(year).write_text(json.dumps(summ, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    log(f"  summary patched {summary_path(year).relative_to(ROOT)}  (provinces {provinces}, changed {changed})")
+    return summ
 
 
 def load_summary(year: int):
@@ -266,13 +313,13 @@ def national_views(summary, ctx) -> list[dict]:
 
 
 # ------------------------------------------------------------------ API-side views
-def _sums(cache, keyfn, monthfn=None):
-    """Group cache rows -> {key: {field: sum}}; keyfn(area6, unit6, month)->key|None."""
+def _sums(cache, keyfn):
+    """Group cache rows -> {key: {field: sum}}; keyfn(area6, hospcode, month)->key|None."""
     fields = cache["fields"]
     out: dict = {}
     for row in cache["rows"]:
-        a6, u6, m, vals = row[0], row[1], row[2], row[3:]
-        k = keyfn(a6, u6, m)
+        a6, h, m, vals = row[0], row[1], row[2], row[3:]
+        k = keyfn(a6, h, m)
         if k is None:
             continue
         s = out.setdefault(k, dict.fromkeys(fields, 0))
@@ -289,53 +336,79 @@ def _values(cache, sums):
     return v
 
 
-def api_views(cache, ctx) -> list[dict]:
-    """Datasets derivable from the API cache: province 15 (rows=districts) and district 1501 (rows=subdistricts)."""
+def unit_areas(cache) -> dict:
+    """{hospcode: {"target": total target, "areas": {areacode6: target}}} from the cache (all months)."""
+    fields = cache["fields"]
+    tidx = [i for i, f in enumerate(fields) if f.startswith("target_")]
+    out: dict = {}
+    for row in cache["rows"]:
+        a6, h, vals = row[0], row[1], row[3:]
+        t = sum(vals[i] for i in tidx)
+        u = out.setdefault(h, {"target": 0, "areas": {}})
+        u["target"] += t
+        u["areas"][a6] = u["areas"].get(a6, 0) + t
+    return out
+
+
+def resolve_tambons(cache, registry: dict) -> dict:
+    """hospcode -> {"tambon": areacode6, "inferred": bool, "name": str}. Registry first (§4.3 rule 1-2), else the
+    Phase 1 fallback: areacode[:6] with the unit's largest target (ties -> lowest code)."""
+    units = (registry or {}).get("units", {})
+    out = {}
+    for h, u in unit_areas(cache).items():
+        reg = units.get(h)
+        if reg:
+            out[h] = {"tambon": reg["tambon"], "inferred": False, "name": reg.get("name", "")}
+        else:
+            top = sorted(u["areas"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+            out[h] = {"tambon": top, "inferred": True, "name": ""}
+    return out
+
+
+def api_views(cache, ctx, registry=None) -> list[dict]:
+    """province P (rows = districts by the district of the reporting unit; unknown district codes -> pseudo rows)
+    and, for every drill district of P, district D (rows = subdistricts by the tambon of the reporting unit, §4.3)."""
     prov = cache["province"]
+    lk = ctx["lookup"]
     views = []
-    dsum = _sums(cache, lambda a6, u6, m: a6[:4])
-    views.append({"level": "province", "scope": prov,
-                  "rows": [{"code": c, "values": _values(cache, s)} for c, s in sorted(dsum.items())]})
+    tam = resolve_tambons(cache, registry)
+    dsum = _sums(cache, lambda a6, h, m: tam[h]["tambon"][:4])
+    rows = []
+    for c, s in sorted(dsum.items()):
+        r = {"code": c, "values": _values(cache, s)}
+        if c not in lk["districts"]:
+            r["pseudo"] = True
+            r["name"] = f"ไม่ระบุพื้นที่ (รหัส {c})"
+        rows.append(r)
+    views.append({"level": "province", "scope": prov, "rows": rows})
+
+    # rows of each unit by areacode district (for the cross-district report)
+    by_unit_dist: dict = {}
+    for h, u in unit_areas(cache).items():
+        for a6, t in u["areas"].items():
+            by_unit_dist.setdefault(h, {})
+            by_unit_dist[h][a6[:4]] = by_unit_dist[h].get(a6[:4], 0) + t
     for d in ctx["drill_districts"]:
-        ssums = _sums(cache, lambda a6, u6, m, d=d: u6 if a6[:4] == d else None)
-        views.append({"level": "district", "scope": d,
-                      "rows": [{"code": c, "values": _values(cache, s)} for c, s in sorted(ssums.items())]})
+        if d[:2] != prov:
+            continue
+        ssums = _sums(cache, lambda a6, h, m, d=d: tam[h]["tambon"] if tam[h]["tambon"][:4] == d else None)
+        units_in = sorted(h for h, t in tam.items() if t["tambon"][:4] == d)
+        inferred = [h for h in units_in if tam[h]["inferred"]]
+        cross = []
+        for h in units_in:                                   # located in d, rows (also) elsewhere
+            other = {k: v for k, v in by_unit_dist[h].items() if k != d}
+            if other:
+                cross.append({"hospcode": h, "name": tam[h]["name"], "tambon": tam[h]["tambon"],
+                              "locatedIn": d, "rowsIn": dict(sorted(by_unit_dist[h].items()))})
+        for h, t in tam.items():                             # rows in d, located elsewhere
+            if t["tambon"][:4] != d and d in by_unit_dist[h]:
+                cross.append({"hospcode": h, "name": t["name"], "tambon": t["tambon"],
+                              "locatedIn": t["tambon"][:4], "rowsIn": dict(sorted(by_unit_dist[h].items()))})
+        views.append({"level": "district", "scope": d, "fill": False,
+                      "rows": [{"code": c, "values": _values(cache, s)} for c, s in sorted(ssums.items())],
+                      "extra": {"inferredUnits": len(inferred), "inferredUnitCodes": inferred,
+                                "units": len(units_in), "crossDistrict": cross}})
     return views
-
-
-def monthly_view(cache, level: str, scope: str, child_len: int) -> dict:
-    """{'months': [12 dicts], 'rows': [{code, months}]} for the scope.
-    province scope: children = districts (areacode[:4]); district scope: children = subdistricts (unit tambon)."""
-    by_unit = level == "district"
-    code_of = (lambda a6, u6: u6) if by_unit else (lambda a6, u6: a6[:4])
-    in_scope = lambda a6, u6: (a6[:4] == scope) if by_unit else a6.startswith(scope)
-
-    def build(sumsmap):
-        months = []
-        cum = {"screened": 0, "target": 0, "normal_total": 0}
-        for fy in range(1, 13):
-            cal = ((fy + 8) % 12) + 1          # fyIndex 1 = Oct(10) ... 12 = Sep(9)
-            s = sumsmap.get(f"{cal:02d}")
-            if s is None:
-                months.append({"fyIndex": fy, "calMonth": cal, "label": THAI_MONTHS_SHORT[cal],
-                               "hasData": False, "screened": None, "target": None, "normal_total": None,
-                               "cum": {"screened": None, "target": None, "normal_total": None}})
-                continue
-            tot = values_from_sums(s)["total"]
-            m = {"screened": tot["screened"], "target": tot["target"], "normal_total": tot["normal_total"]}
-            for k in cum:
-                cum[k] += m[k]
-            months.append({"fyIndex": fy, "calMonth": cal, "label": THAI_MONTHS_SHORT[cal], "hasData": True,
-                           **m, "cum": dict(cum)})
-        return months
-
-    tot_by_month = _sums(cache, lambda a6, u6, m: m if in_scope(a6, u6) else None)
-    codes = sorted({code_of(r[0], r[1]) for r in cache["rows"] if in_scope(r[0], r[1])})
-    out_rows = []
-    for c in codes:
-        sm = _sums(cache, lambda a6, u6, m, c=c: m if in_scope(a6, u6) and code_of(a6, u6) == c else None)
-        out_rows.append({"code": c, "months": build(sm)})
-    return {"months": build(tot_by_month), "rows": out_rows}
 
 
 # ------------------------------------------------------------------ validation

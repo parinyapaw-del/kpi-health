@@ -1,25 +1,31 @@
-"""Build the web data layer  site/data/<site>/  from the aggregate cache (API) + HDC Excel (oracle / Excel-sourced levels).
+"""Build the web data layer  site/data/<site>/  from the aggregate cache (API) + HDC Excel (oracle).
 
-`build_datasets()` is shared with verify.py: it returns every dataset that the API cache can produce (`api`), every
-dataset read from Excel (`excel`), and the `published` selection per the source matrix (spec §3.4).
+`build_datasets()` is shared with verify.py: it returns every dataset the API cache can produce (`api`), every
+dataset read from Excel (`excel`), and the `published` selection per the source matrix (all levels = api since
+2026-09-30, Excel is the oracle only).
+
+Phase 2 (web_spec_phase2.md §4): scope = health region 4 -> its 8 provinces -> every district -> every subdistrict
+(DSPM; Coverage stops at district rows because its API table is one row per district).
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
+from . import build_lookup
 from .indicators import coverage, dspm
 from .indicators.common import fmt_asof
 from .loaders import xlsx_hdc
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGINS = {"dspm": dspm, "coverage": coverage}
-# source matrix (spec §3.4): which source publishes which level
+# source matrix: which source publishes which level (Excel is verify-only)
 SOURCE_LEVELS = {
     "dspm": {"country": "api", "region": "api", "province": "api", "district": "api"},
     "coverage": {"country": "api", "region": "api", "province": "api", "district": "api"},
 }
 LEVEL_ORDER = ["country", "region", "province", "district"]
+INDEX_SCHEMA = 2
 
 
 class BuildError(RuntimeError):
@@ -31,18 +37,36 @@ def load_site(site_id: str) -> dict:
     return json.loads((ROOT / "sites" / f"{site_id}.json").read_text(encoding="utf-8"))
 
 
+def save_site(site: dict) -> None:
+    (ROOT / "sites" / f"{site['site']}.json").write_text(json.dumps(site, ensure_ascii=False, indent=2) + "\n",
+                                                          encoding="utf-8")
+
+
 def make_context(site: dict) -> dict:
     lk_path = ROOT / "data" / "lookup" / "areas.json"
     if not lk_path.exists():
         raise BuildError("data/lookup/areas.json missing — run: python3 scripts/kpi.py lookup")
     lk = json.loads(lk_path.read_text(encoding="utf-8"))
-    home = {p["level"]: p["code"] for p in site["home"]["path"]}
+    home = site["home"]
+    if home.get("level") != "region":
+        raise BuildError("sites/<site>.json home.level must be 'region' (Phase 2)")
+    drill = site.get("drill", {})
+    provinces = [str(p) for p in drill.get("provinces", [])]
+    for p in provinces:
+        if p not in lk["provinces"]:
+            raise BuildError(f"drill.provinces: {p} not in lookup")
+        if str(lk["provinces"][p]["region"]) != str(home["code"]):
+            raise BuildError(f"drill.provinces: {p} is not in health region {home['code']}")
+    if drill.get("districts", "all") == "all":
+        districts = sorted(d for d in lk["districts"] if d[:2] in provinces)
+    else:
+        districts = [str(d) for d in drill["districts"]]
     n_districts: dict = {}
     for d in lk["districts"]:
         n_districts[d[:2]] = n_districts.get(d[:2], 0) + 1
     return {"site": site, "lookup": lk, "home": home,
             "prov_region": {pc: v["region"] for pc, v in lk["provinces"].items()},
-            "drill_regions": [str(home["region"])], "drill_provinces": [home["province"]], "drill_districts": [home["district"]],
+            "drill_regions": [str(home["code"])], "drill_provinces": provinces, "drill_districts": districts,
             "n_districts": n_districts}
 
 
@@ -90,12 +114,21 @@ def scope_parent(ctx, level: str, scope: str):
 
 
 # ------------------------------------------------------------------ dataset construction
+def _row_name(ctx, crow, r):
+    if r.get("name"):
+        return r["name"]
+    return area_name(ctx, crow, r["code"])
+
+
 def _mk_dataset(plugin, ctx, year, level, scope, rows, total_vals, asof, source, extra=None):
     crow = child_level(level)
     out_rows = []
-    for r in sorted(rows, key=lambda r: int(r["code"])):
-        out_rows.append({"code": r["code"], "name": area_name(ctx, crow, r["code"]),
-                         "values": r["values"], "hasData": plugin.has_data(r["values"])})
+    for r in sorted(rows, key=lambda r: (bool(r.get("pseudo")), r["code"])):
+        row = {"code": r["code"], "name": _row_name(ctx, crow, r),
+               "values": r["values"], "hasData": plugin.has_data(r["values"])}
+        if r.get("pseudo"):
+            row["pseudo"] = True
+        out_rows.append(row)
     ds = {"indicator": plugin.ID, "year": year, "level": level, "scope": scope,
           "scopeName": area_name(ctx, level, scope), "parent": scope_parent(ctx, level, scope),
           "asOf": asof, "source": source, "rows": out_rows,
@@ -105,23 +138,34 @@ def _mk_dataset(plugin, ctx, year, level, scope, rows, total_vals, asof, source,
     return ds
 
 
-def api_datasets(plugin, ctx, year, cache, warnings, views=None):
+def api_datasets(plugin, ctx, year, cache, warnings, views):
     out = {}
-    views = plugin.api_views(cache, ctx) if views is None else views
     for v in views:
-        have = {r["code"] for r in v["rows"]}
-        rows = list(v["rows"])
-        for c in child_codes(ctx, v["level"], v["scope"]):
-            if c not in have:
-                warnings.append(f"{plugin.ID} {year} {v['level']}/{v['scope']}: child {c} "
-                                f"({area_name(ctx, child_level(v['level']), c)}) absent from API -> zero row")
-                rows.append({"code": c, "values": _zero(plugin)})
-        extra_codes = have - set(child_codes(ctx, v["level"], v["scope"]))
-        if extra_codes:
-            raise BuildError(f"{plugin.ID} {year} {v['level']}/{v['scope']}: unexpected child codes {sorted(extra_codes)}")
+        expected = child_codes(ctx, v["level"], v["scope"])
+        rows = []
+        for r in v["rows"]:
+            if r["code"] in expected:
+                rows.append(r)
+            elif v["level"] == "province":
+                rows.append(dict(r, pseudo=True, name=r.get("name") or f"ไม่ระบุพื้นที่ (รหัส {r['code']})"))
+                warnings.append(f"{plugin.ID} {year} {v['level']}/{v['scope']}: district code {r['code']} not in "
+                                f"lookup -> pseudo row (counted in the province total, not ranked)")
+            elif v["level"] == "district":
+                rows.append(dict(r, pseudo=True, name=f"ไม่ระบุตำบล (รหัส {r['code']})"))
+                warnings.append(f"{plugin.ID} {year} {v['level']}/{v['scope']}: subdistrict code {r['code']} not in "
+                                f"lookup -> pseudo row")
+            else:
+                raise BuildError(f"{plugin.ID} {year} {v['level']}/{v['scope']}: unexpected child code {r['code']}")
+        if v.get("fill", True):
+            have = {r["code"] for r in rows}
+            for c in expected:
+                if c not in have:
+                    warnings.append(f"{plugin.ID} {year} {v['level']}/{v['scope']}: child {c} "
+                                    f"({area_name(ctx, child_level(v['level']), c)}) absent from API -> zero row")
+                    rows.append({"code": c, "values": _zero(plugin)})
         total = plugin.sum_values([r["values"] for r in rows])
         out[(plugin.ID, year, v["level"], v["scope"])] = _mk_dataset(
-            plugin, ctx, year, v["level"], v["scope"], rows, total, fmt_asof(cache["asOf"]), "api")
+            plugin, ctx, year, v["level"], v["scope"], rows, total, fmt_asof(cache["asOf"]), "api", v.get("extra"))
     return out
 
 
@@ -131,20 +175,52 @@ def _zero(plugin):
     return plugin.derive({k: 0 for k in plugin.COUNT_KEYS} | {"prevalence": None})
 
 
-def _resolve_codes(ctx, level: str, labels: list[str], path: str):
+# ------------------------------------------------------------------ Excel oracle (scope detected from the row names)
+def _detect_scope(ctx, level: str, labels: list[str], path: str) -> str:
+    """Which area is this workbook about? country -> TH; region -> the region of its provinces; province -> the
+    province whose district-name set equals the labels; district -> the (unique) district whose subdistrict names
+    contain every label (HDC lists only subdistricts with units). Ambiguity = hard error."""
+    lk = ctx["lookup"]
+    names = set(labels)
+    if level == "country":
+        return "TH"
+    if level == "region":
+        pm = {v["name"]: k for k, v in lk["provinces"].items()}
+        miss = names - set(pm)
+        if miss:
+            raise BuildError(f"{path}: province names not in lookup: {sorted(miss)}")
+        regs = {str(ctx["prov_region"][pm[n]]) for n in names}
+        if len(regs) != 1:
+            raise BuildError(f"{path}: provinces span several regions {sorted(regs)}")
+        return regs.pop()
+    if level == "province":
+        cands = [p for p in lk["provinces"] if {lk["districts"][d] for d in child_codes(ctx, "province", p)} == names]
+        if len(cands) != 1:
+            raise BuildError(f"{path}: cannot identify the province from its district names (candidates {cands})")
+        return cands[0]
+    # district: prefer the drill districts, then any district in the country
+    def match(dists):
+        return [d for d in dists if names <= {lk["subdistricts"][s] for s in child_codes(ctx, "district", d)}]
+    cands = match(ctx["drill_districts"]) or match(list(lk["districts"]))
+    if len(cands) != 1:
+        raise BuildError(f"{path}: cannot identify the district from its subdistrict names (candidates {cands})")
+    return cands[0]
+
+
+def _resolve_codes(ctx, level: str, scope: str, labels: list[str], path: str):
     lk = ctx["lookup"]
     if level == "country":
         m = {v: k for k, v in lk["regions"].items()}
     elif level == "region":
-        m = {v["name"]: k for k, v in lk["provinces"].items()}
+        m = {v["name"]: k for k, v in lk["provinces"].items() if str(v["region"]) == scope}
     elif level == "province":
-        m = {n: c for c, n in lk["districts"].items() if c[:2] == ctx["home"]["province"]}
+        m = {n: c for c, n in lk["districts"].items() if c[:2] == scope}
     else:
-        m = {n: c for c, n in lk["subdistricts"].items() if c[:4] == ctx["home"]["district"]}
+        m = {n: c for c, n in lk["subdistricts"].items() if c[:4] == scope}
     codes = []
     for lab in labels:
         if lab not in m:
-            raise BuildError(f"{path}: row name {lab!r} not found in lookup for level {level}")
+            raise BuildError(f"{path}: row name {lab!r} not found in lookup for level {level} scope {scope}")
         codes.append(m[lab])
     if len(set(codes)) != len(codes):
         raise BuildError(f"{path}: duplicate area names")
@@ -155,24 +231,15 @@ def excel_datasets(plugin, ctx, workbooks, excel_export_date):
     out = {}
     for w in workbooks:
         level = w["level"]
-        codes = _resolve_codes(ctx, level, [r["label"] for r in w["rows"]], w["path"])
-        if level == "country":
-            scope = "TH"
-        elif level == "region":
-            regs = {str(ctx["prov_region"][c]) for c in codes}
-            if len(regs) != 1:
-                raise BuildError(f"{w['path']}: provinces span several regions {regs}")
-            scope = regs.pop()
-        elif level == "province":
-            scope = ctx["home"]["province"]
-        else:
-            scope = ctx["home"]["district"]
+        labels = [r["label"] for r in w["rows"]]
+        scope = _detect_scope(ctx, level, labels, w["path"])
+        codes = _resolve_codes(ctx, level, scope, labels, w["path"])
         rows = [{"code": c, "values": plugin.from_excel(r["values"])} for c, r in zip(codes, w["rows"])]
         total = plugin.from_excel(w["total"]["values"]) if w["total"] else \
             plugin.sum_values([r["values"] for r in rows])
         key = (plugin.ID, w["year"], level, scope)
         if key in out:
-            raise BuildError(f"two Excel files for {key}: {w['path']}")
+            raise BuildError(f"two Excel files for {key}: {w['path']} and {out[key]['excel_path']}")
         if plugin.ID == "dspm":
             xl_keys = {g: list(kv) for g, kv in w["rows"][0]["values"].items()}
         else:
@@ -183,25 +250,22 @@ def excel_datasets(plugin, ctx, workbooks, excel_export_date):
     return out
 
 
+# ------------------------------------------------------------------ build
 def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int], log=print) -> dict:
-    api, excel, monthly, warnings = {}, {}, {}, []
+    api, excel, warnings = {}, {}, []
     excel_dir = ROOT / site["excel"]["dir"]
-    export_date = site["excel"]["exportDate"]
+    export_date = site["excel"].get("exportDate")
+    registry = build_lookup.load_units()
     for ind in indicators:
         plugin = PLUGINS[ind]
         wbs = [w for w in xlsx_hdc.discover(excel_dir, ind) if w["year"] in years]
         excel.update(excel_datasets(plugin, ctx, wbs, export_date))
         for y in years:
-            for lvl, src in SOURCE_LEVELS[ind].items():
-                if src == "excel" and not any(k[0] == ind and k[1] == y and k[2] == lvl for k in excel):
-                    warnings.append(f"{ind} {y}: no Excel export for {lvl} level (source matrix says Excel) - "
-                                    f"export HDC xlsx into {site['excel']['dir']}/{ind}/{y}/")
-        for y in years:
             if ind == "dspm":
                 summ = dspm.load_summary(y)
                 if summ is None:
                     warnings.append(f"dspm {y}: no province summary {dspm.summary_path(y).relative_to(ROOT)} "
-                                    f"(run fetch) - country/region levels missing")
+                                    f"(run kpi.py update --national) - country/region levels missing")
                 else:
                     api.update(api_datasets(dspm, ctx, y, summ, warnings, dspm.national_views(summ, ctx)))
                 for prov in ctx["drill_provinces"]:
@@ -209,22 +273,13 @@ def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int
                     if cache is None:
                         warnings.append(f"dspm {y}: no cache for province {prov} (run fetch)")
                         continue
-                    api.update(api_datasets(dspm, ctx, y, cache, warnings))
-                    for lvl, scope, clen in (("province", prov, 4), ("district", ctx["home"]["district"], 6)):
-                        m = dspm.monthly_view(cache, lvl, scope, clen)
-                        crow = child_level(lvl)
-                        for r in m["rows"]:
-                            r["name"] = area_name(ctx, crow, r["code"])
-                        monthly[(ind, y, lvl, scope)] = {
-                            "indicator": ind, "year": y, "level": lvl, "scope": scope,
-                            "scopeName": area_name(ctx, lvl, scope), "parent": scope_parent(ctx, lvl, scope),
-                            "asOf": fmt_asof(cache["asOf"]), "source": "api", **m}
+                    api.update(api_datasets(dspm, ctx, y, cache, warnings, dspm.api_views(cache, ctx, registry)))
             else:
                 cache = coverage.load_cache(y)
                 if cache is None:
                     warnings.append(f"coverage {y}: no cache (run fetch)")
                     continue
-                api.update(api_datasets(coverage, ctx, y, cache, warnings))
+                api.update(api_datasets(coverage, ctx, y, cache, warnings, coverage.api_views(cache, ctx)))
     published = {}
     for key, ds in list(api.items()) + list(excel.items()):
         ind, y, level, scope = key
@@ -232,14 +287,20 @@ def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int
         src = api if want == "api" else excel
         if key in src and key not in published:
             published[key] = src[key]
-    return {"api": api, "excel": excel, "published": published, "monthly": monthly, "warnings": warnings}
+    # district datasets that have an Excel oracle -> verified (the pipeline fails hard if they ever differ)
+    verified: dict = {}
+    for (ind, y, level, scope) in excel:
+        if level == "district" and (ind, y, level, scope) in published:
+            verified.setdefault(ind, {}).setdefault(str(y), []).append(scope)
+            published[(ind, y, level, scope)]["verified"] = True
+    for k in verified:
+        for y in verified[k]:
+            verified[k][y].sort()
+    return {"api": api, "excel": excel, "published": published, "warnings": warnings, "verified": verified,
+            "registry": registry}
 
 
 # ------------------------------------------------------------------ JSON writing
-def _round_pcts(plugin, vals):
-    return vals  # pct fields are already rounded to 2 decimals when derived; Excel pcts are 2-decimal cells
-
-
 def _jsonify(plugin, values, has):
     if not has:
         values = plugin.null_values(values)
@@ -248,14 +309,27 @@ def _jsonify(plugin, values, has):
 
 
 def dataset_json(site_id: str, plugin, ds: dict) -> dict:
-    return {"schema": 1, "site": site_id, "indicator": ds["indicator"], "year": ds["year"],
-            "level": ds["level"],
-            "scope": {"code": ds["scope"], "name": ds["scopeName"], "parent": ds["parent"]},
-            "asOf": ds["asOf"], "source": ds["source"],
-            "rows": [{"code": r["code"], "name": r["name"], "hasData": r["hasData"],
-                      **_jsonify(plugin, r["values"], r["hasData"])} for r in ds["rows"]],
-            "total": {"code": ds["scope"], "name": "รวม", "hasData": ds["total"]["hasData"],
-                      **_jsonify(plugin, ds["total"]["values"], ds["total"]["hasData"])}}
+    rows = []
+    for r in ds["rows"]:
+        row = {"code": r["code"], "name": r["name"], "hasData": r["hasData"]}
+        if r.get("pseudo"):
+            row["pseudo"] = True
+        row.update(_jsonify(plugin, r["values"], r["hasData"]))
+        rows.append(row)
+    out = {"schema": INDEX_SCHEMA, "site": site_id, "indicator": ds["indicator"], "year": ds["year"],
+           "level": ds["level"],
+           "scope": {"code": ds["scope"], "name": ds["scopeName"], "parent": ds["parent"]},
+           "asOf": ds["asOf"], "source": ds["source"]}
+    if ds["level"] == "district":
+        out["inferredUnits"] = ds.get("inferredUnits", 0)
+        out["units"] = ds.get("units", 0)
+        out["verified"] = bool(ds.get("verified", False))
+        out["crossDistrict"] = [{"hospcode": c["hospcode"], "name": c["name"], "tambon": c["tambon"],
+                                 "locatedIn": c["locatedIn"]} for c in ds.get("crossDistrict", [])]
+    out["rows"] = rows
+    out["total"] = {"code": ds["scope"], "name": "รวม", "hasData": ds["total"]["hasData"],
+                    **_jsonify(plugin, ds["total"]["values"], ds["total"]["hasData"])}
+    return out
 
 
 def dataset_file(ds_key) -> str:
@@ -263,26 +337,32 @@ def dataset_file(ds_key) -> str:
     return f"{ind}_{y}_{level}_{scope}.json"
 
 
-def monthly_file(key) -> str:
-    ind, y, level, scope = key
-    return f"{ind}_{y}_monthly_{scope}.json"
-
-
 def build_tree(ctx, published) -> dict:
-    scopes = {(lvl, sc) for (_, _, lvl, sc) in published}
-    def node(level, code):
-        return {"code": code, "level": level, "name": area_name(ctx, level, code)}
-    def build(level, code):
-        n = node(level, code)
-        kids = []
-        cl = child_level(level)
-        for c in child_codes(ctx, level, code):
-            if (cl, c) in scopes:
-                kids.append(build(cl, c))
-        if kids:
-            n["children"] = kids
-        return n
-    return build("country", "TH")
+    """region -> provinces -> districts (inferredUnits) -> subdistricts that have a row in any published district
+    dataset (spec §4.2)."""
+    home = ctx["home"]
+    sub_rows: dict = {}
+    inferred: dict = {}
+    for (ind, y, level, scope), ds in published.items():
+        if level == "district":
+            sub_rows.setdefault(scope, set()).update(r["code"] for r in ds["rows"] if not r.get("pseudo"))
+            inferred[scope] = max(inferred.get(scope, 0), ds.get("inferredUnits", 0))
+    tree = {"code": str(home["code"]), "level": "region", "name": area_name(ctx, "region", str(home["code"])),
+            "children": []}
+    for p in ctx["drill_provinces"]:
+        pn = {"code": p, "level": "province", "name": area_name(ctx, "province", p), "children": []}
+        for d in child_codes(ctx, "province", p):
+            if d not in ctx["drill_districts"]:
+                continue
+            dn = {"code": d, "level": "district", "name": area_name(ctx, "district", d),
+                  "inferredUnits": inferred.get(d, 0)}
+            subs = sorted(sub_rows.get(d, ()))
+            if subs:
+                dn["children"] = [{"code": s, "level": "subdistrict", "name": area_name(ctx, "subdistrict", s)}
+                                  for s in subs]
+            pn["children"].append(dn)
+        tree["children"].append(pn)
+    return tree
 
 
 def write_site(site: dict, ctx: dict, built: dict, log=print) -> dict:
@@ -302,25 +382,18 @@ def write_site(site: dict, ctx: dict, built: dict, log=print) -> dict:
         index_ds.append({"indicator": key[0], "year": key[1], "level": key[2], "scope": key[3],
                          "kind": "level", "file": fname, "asOf": ds["asOf"], "source": ds["source"]})
         written.append((fname, len(ds["rows"]), ds["asOf"], ds["source"]))
-    for key in sorted(built["monthly"], key=lambda k: (k[1], LEVEL_ORDER.index(k[2]))):
-        m = built["monthly"][key]
-        fname = monthly_file(key)
-        body = {"schema": 1, "site": site_id, "indicator": m["indicator"], "year": m["year"], "level": m["level"],
-                "scope": {"code": m["scope"], "name": m["scopeName"], "parent": m["parent"]},
-                "asOf": m["asOf"], "source": m["source"], "fiscalYearStartMonth": 10,
-                "months": m["months"], "rows": m["rows"]}
-        (out_dir / fname).write_text(json.dumps(body, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        index_ds.append({"indicator": key[0], "year": key[1], "level": key[2], "scope": key[3],
-                         "kind": "monthly", "file": fname, "asOf": m["asOf"], "source": m["source"]})
-        written.append((fname, len(m["rows"]), m["asOf"], m["source"]))
     inds = [i for i in site["indicators"] if i in PLUGINS]
     years = sorted({k[1] for k in built["published"]})
-    index = {"schema": 1, "site": site_id, "name": site["name"], "org": site["org"], "logo": site["logo"],
-             "years": years, "currentYear": site["currentYear"], "home": site["home"],
+    index = {"schema": INDEX_SCHEMA, "site": site_id, "name": site["name"], "org": site["org"],
+             "logo": site["logo"], "orgLogo": site.get("orgLogo"), "repo": site.get("repo"),
+             "home": {"level": site["home"]["level"], "code": str(site["home"]["code"]),
+                      "name": area_name(ctx, site["home"]["level"], str(site["home"]["code"]))},
+             "years": years, "currentYear": site["currentYear"],
              "colorRules": site["colorRules"],
              "sourceLabels": {"api": "MOPH Open Data API", "excel": site["excel"]["sourceLabel"]},
              "indicators": {i: PLUGINS[i].META for i in inds},
              "targets": site["targets"], "tree": build_tree(ctx, built["published"]),
+             "verified": built.get("verified", {}),
              "datasets": index_ds}
     (out_dir / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
     written.append(("index.json", len(index_ds), "", ""))

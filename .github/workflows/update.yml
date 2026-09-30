@@ -1,0 +1,110 @@
+# อัปเดตข้อมูลอัตโนมัติ (web_spec_phase2.md §7)
+# ทุกวัน 07:00 ICT (= 00:00 UTC): DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ · วันจันทร์: DSPM ทั้ง 77 จังหวัด (ระดับประเทศ/เขต)
+# ผ่าน -> commit "data: auto-update <วันที่>" + push (Cloudflare Pages deploy เอง) · ล้ม -> ไม่ commit + เปิด/คอมเมนต์ GitHub Issue
+name: update-data
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      national:
+        description: "ดึง DSPM ทั้ง 77 จังหวัด (ระดับประเทศ/เขต) ด้วย — ปกติทำเองทุกวันจันทร์"
+        type: boolean
+        default: false
+      fail_test:
+        description: "ทดสอบเส้นทางล้มเหลว (kpi.py --fail-test) — ไม่ดึงข้อมูล"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      national: ${{ steps.p.outputs.national }}
+      today: ${{ steps.p.outputs.today }}
+    steps:
+      - id: p
+        run: |
+          # วันจันทร์ (ICT) = รอบระดับประเทศ · หรือกดเลือกเอง
+          DOW=$(TZ=Asia/Bangkok date +%u)
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$DOW" = "1" ]; then N=true; else N=false; fi
+          if [ "${{ inputs.national }}" = "true" ]; then N=true; fi
+          echo "national=$N" >> "$GITHUB_OUTPUT"
+          echo "today=$(TZ=Asia/Bangkok date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          echo "national=$N dow=$DOW"
+
+  update:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ needs.plan.outputs.national == 'true' && 90 || 40 }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TZ: Asia/Bangkok
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - run: python3 -m pip install -r scripts/requirements.txt
+
+      - name: kpi.py update
+        id: run
+        run: |
+          set -o pipefail
+          ARGS="update --site angthong --refresh"
+          if [ "${{ needs.plan.outputs.national }}" = "true" ]; then ARGS="$ARGS --national"; fi
+          if [ "${{ inputs.fail_test }}" = "true" ]; then ARGS="$ARGS --fail-test"; fi
+          echo "python3 scripts/kpi.py $ARGS"
+          python3 scripts/kpi.py $ARGS 2>&1 | tee update.log
+
+      - name: commit + push (เมื่อมีข้อมูลใหม่)
+        if: success()
+        run: |
+          git add -A data/cache data/lookup/units.json site/data sites/angthong.json
+          if git diff --cached --quiet; then
+            echo "no data change"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "data: auto-update ${{ needs.plan.outputs.today }}${{ needs.plan.outputs.national == 'true' && ' (national)' || '' }}"
+            git push
+          fi
+
+      - name: Issue เมื่อพบปีงบใหม่ (spec §7.3)
+        if: success()
+        run: |
+          YEARS=$(python3 -c "import json,sys; s=json.load(open('data/cache/pipeline_status.json')); print(' '.join(str(y) for y in s.get('newYears') or []))" 2>/dev/null || true)
+          for Y in $YEARS; do
+            TITLE="พบข้อมูลปีงบ $Y — กรุณาใส่เป้าหมาย"
+            if [ -z "$(gh issue list --state all --search "\"$TITLE\" in:title" --json number --jq '.[0].number')" ]; then
+              gh label create pipeline --color d73a4a --description "pipeline อัปเดตข้อมูลอัตโนมัติ" --force
+              gh issue create --label pipeline --title "$TITLE" --body "$(printf 'GitHub Actions พบข้อมูลปีงบ %s ใน MOPH Open Data API แล้ว และเพิ่มปีนี้ใน `sites/angthong.json` (currentYear = %s) โดยยังไม่มีเป้าหมาย → เว็บแสดง "เป้าหมาย: ยังไม่กำหนด"\n\nใส่เป้าหมายได้ 2 ทาง\n1. แก้ `sites/angthong.json` → `targets.dspm.%s.value` และ `targets.coverage.%s.value` แล้ว push\n2. หน้า admin (Phase 2b)\n\nปิด Issue นี้เมื่อใส่เป้าหมายแล้ว' "$Y" "$Y" "$Y" "$Y")"
+            fi
+          done
+
+      - name: Issue เมื่อล้มเหลว (spec §7.1 / Q39)
+        if: failure()
+        run: |
+          TITLE="อัปเดตข้อมูลล้มเหลว ${{ needs.plan.outputs.today }}"
+          LOG=$(tail -n 50 update.log 2>/dev/null || echo "(ไม่มี log)")
+          BODY=$(printf 'Workflow run: %s/%s/actions/runs/%s\n\nข้อมูลบนเว็บยังเป็นชุดเดิม (ไม่ได้ commit)\n\n50 บรรทัดท้ายของ log:\n```\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$LOG")
+          gh label create pipeline --color d73a4a --description "pipeline อัปเดตข้อมูลอัตโนมัติ" --force
+          OPEN=$(gh issue list --state open --label pipeline --search "อัปเดตข้อมูลล้มเหลว in:title" --json number --jq '.[0].number')
+          if [ -n "$OPEN" ]; then
+            gh issue comment "$OPEN" --body "$(printf '%s\n\n%s' "$TITLE" "$BODY")"
+          else
+            gh issue create --label pipeline --title "$TITLE" --body "$BODY"
+          fi

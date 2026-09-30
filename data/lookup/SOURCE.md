@@ -20,6 +20,17 @@ taken as `district.id // 100`; district code = `district.id` (4 digits); subdist
   full); the whole table is validated by
   `kpi.py verify` (Coverage API grouped by this table must equal the HDC Excel `เขตสุขภาพ` country files 100%).
 
+## Unit registry `data/lookup/units.json` (Phase 2, 2026-09-30)
+- `https://opendata-service.moph.go.th/gis/v1/getgis/hoscode/{hoscode}` (MOPH GIS service, no auth, GeoJSON;
+  `properties.provcode/distcode/subdistcode/hosname/hostype/dep`) → `units[hospcode] = {name, tambon (6-digit), hostype, dep}`.
+- Built incrementally by `python3 scripts/kpi.py units` (also inside `fetch`/`update`) for every hospcode in the DSPM
+  caches of the 8 provinces of health region 4 (982 codes for 2569: 882 found, 100 not in the registry).
+- `missing[hospcode] = {maxTargetArea, target, areas}` = fallback location (areacode6 with the unit's largest DSPM
+  target) for units the registry does not know (private clinics `1xxxx/2xxxx`, local-government units `4xxxx`, …).
+- The district AND subdistrict levels of the web group rows by this unit location (HDC does the same — verified
+  100% against the HDC Excel exports of เมืองอ่างทอง / หนองแค / ท่าเรือ (ตำบล) and อ่างทอง / สระบุรี / อยุธยา (อำเภอ)).
+
 ## Mandatory checks (performed in `kpi.py verify`, hard errors)
-- the 7 district names and 14 subdistrict names of Angthong equal the names in the HDC Excel files;
+- every Excel oracle file is matched to its area by its row names (district names of one province / subdistrict
+  names inside one district) — ambiguous or unknown names stop the pipeline;
 - region 4 = นครนายก นนทบุรี ปทุมธานี พระนครศรีอยุธยา ลพบุรี สระบุรี สิงห์บุรี อ่างทอง.

@@ -10,7 +10,27 @@ __pycache__/
 # temp
 *.tmp
 ~$*.xlsx
-# all-province DSPM cache (scripts/fetch_all_dspm.py) stays local; only the site province is committed
+# pipeline status written by kpi.py for the Actions workflow
+data/cache/pipeline_status.json
+# DSPM province caches: only the 8 provinces of health region 4 (drill.provinces) + the national summary are committed;
+# the other provinces (scripts/fetch_all_dspm.py / kpi.py --national) stay local
 data/cache/dspm/*/*.json
+!data/cache/dspm/*/12.json
+!data/cache/dspm/*/13.json
+!data/cache/dspm/*/14.json
 !data/cache/dspm/*/15.json
+!data/cache/dspm/*/16.json
+!data/cache/dspm/*/17.json
+!data/cache/dspm/*/19.json
+!data/cache/dspm/*/26.json
 !data/cache/dspm/*/provinces.json
+# population tables (scripts/population.py) are prepared offline, not published
+data/cache/pop/
+data/cache/pyramid/
+data/cache/typearea/
+data/prepared/
+# Phase 1 years stay local (the web publishes only the years in sites/angthong.json)
+data/cache/dspm/2567/1*.json
+data/cache/dspm/2567/2*.json
+data/cache/dspm/2568/1*.json
+data/cache/dspm/2568/2*.json

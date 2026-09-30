@@ -1,35 +1,21 @@
 {
-  "schema": 1,
+  "schema": 2,
   "site": "angthong",
-  "name": "ระบบติดตามตัวชี้วัด จังหวัดอ่างทอง",
-  "org": "โรงพยาบาลอ่างทอง",
-  "logo": "assets/logo-angthong.png",
-  "home": {
-    "path": [
-      {"level": "country",  "code": "TH",   "name": "ประเทศ"},
-      {"level": "region",   "code": "4",    "name": "เขตสุขภาพที่ 4"},
-      {"level": "province", "code": "15",   "name": "อ่างทอง"},
-      {"level": "district", "code": "1501", "name": "เมืองอ่างทอง"}
-    ]
-  },
+  "name": "ระบบติดตามตัวชี้วัดเข็มมุ่งพัฒนาการเด็ก เขตสุขภาพที่ 4",
+  "org": "จัดทำโดย โรงพยาบาลอ่างทอง",
+  "logo": "assets/logo-r4.png",
+  "orgLogo": "assets/logo-angthong.png",
+  "repo": "https://github.com/parinyapaw-del/kpi-health",
+  "home": {"level": "region", "code": "4", "name": "เขตสุขภาพที่ 4"},
+  "drill": {"provinces": ["12", "13", "14", "15", "16", "17", "19", "26"], "districts": "all", "subdistricts": "all"},
   "indicators": ["dspm", "coverage"],
-  "years": [2567, 2568, 2569],
+  "years": [2569],
   "currentYear": 2569,
+  "autoYear": true,
   "targets": {
-    "dspm": {
-      "2567": {"value": 85, "note": "เป้าหมายอ้างอิง ยังไม่ยืนยัน"},
-      "2568": {"value": 87},
-      "2569": {"value": 88}
-    },
-    "coverage": {
-      "2568": {"value": 20, "note": "เป้าหมายอ้างอิง ยังไม่ยืนยัน"},
-      "2569": {"value": 30}
-    }
+    "dspm": {"2569": {"value": 88}},
+    "coverage": {"2569": {"value": 30}}
   },
   "colorRules": {"warnBand": 5, "smallN": 20},
-  "excel": {
-    "dir": "data/excel_reference/angthong",
-    "exportDate": "2569-09-29",
-    "sourceLabel": "HDC export"
-  }
+  "excel": {"dir": "data/excel_reference", "sourceLabel": "HDC export"}
 }

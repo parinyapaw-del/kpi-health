@@ -1,11 +1,12 @@
-// Data layer: fetches index.json + dataset files (relative to the page) and caches them in memory.
-// Everything indicator-specific comes from index.json metadata.
+// Data layer: fetches index.json + dataset files and caches them in memory.
+// Everything indicator-specific comes from index.json metadata (schema 2).
 
-const BASE = '../data/angthong/';
+const BASE = 'data/angthong/';
 let index = null;
 const fileCache = new Map(); // file -> Promise<json|null>
 
-export const LEVELS = ['country', 'region', 'province', 'district'];
+/** Levels that have a page (country exists only as the 13-region dataset on the home page). */
+export const ROUTE_LEVELS = ['region', 'province', 'district'];
 export const CHILD_LEVEL = { country: 'region', region: 'province', province: 'district', district: 'subdistrict' };
 export const LEVEL_NAME = {
   country: 'ประเทศ',
@@ -14,8 +15,6 @@ export const LEVEL_NAME = {
   district: 'อำเภอ',
   subdistrict: 'ตำบล',
 };
-/** Prefix used when a child row name is put into a sentence. Regions already carry "เขตสุขภาพที่". */
-export const ROW_PREFIX = { region: '', province: 'จังหวัด', district: 'อำเภอ', subdistrict: 'ตำบล' };
 
 export async function loadIndex() {
   const res = await fetch(`${BASE}index.json`, { cache: 'no-cache' });
@@ -60,10 +59,11 @@ export async function load(indicator, year, level, scope, kind = 'level') {
 /** The metric bag of a row for a group (DSPM) or the flat metrics (group-less indicators). */
 export function vals(row, groupKey) {
   if (!row) return null;
-  if (row.groups) return row.groups[groupKey] ?? row.groups.total ?? null;
+  if (row.groups) return row.groups[groupKey ?? 'total'] ?? row.groups.total ?? null;
   return row.metrics ?? null;
 }
 
+/** Target for an indicator/year, or null when missing or `value: null` (Q33: "ยังไม่กำหนด"). */
 export function targetFor(ind, year) {
   const key = ind.targets_key ?? ind.id;
   const t = index?.targets?.[key]?.[String(year)];
@@ -74,7 +74,7 @@ export function tableLabel(ind, key) {
   return ind.table?.find((c) => c.key === key)?.label ?? key;
 }
 
-/** Table label up to its first "(" — e.g. "อัตราการเข้าถึงบริการ ปีงบประมาณปัจจุบัน". */
+/** Table label up to its first "(" — e.g. "อัตราการเข้าถึงบริการ สะสม". */
 export function shortLabel(ind, key) {
   const l = tableLabel(ind, key);
   const cut = l.indexOf('(');
@@ -91,51 +91,26 @@ function walk(node, fn, parents = []) {
   return null;
 }
 
+/** Tree node (rooted at region 4) + its ancestors, or null. */
 export function findTreeNode(level, code) {
   return walk(index?.tree, (n) => n.level === level && String(n.code) === String(code));
 }
 
-/** A child row can be drilled into when the tree has it with children, or a dataset exists for it. */
+/** A child row is drillable only when a dataset exists for it (the tree alone is not enough). */
 export function canDrill(indicator, year, level, code) {
-  if (!LEVELS.includes(level)) return false;
-  if (findDataset(indicator, year, level, code)) return true;
+  if (!ROUTE_LEVELS.includes(level)) return false;
+  return Boolean(findDataset(indicator, year, level, code));
+}
+
+/** Breadcrumb trail [{level, code, name}] from region 4 down to the scope, from the tree. */
+export function trailFor(level, code) {
   const hit = findTreeNode(level, code);
-  return Boolean(hit && hit.node.children && hit.node.children.length);
+  if (!hit) return [];
+  return [...hit.parents, hit.node].map((n) => ({ level: n.level, code: String(n.code), name: n.name }));
 }
 
-/** Home-path code at a level (e.g. region → "4"), or null. */
-export function homeCodeAt(level) {
-  return index?.home?.path?.find((p) => p.level === level)?.code ?? null;
-}
-
-/**
- * Breadcrumb trail for a scope: [{level, code, name}] from country down to the scope.
- * Uses home.path first; off-path scopes are resolved through the parent level's datasets.
- */
-export async function resolveTrail(indicator, year, level, code, depth = 0) {
-  const path = index.home.path;
-  const li = LEVELS.indexOf(level);
-  if (li < 0) return [];
-  const onPath = path[li] && path[li].level === level && String(path[li].code) === String(code);
-  if (onPath) return path.slice(0, li + 1).map((p) => ({ ...p }));
-  if (li === 0 || depth > 4) return [{ level, code, name: String(code) }];
-
-  const parentLevel = LEVELS[li - 1];
-  // Prefer datasets of the current indicator/year, then any indicator/year.
-  const cands = index.datasets
-    .filter((d) => d.level === parentLevel && (d.kind ?? 'level') === 'level')
-    .sort((a, b) => score(b) - score(a));
-  function score(d) {
-    return (d.indicator === indicator ? 2 : 0) + (Number(d.year) === Number(year) ? 1 : 0);
-  }
-  for (const d of cands) {
-    const json = await loadFile(d.file);
-    const row = json?.rows?.find((r) => String(r.code) === String(code));
-    if (row) {
-      const up = await resolveTrail(indicator, year, parentLevel, d.scope, depth + 1);
-      return [...up, { level, code, name: row.name }];
-    }
-  }
-  const up = path.slice(0, li).map((p) => ({ ...p }));
-  return [...up, { level, code, name: String(code) }];
+/** Latest asOf over all datasets of a year (footer fallback). */
+export function latestAsOf(year) {
+  const list = (index?.datasets ?? []).filter((d) => year == null || Number(d.year) === Number(year));
+  return list.map((d) => d.asOf).filter(Boolean).sort().pop() ?? null;
 }

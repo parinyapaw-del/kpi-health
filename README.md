@@ -1,101 +1,111 @@
-# kpi-health — ระบบติดตามตัวชี้วัด จังหวัดอ่างทอง
+# kpi-health — ระบบติดตามตัวชี้วัดเข็มมุ่งพัฒนาการเด็ก เขตสุขภาพที่ 4
 
-Dashboard ตัวชี้วัดสาธารณสุขสำหรับผู้ตรวจราชการ เปิด link แล้วดูได้ทันที ไม่ต้อง login
-เจาะได้ 4 ชั้น: ประเทศ (13 เขตสุขภาพ) → เขตสุขภาพที่ 4 (8 จังหวัด) → อ่างทอง (7 อำเภอ) → เมืองอ่างทอง (14 ตำบล)
+Dashboard ตัวชี้วัดพัฒนาการเด็กปฐมวัยสำหรับผู้ตรวจราชการ เปิด link แล้วดูได้ทันที ไม่ต้อง login
+เจาะได้ 4 ชั้น: **เขตสุขภาพที่ 4 → 8 จังหวัด → ทุกอำเภอ (70) → ทุกตำบล (703 ตำบลที่มีหน่วยบริการ)**
 
-- ผู้ดูแล: โรงพยาบาลอ่างทอง
-- Spec ฉบับล็อก: [`web_spec.md`](web_spec.md) (v1.1, 2026-09-29)
-- ตัวชี้วัด Phase 1: **DSPM** (ร้อยละเด็ก 0–5 ปี พัฒนาการสมวัย) และ **Coverage** (ร้อยละเด็กพัฒนาการล่าช้าเข้าถึงบริการ) ปีงบ 2567–2569
-- แหล่งข้อมูล: **MOPH Open Data API ทุกระดับ** · Excel HDC export ใน `data/excel_reference/` ใช้เป็น oracle สำหรับ `verify` (ระดับอ่างทอง/อำเภอเมืองต้องตรง 100%; DSPM ประเทศ/เขต ต่างจาก HDC ได้ 0.1–3% บางจังหวัด → warning, ดู `docs/API_NOTES.md` §3)
-- Static site ล้วน (vanilla HTML/CSS/JS + Chart.js จาก CDN) ไม่มี build step · deploy ด้วย Cloudflare Pages จาก `site/`
+- URL: `https://kpi-health.pages.dev/` (link เก่า `/angthong/…` redirect มาที่นี่)
+- จัดทำโดย: โรงพยาบาลอ่างทอง
+- Spec ฉบับล็อก: [`web_spec_phase2.md`](web_spec_phase2.md) (v2.0, 2026-09-30) · Phase 1: [`web_spec.md`](web_spec.md)
+- ตัวชี้วัด: **สมวัย** — ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย 5 ช่วงอายุ (DSPM) และ **เข้าถึงบริการ** — ร้อยละของเด็กปฐมวัยที่มีพัฒนาการล่าช้าเข้าถึงบริการพัฒนาการและสุขภาพจิตที่ได้มาตรฐาน (Coverage) · ปีงบ 2569 (ปีใหม่เพิ่มเองเมื่อ API มีข้อมูล)
+- แหล่งข้อมูล: **MOPH Open Data API ทุกระดับ** · Excel HDC export ใน `data/excel_reference/` เป็น oracle ให้ `verify` (ระดับอำเภอ/ตำบลต้องตรง 100% · DSPM ประเทศ/เขต ต่างจาก HDC ได้ 0.1–3% → warning, ดู `docs/API_NOTES.md` §3)
+- Static site (vanilla HTML/CSS/JS + Chart.js จาก CDN) ไม่มี build step + Pages Function `/api/hit` (นับผู้ใช้, D1) · deploy ด้วย Cloudflare Pages จาก `site/`
 
-## 1. อัปเดตข้อมูล (ทำเองได้ด้วยคำสั่งเดียว)
+## 1. อัปเดตข้อมูล
 
+### อัตโนมัติ (GitHub Actions — [`.github/workflows/update.yml`](.github/workflows/update.yml))
+- **ทุกวัน 07:00 ICT**: DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ → build → verify → ถ้าผ่านและมีข้อมูลใหม่ commit `data: auto-update <วันที่>` → Cloudflare deploy เอง (≈ 10 นาที)
+- **ทุกวันจันทร์**: เพิ่ม DSPM ทั้ง 77 จังหวัด (`--national`, ≈ 45–60 นาที) สำหรับกราฟ 13 เขต / ยอดเขต 4
+- **ปีงบใหม่**: ก่อนดึงจะยิงถาม API ปี `max(years)+1` ถ้ามีข้อมูลจะเพิ่มปีใน `sites/angthong.json` เอง (`currentYear` = ปีใหม่, เป้าหมายยังว่าง → เว็บแสดง "เป้าหมาย: ยังไม่กำหนด") และเปิด Issue **"พบข้อมูลปีงบ 2570 — กรุณาใส่เป้าหมาย"** → ใส่เป้าใน `targets` แล้ว push (หรือหน้า admin ใน Phase 2b) แล้วปิด Issue
+- **ล้มเหลว**: ไม่ commit (เว็บคงข้อมูลเดิม) · workflow แดง · เปิด Issue label `pipeline` "อัปเดตข้อมูลล้มเหลว <วันที่>" แนบ log 50 บรรทัด (ถ้ามี Issue เปิดอยู่จะคอมเมนต์ต่อ) · GitHub ส่งอีเมลให้เอง · ปิด Issue เองเมื่ออ่านแล้ว
+- กดรันเองได้ที่ GitHub → Actions → **update-data** → Run workflow (ติ๊ก `national` ถ้าต้องการรอบ 77 จังหวัด)
+
+### ทำเองในเครื่อง
 ต้องมี Python 3.13 (python.org) และ package ใน `scripts/requirements.txt`:
 
 ```bash
 python3 -m pip install -r scripts/requirements.txt
 ```
 
-ดึงข้อมูลจาก API → สร้าง JSON เว็บ → ตรวจกับ Excel → รายงาน:
-
 ```bash
 python3 scripts/kpi.py update --site angthong
 ```
 
-ตัวเลือกที่ใช้บ่อย
-
 | คำสั่ง | ความหมาย |
 |---|---|
-| `update --year 2570` | ดึงเฉพาะปีงบ 2570 (ระบุซ้ำได้หลายปี) |
-| `update --indicator dspm` | ดึงเฉพาะตัวชี้วัดเดียว (`dspm` / `coverage`) |
-| `update --refresh` | ไม่ใช้ raw cache ใน `data/raw_api/` ยิง API ใหม่ทั้งหมด (DSPM ดึงทุก 77 จังหวัด ทีละจังหวัด ≈ 45 นาที/ปี → ใช้คู่กับ `--year <ปีปัจจุบัน>`) |
-| `fetch` / `build` / `verify` | ทำทีละขั้น · `verify` ทำงาน offline จาก `data/cache/` |
+| `update` | ตรวจปีใหม่ → fetch (ใช้ raw cache ใน `data/raw_api/` ถ้ามี) → units → build → verify |
+| `update --refresh` | ไม่ใช้ raw cache ยิง API ใหม่ (DSPM 8 จังหวัด ≈ 5 นาที) |
+| `update --national` | DSPM ทั้ง 77 จังหวัด → `data/cache/dspm/<ปี>/provinces.json` (ระดับประเทศ/เขต ≈ 45 นาที ห้ามยิงขนาน) |
+| `update --year 2570` | เฉพาะปีที่ระบุ (ซ้ำได้) · `--indicator dspm` เฉพาะตัวชี้วัด · `--no-auto-year` ข้ามการตรวจปีใหม่ |
+| `fetch` / `units` / `build` / `verify` | ทำทีละขั้น · `build` และ `verify` ทำงาน offline จาก `data/cache/` |
+| `units` | เติมทะเบียนที่ตั้งหน่วยบริการ `data/lookup/units.json` จาก MOPH GIS (เฉพาะรหัสใหม่) |
 | `lookup` | สร้าง `data/lookup/areas.json` ใหม่ (ชื่อพื้นที่จากรหัส DOPA + ตารางจังหวัด→เขตสุขภาพ) |
 
-คำสั่งจบด้วย exit code ≠ 0 ถ้ามี **hard error** (สูตรไม่ตรง, จำนวนแถวผิด, ตัวเลขไม่ตรง Excel) → ห้าม push จนกว่าจะแก้
-Warning ที่คาดไว้แล้ว: `followed ≠ normal_after + delay_after_total` ระดับเขต · `normal_total ≠ female + male` ปี 2568–2569 (ความคลาดของ HDC เอง) · `API != HDC Excel` ของ DSPM ประเทศ/เขต · เขตสุขภาพที่ 13 (กทม.) ไม่มีข้อมูล DSPM
+จบด้วย exit code ≠ 0 ถ้ามี **hard error** (สูตรไม่ตรง, จำนวนแถวผิด, ตัวเลขไม่ตรง Excel) → ห้าม push จนกว่าจะแก้ ·
+สถานะรอบล่าสุดอยู่ใน `data/cache/pipeline_status.json` (ไม่ commit)
+Warning ที่คาดไว้แล้ว: `normal_total ≠ female + male` และ `followed ≠ normal_after + delay_after_total` (ความคลาดของ HDC เอง) · `API != HDC Excel` ของ DSPM ประเทศ/เขต · เขต 13 (กทม.) ไม่มีข้อมูล DSPM · อำเภอรหัส `1310` (ปทุมธานี) ไม่มีในทะเบียน → แถว "ไม่ระบุพื้นที่"
 
 หลังรันผ่านแล้ว:
 
 ```bash
-git add -A && git commit -m "data: update 2570" && git push
+git add -A && git commit -m "data: update" && git push
 ```
 
-Cloudflare Pages จะ deploy ให้อัตโนมัติเมื่อ push ขึ้น `main`
+### ใส่เป้าหมาย / เพิ่มปี
+`sites/angthong.json` → `years`, `currentYear`, `targets.<indicator>.<ปี>.value` (ไม่มีค่า = "ยังไม่กำหนด" สีกลาง ไม่มีเส้นเป้า)
 
-### ปีใหม่ต้องเตรียมอะไรเพิ่ม
-- **DSPM ระดับประเทศ / เขต 4** มาจาก API: `fetch` ดึงครบ 77 จังหวัด (cache รายจังหวัดเก็บในเครื่อง, commit เฉพาะ `data/cache/dspm/<ปี>/provinces.json`) · ปีใหม่ใช้เวลาราว 45 นาที
-- Excel ของปีใหม่ **ไม่จำเป็น** แต่ถ้ามีจะถูกใช้ตรวจสอบเพิ่ม
-- เพิ่มปีใน `sites/angthong.json` (`years`, `currentYear`) และเป้าหมายใน `targets`
+### เพิ่ม Excel HDC มาตรวจสอบ
+วางไฟล์ export ของ HDC ใน `data/excel_reference/<dspm|coverage>/<ปี>/` ชื่อไฟล์อิสระ — `verify` อ่านระดับจาก header A1 (`เขตสุขภาพ`/`จังหวัด`/`อำเภอ`/`ตำบล`) และหาพื้นที่จากชุดชื่อในคอลัมน์ A เอง ·
+อำเภอที่มีไฟล์รายตำบลตรง 100% จะถูกใส่ใน `index.json → verified` และป้ายบนเว็บเปลี่ยนเป็น "ตรวจกับ HDC แล้ว" ·
+อำเภอที่ควร export มาเพิ่ม (มีหน่วยนอกทะเบียนมาก): ดู spec §4.4
 
 ## 2. โครงสร้าง repo
 
 ```
 kpi-health/
-├── README.md · web_spec.md · docs/API_NOTES.md
-├── sites/angthong.json                 # ชื่อ, โลโก้, เส้นทางหลัก TH→4→15→1501, ปี, เป้าหมาย, กฎสี
+├── README.md · web_spec_phase2.md · web_spec.md · docs/API_NOTES.md
+├── .github/workflows/update.yml        # อัปเดตอัตโนมัติ (§1)
+├── functions/api/hit.js                # Pages Function นับผู้ใช้ (D1 binding `DB`)
+├── sites/angthong.json                 # ชื่อ, โลโก้, home = เขต 4, drill 8 จังหวัด, ปี, เป้าหมาย, กฎสี
 ├── data/
-│   ├── excel_reference/angthong/{dspm,coverage}/<ปี>/*.xlsx   # oracle
-│   ├── lookup/areas.json + SOURCE.md   # รหัส→ชื่อพื้นที่ + จังหวัด→เขตสุขภาพ
-│   ├── cache/<indicator>/<ปี>/*.json   # aggregate จาก API (commit)
+│   ├── excel_reference/{dspm,coverage}/<ปี>/*.xlsx   # oracle (ชื่อไฟล์อิสระ)
+│   ├── lookup/areas.json + units.json + SOURCE.md   # รหัส→ชื่อพื้นที่ · ที่ตั้งหน่วยบริการ (MOPH GIS)
+│   ├── cache/dspm/<ปี>/{12,13,14,15,16,17,19,26,provinces}.json · coverage/<ปี>/all.json   # commit
+│   ├── logo-r4.jpg · logo.webp         # โลโก้ต้นฉบับ (เขต 4 · รพ.อ่างทอง)
+│   ├── prepared/angthong/              # JSON ประชากร 3 แท็บ ยังไม่ขึ้นเว็บ (§5, ไม่ commit)
 │   └── raw_api/                        # response ดิบ (.gitignore)
 ├── scripts/
-│   ├── kpi.py                          # CLI
+│   ├── kpi.py                          # CLI (§1)
 │   ├── loaders/moph_api.py · xlsx_hdc.py
-│   ├── indicators/dspm.py · coverage.py   # plugin ต่อตัวชี้วัด
+│   ├── indicators/dspm.py · coverage.py   # plugin ต่อตัวชี้วัด (metadata + สูตร + กฎที่ตั้งหน่วย)
 │   ├── build_site.py · verify.py · build_lookup.py · process_logo.py
+│   ├── population.py · population_report.py · indicators/{pop,typearea,pyramid,denom05}.py   # ประชากร (§5)
 │   └── requirements.txt
 └── site/                               # Cloudflare output directory
-    ├── index.html (redirect) · _redirects · angthong/index.html
-    ├── assets/ (styles.css, app.js, modules/, logo-angthong.png)
-    └── data/angthong/*.json            # JSON ที่เว็บอ่าน
+    ├── index.html · _redirects (/angthong/* → /)
+    ├── assets/ (styles.css, app.js, modules/, logo-r4.png, logo-angthong.png)
+    └── data/angthong/ index.json + <ind>_<ปี>_{country_TH,region_4,province_<8>,district_<70>}.json
 ```
 
-URL: `/` → `/angthong/` · หน้าเดียว ใช้ hash `#/<indicator>/<ปี>/<level>/<code>` เช่น `#/dspm/2569/province/15`
+หน้าเดียว ใช้ hash `#/<indicator>/<ปี>/<level>/<code>` เช่น `#/dspm/2569/province/19` · `#/coverage/2569/district/1903` (level ∈ region|province|district)
 
-## 3. เชื่อม Cloudflare Pages (ทำครั้งเดียว)
+## 3. Cloudflare Pages (ทำครั้งเดียว)
 
-1. เข้า Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
-2. เลือก repo `parinyapaw-del/kpi-health` (GitHub)
-3. Project name: `kpi-health` (ถ้าไม่ว่างใช้ `kpi-health-th`)
-4. Production branch: `main` · **Build command: เว้นว่าง** · Framework preset: None · **Build output directory: `site`**
-5. กด **Save and Deploy** → ได้ URL `https://kpi-health.pages.dev` (root จะ redirect ไป `/angthong/` เอง)
-6. หลังจากนั้นทุกครั้งที่ `git push` ขึ้น `main` จะ deploy ใหม่อัตโนมัติ (ประมาณ 1 นาที)
+1. Workers & Pages → Create → Pages → Connect to Git → repo `parinyapaw-del/kpi-health` → Project name `kpi-health` · Production branch `main` · Build command **ว่าง** · Build output directory **`site`** → Save and Deploy
+2. **ยอดผู้ใช้ (Phase 2)**: Workers & Pages → **D1** → Create database `kpi-health-hits` → Pages project `kpi-health` → Settings → **Bindings** → Add → D1 database · Variable name **`DB`** · database `kpi-health-hits` → Save แล้ว redeploy 1 ครั้ง (Function สร้างตาราง `hits` เองครั้งแรก) · ไม่มี binding เว็บยังใช้ได้ footer แสดง "–"
+3. (Phase 2b) KV `kpi-health-config` bind `CONFIG` + env `GOOGLE_CLIENT_ID` — ดู spec §8.4
 
-## 4. เพิ่มตัวชี้วัดใหม่ (Phase 2)
+ทุกครั้งที่ `git push` ขึ้น `main` จะ deploy ใหม่อัตโนมัติ (≈ 1 นาที)
 
-1. สร้าง `scripts/indicators/<id>.py` โดยเลียนแบบ `dspm.py` / `coverage.py`: ประกาศ `ID`, `TABLE`, metadata (`name_th`, `short`, `levels`, `groups`, `headline`, `cards`, `table`, `monthly`), ฟังก์ชัน fetch/aggregate/build/validate
-2. ถ้ามี Excel HDC ของตัวชี้วัดนั้น วางใน `data/excel_reference/angthong/<id>/<ปี>/` และเพิ่ม layout ใน `loaders/xlsx_hdc.py` เพื่อให้ `verify` เทียบได้
-3. เพิ่ม `<id>` ใน `sites/angthong.json` → `indicators` และเป้าหมายใน `targets`
-4. รัน `python3 scripts/kpi.py update --site angthong --indicator <id>` → แท็บใหม่ขึ้นเว็บเองจาก metadata (เว็บไม่ hardcode ชื่อ metric)
-
-## 5. ข้อควรรู้เกี่ยวกับข้อมูล
+## 4. ข้อควรรู้เกี่ยวกับข้อมูล
 
 - ทุกเปอร์เซ็นต์บนเว็บมีตัวตั้ง/ตัวหารกำกับ · สีตามกฎ ok ≥ เป้า · warn [เป้า−5, เป้า) · bad < เป้า−5 · ตัวหาร < 20 = "n<20" ไม่นับในอันดับ
-- `monthly` ของ API DSPM = เดือนปฏิทิน (01–12) → ปีงบเรียง ต.ค.→ก.ย. · กราฟรายเดือนแสดงความคืบหน้าสะสมเทียบเป้าหมายทั้งปี
-- **ระดับตำบล**: รายงาน HDC จัดกลุ่มตามตำบลของหน่วยบริการ (hospcode) ไม่ใช่ `areacode[:6]` ของบ้านเด็ก · pipeline กำหนดตำบลของแต่ละ hospcode จากพื้นที่ที่หน่วยนั้นมีเป้าหมายมากที่สุด (ตรง Excel 100% ทั้ง 3 ปี, `verify` จะฟ้องทันทีถ้าหยุดตรง)
-- Coverage ปี 2567–2568 API ให้รายจังหวัดเท่านั้น → ระดับอำเภอ/ตำบลไม่มีข้อมูล · ปี 2569 มีรายอำเภอ
-- เขตสุขภาพที่ 13 (กทม.) ปี 2569 DSPM ทั้งแถวเป็น 0 → แสดง "ไม่มีข้อมูล" ไม่นับในกราฟ/อันดับ
-- เป้าหมายที่มี `*` (DSPM 2567 = 85, Coverage 2568 = 20) เป็นค่าอ้างอิงที่ยังไม่ยืนยัน
-- รายละเอียด API และ field mapping: [`docs/API_NOTES.md`](docs/API_NOTES.md)
+- **ระดับอำเภอและตำบล**: รายงาน HDC จัดกลุ่มตาม**ที่ตั้งของหน่วยบริการ (hospcode)** ในทะเบียน MOPH GIS ไม่ใช่ `areacode` ของบ้านเด็ก (ตรง Excel 100% ที่ อ่างทอง/สระบุรี/อยุธยา รายอำเภอ และ เมืองอ่างทอง/หนองแค/ท่าเรือ รายตำบล) · หน่วยที่ไม่มีในทะเบียน (100 จาก 982 หน่วย ส่วนใหญ่คลินิกเอกชน/อปท. ในนนทบุรี-ปทุมธานี) ใช้ตำบลที่หน่วยมีเป้ามากสุด → ป้าย `[INFERRED] หน่วย n แห่งใช้การอนุมานที่ตั้ง` บนหน้ารายอำเภอ
+- **Coverage** ปี 2569 API ให้ 1 แถวต่ออำเภอ (ไม่มีรายหน่วย/ตำบล) → ลึกสุดคือหน้ารายจังหวัด (แถว = อำเภอ) · ปี 2567–2568 ให้รายจังหวัดเท่านั้น
+- Coverage headline = (8) อัตราเข้าถึงบริการสะสม เป้า 30 · บรรทัดย่อย "ปีงบนี้" = (10) · กราฟ: แดง = คาดประมาณเด็กล่าช้า (3) เขียว = เข้าถึงสะสม (7)
+- เขตสุขภาพที่ 13 (กทม.) DSPM ทั้งแถวเป็น 0 → "ไม่มีข้อมูล" ไม่นับในกราฟ/อันดับ · เขต 4 อยู่อันดับ x/12
+- รายละเอียด API และ field mapping: [`docs/API_NOTES.md`](docs/API_NOTES.md) · ที่มาของรหัสพื้นที่/ทะเบียนหน่วย: [`data/lookup/SOURCE.md`](data/lookup/SOURCE.md)
+
+## 5. ข้อมูลประชากร HDC — 3 แท็บที่เตรียมไว้แต่ยังไม่ขึ้นเว็บ (2026-09-30, Phase 1 อ่างทอง)
+
+`pop` (ประชากรกลางปีจำแนกเพศ/กลุ่มอายุ) · `typearea` (ประเภทการอยู่อาศัย) · `denom05` (ตัวหารเด็ก 0–5 ปี) —
+`python3 scripts/population.py all` → `data/cache/{pop,typearea,pyramid}/` + `data/prepared/angthong/` (ไม่ commit) · ผลตรวจสอบ: [`docs/POPULATION_DENOMINATORS_ANGTHONG.md`](docs/POPULATION_DENOMINATORS_ANGTHONG.md) · ตาราง: [`docs/population_tables_angthong.md`](docs/population_tables_angthong.md)

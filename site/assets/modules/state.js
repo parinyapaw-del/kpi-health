@@ -3,8 +3,7 @@ const THEME_KEY = 'kpi-health-theme';
 
 export const state = {
   groupKey: 'total', // DSPM age-group tab (not in the hash)
-  monthlyRow: '', // selected child row in the monthly chart ('' = whole scope)
-  monthlyScope: '', // scope the monthlyRow belongs to
+  heatSort: 'code', // heatmap order: 'code' (area code, Q6 default) | 'pct'
 };
 
 export function getTheme() {
@@ -24,5 +23,6 @@ export function setTheme(t) {
   }
 }
 
-export const reduceMotion = () =>
-  window.matchMedia('(max-width: 600px)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const isMobile = () => window.matchMedia('(max-width: 600px)').matches;
+
+export const reduceMotion = () => isMobile() || window.matchMedia('(prefers-reduced-motion: reduce)').matches;

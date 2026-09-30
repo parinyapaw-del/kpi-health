@@ -1,37 +1,34 @@
 // Entry point: routing → data → components.
-import { loadIndex, getIndex, findDataset, loadFile, load, resolveTrail, targetFor, LEVEL_NAME } from './modules/data.js';
+import { loadIndex, getIndex, findDataset, loadFile, load, trailFor, targetFor, latestAsOf, LEVEL_NAME } from './modules/data.js';
 import { parseHash, defaultRoute, replace, go } from './modules/router.js';
-import { state, getTheme, setTheme } from './modules/state.js';
+import { state, getTheme, setTheme, isMobile } from './modules/state.js';
 import { destroyCharts } from './modules/charts.js';
 import { esc } from './modules/format.js';
+import { trackRoute, onCounts, getCounts } from './modules/hit.js';
 import { headerHTML } from './modules/components/header.js';
+import { footerHTML, countsText } from './modules/components/footer.js';
 import { breadcrumbHTML } from './modules/components/breadcrumb.js';
-import { shortcutsHTML } from './modules/components/shortcuts.js';
 import { groupTabsHTML } from './modules/components/groupTabs.js';
-import { headlineHTML, cardsHTML } from './modules/components/kpiCards.js';
-import { childBarsHTML, mountChildBars } from './modules/components/childBars.js';
-import { trendHTML, mountTrend } from './modules/components/trend.js';
-import { monthlyHTML, mountMonthly, loadMonthly } from './modules/components/monthly.js';
+import { headlineHTML, compactHeadlineHTML, cardsHTML } from './modules/components/kpiCards.js';
+import { barItems, barsPanelHTML, mountBars, childBarsPanel } from './modules/components/childBars.js';
 import { heatmapHTML } from './modules/components/heatmap.js';
-import { weaknessHTML } from './modules/components/weakness.js';
 import { fullTableHTML, downloadCSV } from './modules/components/fullTable.js';
 import { noDataHTML } from './modules/components/noData.js';
 
 const $header = document.getElementById('site-header');
 const $main = document.getElementById('main');
+const $footer = document.getElementById('site-footer');
 let token = 0;
 let ctx = null;
-let mdata = null;
+let lastScopeKey = null;
 
 function currentRoute(index) {
   const r = parseHash(location.hash, index);
   if (r) return r;
-  const d = defaultRoute(index);
+  const d = defaultRoute(index); // invalid route or a country route → region 4
   replace(d);
   return d;
 }
-
-let lastScopeKey = null;
 
 async function render() {
   const my = ++token;
@@ -40,55 +37,42 @@ async function render() {
   const route = currentRoute(index);
   const ind = index.indicators[route.indicator];
 
-  if (ind.groups) {
-    if (!ind.groups.some((g) => g.key === state.groupKey)) state.groupKey = ind.groups[0].key;
-  }
+  if (ind.groups && !ind.groups.some((g) => g.key === state.groupKey)) state.groupKey = ind.groups[0].key;
   const groupKey = ind.groups ? state.groupKey : null;
   const groupLabel = ind.groups ? ind.groups.find((g) => g.key === groupKey)?.label : '';
-  if (state.monthlyScope !== `${route.level}/${route.scope}`) {
-    state.monthlyScope = `${route.level}/${route.scope}`;
-    state.monthlyRow = '';
-  }
 
-  // Drill / breadcrumb (level or scope changed) → start the new page at the top (Q12: projector use)
+  // Drill / breadcrumb (level or scope changed) → start the new page at the top.
   const scopeKey = `${route.level}/${route.scope}`;
   if (lastScopeKey && lastScopeKey !== scopeKey) window.scrollTo({ top: 0, behavior: 'auto' });
   lastScopeKey = scopeKey;
 
   const ds = findDataset(route.indicator, route.year, route.level, route.scope);
-  const [data, trail] = await Promise.all([ds ? loadFile(ds.file) : null, resolveTrail(route.indicator, route.year, route.level, route.scope)]);
-  if (stale()) return;
-
-  $header.innerHTML = headerHTML(index, route, data ? ds : null);
-  document.title = `${trail[trail.length - 1]?.name ?? ''} · ${ind.short} ${route.year} · ${index.name}`;
-
-  const shortcuts = route.level === 'country' ? await shortcutsHTML(index, route) : '';
-  if (stale()) return;
-
+  const trail = trailFor(route.level, route.scope);
   const here = trail[trail.length - 1];
-  const scopeHead = `<div class="scope-head">
-      <p class="eyebrow">ระดับ${esc(LEVEL_NAME[route.level])} · ปีงบ ${route.year}</p>
-      <h1>${esc(data?.scope?.name ?? here?.name ?? route.scope)}</h1>
-      <p class="scope-ind">${esc(ind.name_th)}</p>
-    </div>`;
+  const data = ds ? await loadFile(ds.file) : null;
+  if (stale()) return;
+
+  $header.innerHTML = headerHTML(index, route, data ? ds : null, trail);
+  $footer.innerHTML = footerHTML(index, data ? ds.asOf : latestAsOf(route.year), getCounts());
+  document.title = `${here?.name ?? ''} · ${ind.short ?? ind.id} ${route.year} · ${index.name}`;
+  trackRoute(`${route.indicator}/${route.level}/${route.scope}`);
 
   // Keep page height while swapping content so the scroll position does not jump.
   $main.style.minHeight = `${$main.offsetHeight}px`;
   destroyCharts();
 
+  const eyebrow = `ระดับ${LEVEL_NAME[route.level]} · ปีงบ ${route.year}`;
   if (!data) {
     ctx = null;
-    $main.innerHTML = breadcrumbHTML(trail, route) + scopeHead + shortcuts + noDataHTML(index, route, trail);
+    $main.innerHTML = `${breadcrumbHTML(trail, route)}
+      <div class="scope-head"><p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(here?.name ?? route.scope)}</h1></div>
+      ${noDataHTML(index, route, trail)}`;
     $main.style.minHeight = '';
     return;
   }
 
   const parentRef = data.scope.parent;
-  const [parentData, prevData, monthly] = await Promise.all([
-    parentRef ? load(route.indicator, route.year, parentRef.level, parentRef.code) : null,
-    load(route.indicator, route.year - 1, route.level, route.scope),
-    loadMonthly({ ind, route }),
-  ]);
+  const parentData = parentRef ? await load(route.indicator, route.year, parentRef.level, parentRef.code) : null;
   if (stale()) return;
 
   ctx = {
@@ -101,61 +85,109 @@ async function render() {
     target: targetFor(ind, route.year),
     rules: { warnBand: index.colorRules?.warnBand ?? 5, smallN: index.colorRules?.smallN ?? 20 },
     parentData,
-    prevData,
   };
-  mdata = monthly;
 
+  const child = childBarsPanel(ctx);
+  const onDrill = (d) => go({ ...route, level: d.childLevel, scope: d.code });
+
+  if (route.level === (index.home?.level ?? 'region')) {
+    // Home page = region 4: headline + cards → 13 regions → 8 provinces → heatmap → table.
+    const regionItems = parentData ? barItems(ctx, parentData, { highlight: route.scope }) : [];
+    const regionPanel = parentData
+      ? barsPanelHTML(ctx, {
+          id: 'regions',
+          title: `เทียบ ${regionItems.length} เขตสุขภาพทั่วประเทศ`,
+          sub: groupLabel,
+          items: regionItems,
+          highlightLabel: `กรอบ = ${data.scope.name}`,
+        })
+      : '';
+    $main.innerHTML = `
+      ${breadcrumbHTML(trail, route)}
+      <div class="scope-head"><p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(data.scope.name)}</h1></div>
+      ${groupTabsHTML(ind, groupKey)}
+      <div class="grid-top">${headlineHTML(ctx)}${cardsHTML(ctx)}</div>
+      <div class="grid-2">${regionPanel}${child.html}</div>
+      ${heatmapHTML(ctx)}
+      ${fullTableHTML(ctx)}`;
+    $main.style.minHeight = '';
+    if (parentData) mountBars(ctx, { id: 'regions', items: regionItems });
+    mountBars(ctx, { id: 'child', items: child.items, onDrill });
+    return;
+  }
+
+  // Province / district: compact headline → heatmap → child bars → table.
   $main.innerHTML = `
     ${breadcrumbHTML(trail, route)}
-    ${scopeHead}
-    ${shortcuts}
     ${groupTabsHTML(ind, groupKey)}
-    <div class="grid-top">${headlineHTML(ctx)}${cardsHTML(ctx)}</div>
-    <div class="grid-2">${childBarsHTML(ctx)}${trendHTML(ctx)}</div>
-    ${mdata ? monthlyHTML(ctx, mdata) : ''}
-    <div class="grid-heat">${heatmapHTML(ctx)}${weaknessHTML(ctx)}</div>
+    ${compactHeadlineHTML(ctx, eyebrow)}
+    ${heatmapHTML(ctx)}
+    ${child.html}
     ${fullTableHTML(ctx)}`;
   $main.style.minHeight = '';
+  mountBars(ctx, { id: 'child', items: child.items, onDrill });
+}
 
-  const leafCodes = new Set((mdata?.rows ?? []).map((r) => String(r.code)));
-  mountChildBars(ctx, {
-    leafCodes,
-    onDrill: (d) => go({ ...route, level: d.childLevel, scope: d.code }),
-    onPickLeaf: (d) => {
-      state.monthlyRow = d.code;
-      const sel = document.getElementById('monthly-row');
-      if (sel) sel.value = d.code;
-      destroyCharts('monthly');
-      mountMonthly(ctx, mdata);
-      document.getElementById('panel-monthly')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function rerender() {
+  render().catch(showError);
+}
+
+/** Phones: condense the sticky header to tabs + one-line breadcrumb once the page scrolls (with hysteresis). */
+function bindCondense() {
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const y = window.scrollY;
+    const on = $header.classList.contains('is-condensed');
+    if (!isMobile()) {
+      if (on) $header.classList.remove('is-condensed');
+      return;
+    }
+    if (!on && y > 140) $header.classList.add('is-condensed');
+    else if (on && y < 24) $header.classList.remove('is-condensed');
+  };
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
     },
-  });
-  if (mdata) mountMonthly(ctx, mdata);
-  await mountTrend(ctx, stale);
+    { passive: true },
+  );
 }
 
 function bindEvents() {
-  window.addEventListener('hashchange', () => render().catch(showError));
+  window.addEventListener('hashchange', rerender);
   document.addEventListener('click', (e) => {
-    const t = e.target.closest('#theme-toggle, .gtab, #csv-btn');
+    const t = e.target.closest('#theme-toggle, .gtab, #csv-btn, .sort-btn');
     if (!t) return;
     if (t.id === 'theme-toggle') {
       setTheme(getTheme() === 'dark' ? 'light' : 'dark');
-      render().catch(showError);
+      rerender();
     } else if (t.classList.contains('gtab')) {
       state.groupKey = t.dataset.group;
-      render().catch(showError);
+      rerender();
+    } else if (t.classList.contains('sort-btn')) {
+      if (!ctx || state.heatSort === t.dataset.sort) return;
+      state.heatSort = t.dataset.sort;
+      const panel = document.getElementById('panel-heat');
+      if (panel) {
+        panel.outerHTML = heatmapHTML(ctx);
+        document.querySelector(`#panel-heat .sort-btn[data-sort="${state.heatSort}"]`)?.focus();
+      }
     } else if (t.id === 'csv-btn' && ctx) {
       downloadCSV(ctx);
     }
   });
-  document.addEventListener('change', (e) => {
-    if (e.target.id === 'monthly-row' && ctx && mdata) {
-      state.monthlyRow = e.target.value;
-      destroyCharts('monthly');
-      mountMonthly(ctx, mdata);
-    }
+  // Chart layout differs on phones (label line above the bar) → re-render when crossing 600px.
+  window.matchMedia('(max-width: 600px)').addEventListener('change', rerender);
+  onCounts((c) => {
+    const el = document.getElementById('hit-counts');
+    if (el) el.textContent = countsText(c);
   });
+  bindCondense();
 }
 
 function showError(err) {

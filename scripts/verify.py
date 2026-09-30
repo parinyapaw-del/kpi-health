@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from . import build_site as B
 from .indicators.common import PCT_TOL
 
-EXPECTED_ROWS = {"country": 13, "region": 8, "province": 7, "district": 14}   # spec §3.5 (home-path scopes)
+EXPECTED_ROWS = {"country": 13, "region": 8}   # fixed row counts (Phase 2 §4.5); province/district follow the lookup
 REGION4 = ["นครนายก", "นนทบุรี", "ปทุมธานี", "พระนครศรีอยุธยา", "ลพบุรี", "สระบุรี", "สิงห์บุรี", "อ่างทอง"]
 
 
@@ -76,33 +76,50 @@ def _lookup_checks(ctx, built, rep):
         rep.err(f"lookup: region 4 = {r4}")
     if sorted(lk["regions"], key=int) != [str(i) for i in range(1, 14)]:
         rep.err("lookup: regions are not 1..13")
-    # names in Angthong Excel files == lookup names
+    # names in the Excel files == lookup names of the detected scope (district files: subset = subdistricts with units)
+    n_xl = 0
     for key, ds in built["excel"].items():
         ind, y, level, scope = key
         if level == "country":
             continue
         crow = B.child_level(level)
         xl = {r["name"] for r in ds["rows"]}
-        lkn = {area_name for area_name in (B.area_name(ctx, crow, c) for c in B.child_codes(ctx, level, scope))}
+        lkn = {B.area_name(ctx, crow, c) for c in B.child_codes(ctx, level, scope)}
         if level == "region":
             if xl != set(REGION4):
                 rep.err(f"{ind} {y} {level}/{scope}: Excel provinces {sorted(xl)} != region-4 set")
-        elif xl != lkn:
+        elif level == "province" and xl != lkn:
             rep.err(f"{ind} {y} {level}/{scope}: Excel names != lookup names (diff {sorted(xl ^ lkn)})")
-    rep.notes.append("lookup names: 7 districts + 14 subdistricts of Angthong == Excel names; region 4 == 8 provinces")
+        elif not xl <= lkn:
+            rep.err(f"{ind} {y} {level}/{scope}: Excel names not in lookup (diff {sorted(xl - lkn)})")
+        n_xl += 1
+    rep.notes.append(f"lookup names: {n_xl} Excel files matched to their scope by row names; region 4 == 8 provinces")
 
 
 def _internal_checks(plugin, key, ds, rep):
     ind, y, level, scope = key
     where0 = f"{ind} {y} {level}/{scope} ({ds['source']})"
-    n_children = len(B.child_codes(rep.ctx, level, scope))
-    if len(ds["rows"]) != n_children:
-        rep.err(f"{where0}: {len(ds['rows'])} rows, expected {n_children}")
-    home = rep.ctx["home"]
-    if scope == home.get(level) or (level == "country" and scope == "TH"):
+    children = B.child_codes(rep.ctx, level, scope)
+    real = [r for r in ds["rows"] if not r.get("pseudo")]
+    pseudo = [r for r in ds["rows"] if r.get("pseudo")]
+    if level == "district":
+        # HDC lists only the subdistricts that have a reporting unit -> rows must be a non-empty subset
+        bad = [r["code"] for r in real if r["code"] not in children]
+        if bad:
+            rep.err(f"{where0}: subdistrict codes not in {scope}: {bad}")
+        if not real:
+            rep.err(f"{where0}: no subdistrict rows")
+        if ds["source"] == "excel" and pseudo:
+            rep.err(f"{where0}: pseudo rows in an Excel file")
+    else:
+        if len(real) != len(children):
+            rep.err(f"{where0}: {len(real)} rows, expected {len(children)}")
+        if pseudo and (ds["source"] == "excel" or level != "province"):
+            rep.err(f"{where0}: unexpected pseudo rows {[r['code'] for r in pseudo]}")
+    if level in EXPECTED_ROWS and (level == "country" or scope in rep.ctx["drill_regions"]):
         exp = EXPECTED_ROWS[level]
-        if len(ds["rows"]) != exp:
-            rep.err(f"{where0}: {len(ds['rows'])} rows, spec expects {exp}")
+        if len(real) != exp:
+            rep.err(f"{where0}: {len(real)} rows, spec expects {exp}")
     for r in ds["rows"] + [{"code": scope, "name": "รวม", **ds["total"]}]:
         if not r["hasData"]:
             continue
@@ -156,7 +173,9 @@ def _api_vs_excel(ctx, built, rep):
 
 
 def _cross_level(ctx, built, rep):
-    """A row of a parent view must equal the total of the child's own view (e.g. region-4 Angthong == province-15 API)."""
+    """A row of a parent view must equal the total of the child's own view (region row == province total,
+    district row == subdistrict total; both by unit location, so they must match exactly). Kept as a soft check
+    (warning with the numbers) only for districts that have cross-district units, per spec §4.3 rule 3."""
     pub = built["published"]
     for key, ds in sorted(pub.items(), key=lambda kv: (kv[0][0], kv[0][1], B.LEVEL_ORDER.index(kv[0][2]))):
         ind, y, level, scope = key
@@ -169,11 +188,19 @@ def _cross_level(ctx, built, rep):
                 continue
             keys = ds["xl_keys"] if ds["source"] == "excel" else _full_keys(plugin)
             n0 = rep.comparisons
+            cross = child.get("crossDistrict") or []
+            soft = [] if cross else None
             _cmp(plugin, child["total"]["values"], r["values"], keys, rep,
-                 f"cross-level {ind} {y}: {level}/{scope} row {r['name']} vs {cl}/{r['code']} total")
-            tag = " [explicit: region-4 Excel Angthong == province-15 API]" if (ind, level, r["code"]) == ("dspm", "region", "15") else ""
-            rep.checks.append((f"cross-level {ind} {y} {level}/{scope} row {r['name']} == {cl}/{r['code']} total{tag}",
-                               rep.comparisons - n0))
+                 f"cross-level {ind} {y}: {level}/{scope} row {r['name']} vs {cl}/{r['code']} total", soft)
+            if soft:
+                t_row = r["values"]["total"]["target"] if ind == "dspm" else None
+                t_child = child["total"]["values"]["total"]["target"] if ind == "dspm" else None
+                units = ", ".join(f"{c['hospcode']} {c['name'] or '(นอกทะเบียน)'} -> {c['tambon']}" for c in cross)
+                rep.warn(f"cross-level {ind} {y}: {level}/{scope} row {r['name']} (by areacode, target {t_row}) != "
+                         f"{cl}/{r['code']} total (by unit location, target {t_child}) in {len(soft)} values - "
+                         f"units located across districts: {units}")
+            rep.checks.append((f"cross-level {ind} {y} {level}/{scope} row {r['name']} == {cl}/{r['code']} total"
+                               f"{' (soft: cross-district units)' if cross else ''}", rep.comparisons - n0))
 
 
 def _check_written(site, ctx, built, rep):
@@ -193,7 +220,7 @@ def _check_written(site, ctx, built, rep):
         j = json.loads(p.read_text(encoding="utf-8"))
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?", j["asOf"]):
             rep.err(f"{e['file']}: bad asOf {j['asOf']}")
-        if e["kind"] == "level":
+        if e.get("kind", "level") == "level":
             if j["level"] not in B.LEVEL_ORDER:
                 rep.err(f"{e['file']}: bad level {j['level']}")
             for r in j["rows"] + [j["total"]]:

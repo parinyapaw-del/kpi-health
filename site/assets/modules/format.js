@@ -26,17 +26,14 @@ export function fmtPct(v, d = 1) {
   return isNum(v) ? `${nf(d, d).format(v)}%` : '–';
 }
 
-/** Signed percentage-point difference ("+1.2"). */
-export function fmtSigned(v, d = 1) {
-  if (!isNum(v)) return '–';
-  const s = nf(d, d).format(Math.abs(v));
-  if (Math.abs(v) < 0.05) return `±${s}`;
-  return v > 0 ? `+${s}` : `−${s}`;
-}
-
 /** "n / d" with thousands separators. */
 export function fmtFrac(n, d) {
   return `${fmtInt(n)} / ${fmtInt(d)}`;
+}
+
+/** Compact "n/d" (bar labels, heatmap cells). */
+export function fmtND(n, d) {
+  return `${fmtInt(n)}/${fmtInt(d)}`;
 }
 
 const TH_MONTH_ABBR = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -84,5 +81,5 @@ export const STATUS_TEXT = {
   warn: 'ใกล้เป้า',
   bad: 'ต่ำกว่าเป้า',
   na: 'ไม่มีข้อมูล',
-  neutral: 'ไม่มีเป้าหมาย',
+  neutral: 'เป้าหมาย: ยังไม่กำหนด',
 };

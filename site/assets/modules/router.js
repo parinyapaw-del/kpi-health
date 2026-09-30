@@ -1,26 +1,36 @@
-// Hash routing: #/<indicator>/<year>/<level>/<scopeCode>
-import { LEVELS } from './data.js';
+// Hash routing: #/<indicator>/<year>/<level>/<code>  (levels: region | province | district)
+import { ROUTE_LEVELS, findTreeNode } from './data.js';
 
 export function defaultRoute(index) {
-  const first = index.home?.path?.[0];
   const indicator = index.indicators.dspm ? 'dspm' : Object.keys(index.indicators)[0];
-  return { indicator, year: index.currentYear, level: first?.level ?? 'country', scope: first?.code ?? 'TH' };
+  const home = index.home ?? { level: 'region', code: '4' };
+  return { indicator, year: Number(index.currentYear), level: home.level, scope: String(home.code) };
 }
 
-/** Parse the current hash; returns null when structurally invalid (unknown indicator/year/level). */
+/**
+ * Parse the current hash. Returns null when invalid (unknown indicator/year/level, a country route,
+ * or an area code that is not in the region-4 tree) → the caller redirects to the default route.
+ */
 export function parseHash(hash, index) {
   const parts = String(hash || '')
     .replace(/^#\/?/, '')
     .split('/')
     .filter(Boolean)
-    .map(decodeURIComponent);
+    .map((p) => {
+      try {
+        return decodeURIComponent(p);
+      } catch {
+        return '';
+      }
+    });
   if (parts.length !== 4) return null;
   const [indicator, yearStr, level, scope] = parts;
   const year = Number(yearStr);
-  if (!index.indicators[indicator]) return null;
-  if (!index.years.includes(year)) return null;
-  if (!LEVELS.includes(level)) return null;
+  if (!Object.prototype.hasOwnProperty.call(index.indicators, indicator)) return null;
+  if (!index.years.map(Number).includes(year)) return null;
+  if (!ROUTE_LEVELS.includes(level)) return null;
   if (!/^[A-Za-z0-9]{1,10}$/.test(scope)) return null;
+  if (!findTreeNode(level, scope)) return null;
   return { indicator, year, level, scope };
 }
 

@@ -66,6 +66,16 @@ def fetch_rows(body: dict) -> tuple[list[dict], int]:
     return rows, total
 
 
+def probe(table: str, year: int, province: str | None = None) -> int:
+    """Row count the API reports for (table, year[, province]) — one request with limit=1, nothing cached.
+    Used by the auto-year check (spec §7.3). Returns 0 when the year is not available."""
+    body = {"tableName": table, "year": str(year), "type": "json", "limit": 1}
+    if province:
+        body["province"] = str(province)
+    resp = _post(body)
+    return int(resp.get("total") or len(resp.get("data") or []))
+
+
 def raw_path(table: str, year: int, scope: str) -> Path:
     return RAW_DIR / table / str(year) / f"{scope}.json"
 

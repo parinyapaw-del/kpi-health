@@ -1,50 +1,61 @@
-// Site header: logo, title, indicator tabs, year switch, theme toggle, "ข้อมูล ณ" line.
+// Site header (§5.2): region-4 logo + site name, "จัดทำโดย" line with the org logo, indicator tabs,
+// year switch (only with ≥ 2 years), theme toggle, full indicator name + "ข้อมูล ณ".
+// On phones the header is sticky and condenses on scroll to the tabs + a one-line breadcrumb.
 import { esc, fmtAsOf } from '../format.js';
 import { toHash } from '../router.js';
 import { getTheme } from '../state.js';
+import { breadcrumbHTML } from './breadcrumb.js';
 
-export function headerHTML(index, route, ds) {
-  const inds = Object.values(index.indicators);
-  const tabs = inds
-    .map((ind) => {
-      const on = ind.id === route.indicator;
-      const href = toHash({ ...route, indicator: ind.id });
-      return `<a class="seg-btn${on ? ' is-on' : ''}" href="${href}" title="${esc(ind.name_th)}"${
+export function headerHTML(index, route, ds, trail) {
+  const ind = index.indicators[route.indicator];
+  const tabs = Object.values(index.indicators)
+    .map((it) => {
+      const on = it.id === route.indicator;
+      return `<a class="seg-btn${on ? ' is-on' : ''}" href="${toHash({ ...route, indicator: it.id })}" title="${esc(it.name_th)}"${
         on ? ' aria-current="page"' : ''
-      }>${esc(ind.short ?? ind.id)}</a>`;
+      }>${esc(it.short ?? it.id)}</a>`;
     })
     .join('');
-  const years = index.years
-    .map((y) => {
-      const on = Number(y) === Number(route.year);
-      const cur = Number(y) === Number(index.currentYear);
-      return `<a class="seg-btn${on ? ' is-on' : ''}" href="${toHash({ ...route, year: y })}"${
-        on ? ' aria-current="page"' : ''
-      }>${y}${cur ? '<span class="cur-badge">ปีงบปัจจุบัน</span>' : ''}</a>`;
-    })
-    .join('');
+  const years =
+    index.years.length >= 2
+      ? `<nav class="seg" aria-label="ปีงบประมาณ">${index.years
+          .map((y) => {
+            const on = Number(y) === Number(route.year);
+            return `<a class="seg-btn${on ? ' is-on' : ''}" href="${toHash({ ...route, year: Number(y) })}"${
+              on ? ' aria-current="page"' : ''
+            }>${y}</a>`;
+          })
+          .join('')}</nav>`
+      : '';
 
-  let asOf = null;
-  if (ds) {
-    const src = index.sourceLabels?.[ds.source] ?? ds.source;
-    asOf = `ข้อมูล ณ ${fmtAsOf(ds.asOf)} · ${esc(src)}`;
-  }
+  const src = ds ? index.sourceLabels?.[ds.source] ?? ds.source : null;
+  const asOf = ds ? `ข้อมูล ณ ${fmtAsOf(ds.asOf)} · ${esc(src)}` : `ไม่มีข้อมูลระดับนี้ในปีงบ ${route.year}`;
   const dark = getTheme() === 'dark';
-  const home = toHash({ indicator: route.indicator, year: route.year, level: index.home.path[0].level, scope: index.home.path[0].code });
+  const home = index.home ?? { level: 'region', code: '4' };
+  const homeHref = toHash({ indicator: route.indicator, year: route.year, level: home.level, scope: home.code });
 
   return `
   <div class="wrap hdr-row">
-    <a class="brand" href="${home}">
-      <span class="logo-plate"><img src="../assets/logo-angthong.png" alt="ตราโรงพยาบาลอ่างทอง" width="800" height="220"></span>
-      <span class="brand-text"><strong>${esc(index.name)}</strong><span>${esc(index.org)}</span></span>
+    <a class="brand" href="${homeHref}">
+      ${index.logo ? `<img class="brand-logo" src="${esc(index.logo)}" alt="ตราเขตสุขภาพที่ 4" width="800" height="806">` : ''}
+      <span class="brand-text">
+        <strong>${esc(index.name)}</strong>
+        <span class="brand-org">${
+          index.orgLogo ? `<span class="org-plate"><img src="${esc(index.orgLogo)}" alt="" width="800" height="220"></span>` : ''
+        }${esc(index.org ?? '')}</span>
+      </span>
     </a>
     <div class="hdr-controls">
-      <nav class="seg" aria-label="ตัวชี้วัด">${tabs}</nav>
-      <nav class="seg" aria-label="ปีงบประมาณ">${years}</nav>
+      <nav class="seg seg-ind" aria-label="ตัวชี้วัด">${tabs}</nav>
+      ${years}
       <button type="button" class="theme-btn" id="theme-toggle" aria-pressed="${dark}">
-        <span aria-hidden="true">${dark ? '☀' : '☾'}</span>${dark ? 'โหมดสว่าง' : 'โหมดมืด'}
+        <span aria-hidden="true">${dark ? '☀' : '☾'}</span><span class="theme-txt">${dark ? 'โหมดสว่าง' : 'โหมดมืด'}</span>
       </button>
     </div>
   </div>
-  <div class="wrap asof"><span class="asof-dot" aria-hidden="true"></span>${asOf ?? `ไม่มีข้อมูลระดับนี้ในปีงบ ${route.year}`}</div>`;
+  <div class="wrap hdr-mini">${breadcrumbHTML(trail, route, 'crumbs crumbs-mini')}</div>
+  <div class="wrap hdr-sub">
+    <span class="ind-name">${esc(ind.name_th)}</span>
+    <span class="asof"><span class="asof-dot" aria-hidden="true"></span>${asOf}</span>
+  </div>`;
 }

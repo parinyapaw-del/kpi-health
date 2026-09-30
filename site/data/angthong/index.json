@@ -1,39 +1,20 @@
 {
- "schema": 1,
+ "schema": 2,
  "site": "angthong",
- "name": "ระบบติดตามตัวชี้วัด จังหวัดอ่างทอง",
- "org": "โรงพยาบาลอ่างทอง",
- "logo": "assets/logo-angthong.png",
+ "name": "ระบบติดตามตัวชี้วัดเข็มมุ่งพัฒนาการเด็ก เขตสุขภาพที่ 4",
+ "org": "จัดทำโดย โรงพยาบาลอ่างทอง",
+ "logo": "assets/logo-r4.png",
+ "orgLogo": "assets/logo-angthong.png",
+ "repo": "https://github.com/parinyapaw-del/kpi-health",
+ "home": {
+  "level": "region",
+  "code": "4",
+  "name": "เขตสุขภาพที่ 4"
+ },
  "years": [
-  2567,
-  2568,
   2569
  ],
  "currentYear": 2569,
- "home": {
-  "path": [
-   {
-    "level": "country",
-    "code": "TH",
-    "name": "ประเทศ"
-   },
-   {
-    "level": "region",
-    "code": "4",
-    "name": "เขตสุขภาพที่ 4"
-   },
-   {
-    "level": "province",
-    "code": "15",
-    "name": "อ่างทอง"
-   },
-   {
-    "level": "district",
-    "code": "1501",
-    "name": "เมืองอ่างทอง"
-   }
-  ]
- },
  "colorRules": {
   "warnBand": 5,
   "smallN": 20
@@ -45,8 +26,8 @@
  "indicators": {
   "dspm": {
    "id": "dspm",
-   "name_th": "ร้อยละเด็กปฐมวัยพัฒนาการสมวัย (DSPM)",
-   "short": "DSPM",
+   "name_th": "ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย 5 ช่วงอายุ (DSPM)",
+   "short": "สมวัย",
    "source": {
     "table": "s_childdev_specialpp",
     "bodyTemplate": {
@@ -115,6 +96,67 @@
      "den": "suspect_wait30"
     }
    ],
+   "heatmap": {
+    "columns": [
+     {
+      "key": "total",
+      "label": "รวม",
+      "group": "total",
+      "metric": "pct_normal",
+      "num": "normal_total",
+      "den": "target",
+      "useTarget": true
+     },
+     {
+      "key": "m9",
+      "label": "9 เดือน",
+      "group": "m9",
+      "metric": "pct_normal",
+      "num": "normal_total",
+      "den": "target",
+      "useTarget": true
+     },
+     {
+      "key": "m18",
+      "label": "18 เดือน",
+      "group": "m18",
+      "metric": "pct_normal",
+      "num": "normal_total",
+      "den": "target",
+      "useTarget": true
+     },
+     {
+      "key": "m30",
+      "label": "30 เดือน",
+      "group": "m30",
+      "metric": "pct_normal",
+      "num": "normal_total",
+      "den": "target",
+      "useTarget": true
+     },
+     {
+      "key": "m42",
+      "label": "42 เดือน",
+      "group": "m42",
+      "metric": "pct_normal",
+      "num": "normal_total",
+      "den": "target",
+      "useTarget": true
+     },
+     {
+      "key": "m60",
+      "label": "60 เดือน",
+      "group": "m60",
+      "metric": "pct_normal",
+      "num": "normal_total",
+      "den": "target",
+      "useTarget": true
+     }
+    ]
+   },
+   "chart": {
+    "style": "status"
+   },
    "table": [
     {
      "key": "target",
@@ -237,13 +279,13 @@
      "type": "pct"
     }
    ],
-   "monthly": true,
+   "monthly": false,
    "targets_key": "dspm"
   },
   "coverage": {
    "id": "coverage",
    "name_th": "ร้อยละของเด็กปฐมวัยที่มีพัฒนาการล่าช้าเข้าถึงบริการพัฒนาการและสุขภาพจิตที่ได้มาตรฐาน (Coverage)",
-   "short": "Coverage",
+   "short": "เข้าถึงบริการ",
    "source": {
     "table": "s_child0_5_pshyche_develop_coverage",
     "bodyTemplate": {
@@ -261,21 +303,26 @@
    ],
    "groups": null,
    "headline": {
-    "metric": "pct_reached_fy",
-    "num": "reached_fy",
-    "den": "expected"
+    "metric": "pct_reached_cum",
+    "num": "reached_cum",
+    "den": "expected",
+    "sub": {
+     "metric": "pct_reached_fy",
+     "num": "reached_fy",
+     "label": "ปีงบนี้"
+    }
    },
    "cards": [
-    {
-     "metric": "pct_reached_cum",
-     "label": "เข้าถึงบริการสะสม",
-     "num": "reached_cum",
-     "den": "expected"
-    },
     {
      "metric": "pct_teda4i",
      "label": "บริการด้วยรหัส TEDA4I",
      "num": "served_teda4i",
+     "den": "expected"
+    },
+    {
+     "metric": "pct_icd9",
+     "label": "บริการด้วยรหัสหัตถการ ICD9CM",
+     "num": "served_icd9",
      "den": "expected"
     },
     {
@@ -285,6 +332,53 @@
      "den": "expected"
     }
    ],
+   "heatmap": {
+    "columns": [
+     {
+      "key": "pct_reached_cum",
+      "label": "เข้าถึงบริการสะสม (8)",
+      "group": null,
+      "metric": "pct_reached_cum",
+      "num": "reached_cum",
+      "den": "expected",
+      "useTarget": true
+     },
+     {
+      "key": "pct_teda4i",
+      "label": "TEDA4I (4)/(3)",
+      "group": null,
+      "metric": "pct_teda4i",
+      "num": "served_teda4i",
+      "den": "expected",
+      "useTarget": false
+     },
+     {
+      "key": "pct_icd9",
+      "label": "ICD9CM (5)/(3)",
+      "group": null,
+      "metric": "pct_icd9",
+      "num": "served_icd9",
+      "den": "expected",
+      "useTarget": false
+     },
+     {
+      "key": "pct_icd10",
+      "label": "ICD-10 (6)/(3)",
+      "group": null,
+      "metric": "pct_icd10",
+      "num": "diagnosed_icd10",
+      "den": "expected",
+      "useTarget": false
+     }
+    ]
+   },
+   "chart": {
+    "style": "fill",
+    "fillNum": "reached_cum",
+    "fillDen": "expected",
+    "fillLabel": "เข้าถึงบริการสะสม",
+    "baseLabel": "คาดประมาณเด็กพัฒนาการล่าช้า"
+   },
    "table": [
     {
      "key": "population",
@@ -347,6 +441,11 @@
      "type": "pct"
     },
     {
+     "key": "pct_icd9",
+     "label": "สัดส่วนเด็กที่ได้รับบริการด้วยรหัสหัตถการ ICD9CM ต่อคาดประมาณ (ร้อยละ) = (5)*100/(3)",
+     "type": "pct"
+    },
+    {
      "key": "pct_icd10",
      "label": "สัดส่วนเด็กที่ได้รับการวินิจฉัย ICD-10 ต่อคาดประมาณ (ร้อยละ) = (6)*100/(3)",
      "type": "pct"
@@ -358,46 +457,4147 @@
  },
  "targets": {
   "dspm": {
-   "2567": {
-    "value": 85,
-    "note": "เป้าหมายอ้างอิง ยังไม่ยืนยัน"
-   },
-   "2568": {
-    "value": 87
-   },
    "2569": {
     "value": 88
    }
   },
   "coverage": {
-   "2568": {
-    "value": 20,
-    "note": "เป้าหมายอ้างอิง ยังไม่ยืนยัน"
-   },
    "2569": {
     "value": 30
    }
   }
  },
  "tree": {
-  "code": "TH",
-  "level": "country",
-  "name": "ประเทศ",
+  "code": "4",
+  "level": "region",
+  "name": "เขตสุขภาพที่ 4",
   "children": [
    {
-    "code": "4",
-    "level": "region",
-    "name": "เขตสุขภาพที่ 4",
+    "code": "12",
+    "level": "province",
+    "name": "นนทบุรี",
     "children": [
      {
-      "code": "15",
-      "level": "province",
-      "name": "อ่างทอง",
+      "code": "1201",
+      "level": "district",
+      "name": "เมืองนนทบุรี",
+      "inferredUnits": 21,
       "children": [
        {
-        "code": "1501",
-        "level": "district",
-        "name": "เมืองอ่างทอง"
+        "code": "120101",
+        "level": "subdistrict",
+        "name": "สวนใหญ่"
+       },
+       {
+        "code": "120102",
+        "level": "subdistrict",
+        "name": "ตลาดขวัญ"
+       },
+       {
+        "code": "120103",
+        "level": "subdistrict",
+        "name": "บางเขน"
+       },
+       {
+        "code": "120104",
+        "level": "subdistrict",
+        "name": "บางกระสอ"
+       },
+       {
+        "code": "120105",
+        "level": "subdistrict",
+        "name": "ท่าทราย"
+       },
+       {
+        "code": "120106",
+        "level": "subdistrict",
+        "name": "บางไผ่"
+       },
+       {
+        "code": "120107",
+        "level": "subdistrict",
+        "name": "บางศรีเมือง"
+       },
+       {
+        "code": "120108",
+        "level": "subdistrict",
+        "name": "บางกร่าง"
+       },
+       {
+        "code": "120109",
+        "level": "subdistrict",
+        "name": "ไทรม้า"
+       },
+       {
+        "code": "120110",
+        "level": "subdistrict",
+        "name": "บางรักน้อย"
+       }
+      ]
+     },
+     {
+      "code": "1202",
+      "level": "district",
+      "name": "บางกรวย",
+      "inferredUnits": 5,
+      "children": [
+       {
+        "code": "120201",
+        "level": "subdistrict",
+        "name": "วัดชลอ"
+       },
+       {
+        "code": "120202",
+        "level": "subdistrict",
+        "name": "บางกรวย"
+       },
+       {
+        "code": "120203",
+        "level": "subdistrict",
+        "name": "บางสีทอง"
+       },
+       {
+        "code": "120204",
+        "level": "subdistrict",
+        "name": "บางขนุน"
+       },
+       {
+        "code": "120205",
+        "level": "subdistrict",
+        "name": "บางขุนกอง"
+       },
+       {
+        "code": "120206",
+        "level": "subdistrict",
+        "name": "บางคูเวียง"
+       },
+       {
+        "code": "120207",
+        "level": "subdistrict",
+        "name": "มหาสวัสดิ์"
+       },
+       {
+        "code": "120208",
+        "level": "subdistrict",
+        "name": "ปลายบาง"
+       },
+       {
+        "code": "120209",
+        "level": "subdistrict",
+        "name": "ศาลากลาง"
+       }
+      ]
+     },
+     {
+      "code": "1203",
+      "level": "district",
+      "name": "บางใหญ่",
+      "inferredUnits": 7,
+      "children": [
+       {
+        "code": "120301",
+        "level": "subdistrict",
+        "name": "บางม่วง"
+       },
+       {
+        "code": "120302",
+        "level": "subdistrict",
+        "name": "บางแม่นาง"
+       },
+       {
+        "code": "120303",
+        "level": "subdistrict",
+        "name": "บางเลน"
+       },
+       {
+        "code": "120304",
+        "level": "subdistrict",
+        "name": "เสาธงหิน"
+       },
+       {
+        "code": "120305",
+        "level": "subdistrict",
+        "name": "บางใหญ่"
+       },
+       {
+        "code": "120306",
+        "level": "subdistrict",
+        "name": "บ้านใหม่"
+       }
+      ]
+     },
+     {
+      "code": "1204",
+      "level": "district",
+      "name": "บางบัวทอง",
+      "inferredUnits": 6,
+      "children": [
+       {
+        "code": "120401",
+        "level": "subdistrict",
+        "name": "โสนลอย"
+       },
+       {
+        "code": "120402",
+        "level": "subdistrict",
+        "name": "บางบัวทอง"
+       },
+       {
+        "code": "120403",
+        "level": "subdistrict",
+        "name": "บางรักใหญ่"
+       },
+       {
+        "code": "120404",
+        "level": "subdistrict",
+        "name": "บางคูรัด"
+       },
+       {
+        "code": "120405",
+        "level": "subdistrict",
+        "name": "ละหาร"
+       },
+       {
+        "code": "120406",
+        "level": "subdistrict",
+        "name": "ลำโพ"
+       },
+       {
+        "code": "120407",
+        "level": "subdistrict",
+        "name": "พิมลราช"
+       },
+       {
+        "code": "120408",
+        "level": "subdistrict",
+        "name": "บางรักพัฒนา"
+       }
+      ]
+     },
+     {
+      "code": "1205",
+      "level": "district",
+      "name": "ไทรน้อย",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "120501",
+        "level": "subdistrict",
+        "name": "ไทรน้อย"
+       },
+       {
+        "code": "120502",
+        "level": "subdistrict",
+        "name": "ราษฎร์นิยม"
+       },
+       {
+        "code": "120503",
+        "level": "subdistrict",
+        "name": "หนองเพรางาย"
+       },
+       {
+        "code": "120504",
+        "level": "subdistrict",
+        "name": "ไทรใหญ่"
+       },
+       {
+        "code": "120505",
+        "level": "subdistrict",
+        "name": "ขุนศรี"
+       },
+       {
+        "code": "120506",
+        "level": "subdistrict",
+        "name": "คลองขวาง"
+       },
+       {
+        "code": "120507",
+        "level": "subdistrict",
+        "name": "ทวีวัฒนา"
+       }
+      ]
+     },
+     {
+      "code": "1206",
+      "level": "district",
+      "name": "ปากเกร็ด",
+      "inferredUnits": 8,
+      "children": [
+       {
+        "code": "120601",
+        "level": "subdistrict",
+        "name": "ปากเกร็ด"
+       },
+       {
+        "code": "120602",
+        "level": "subdistrict",
+        "name": "บางตลาด"
+       },
+       {
+        "code": "120603",
+        "level": "subdistrict",
+        "name": "บ้านใหม่"
+       },
+       {
+        "code": "120604",
+        "level": "subdistrict",
+        "name": "บางพูด"
+       },
+       {
+        "code": "120605",
+        "level": "subdistrict",
+        "name": "บางตะไนย์"
+       },
+       {
+        "code": "120606",
+        "level": "subdistrict",
+        "name": "คลองพระอุดม"
+       },
+       {
+        "code": "120607",
+        "level": "subdistrict",
+        "name": "ท่าอิฐ"
+       },
+       {
+        "code": "120608",
+        "level": "subdistrict",
+        "name": "เกาะเกร็ด"
+       },
+       {
+        "code": "120609",
+        "level": "subdistrict",
+        "name": "อ้อมเกร็ด"
+       },
+       {
+        "code": "120610",
+        "level": "subdistrict",
+        "name": "คลองข่อย"
+       },
+       {
+        "code": "120611",
+        "level": "subdistrict",
+        "name": "บางพลับ"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "13",
+    "level": "province",
+    "name": "ปทุมธานี",
+    "children": [
+     {
+      "code": "1301",
+      "level": "district",
+      "name": "เมืองปทุมธานี",
+      "inferredUnits": 2,
+      "children": [
+       {
+        "code": "130101",
+        "level": "subdistrict",
+        "name": "บางปรอก"
+       },
+       {
+        "code": "130102",
+        "level": "subdistrict",
+        "name": "บ้านใหม่"
+       },
+       {
+        "code": "130103",
+        "level": "subdistrict",
+        "name": "บ้านกลาง"
+       },
+       {
+        "code": "130104",
+        "level": "subdistrict",
+        "name": "บ้านฉาง"
+       },
+       {
+        "code": "130105",
+        "level": "subdistrict",
+        "name": "บ้านกระแชง"
+       },
+       {
+        "code": "130106",
+        "level": "subdistrict",
+        "name": "บางขะแยง"
+       },
+       {
+        "code": "130107",
+        "level": "subdistrict",
+        "name": "บางคูวัด"
+       },
+       {
+        "code": "130108",
+        "level": "subdistrict",
+        "name": "บางหลวง"
+       },
+       {
+        "code": "130109",
+        "level": "subdistrict",
+        "name": "บางเดื่อ"
+       },
+       {
+        "code": "130110",
+        "level": "subdistrict",
+        "name": "บางพูด"
+       },
+       {
+        "code": "130111",
+        "level": "subdistrict",
+        "name": "บางพูน"
+       },
+       {
+        "code": "130112",
+        "level": "subdistrict",
+        "name": "บางกะดี"
+       },
+       {
+        "code": "130113",
+        "level": "subdistrict",
+        "name": "สวนพริกไทย"
+       },
+       {
+        "code": "130114",
+        "level": "subdistrict",
+        "name": "หลักหก"
+       }
+      ]
+     },
+     {
+      "code": "1302",
+      "level": "district",
+      "name": "คลองหลวง",
+      "inferredUnits": 11,
+      "children": [
+       {
+        "code": "130201",
+        "level": "subdistrict",
+        "name": "คลองหนึ่ง"
+       },
+       {
+        "code": "130202",
+        "level": "subdistrict",
+        "name": "คลองสอง"
+       },
+       {
+        "code": "130203",
+        "level": "subdistrict",
+        "name": "คลองสาม"
+       },
+       {
+        "code": "130204",
+        "level": "subdistrict",
+        "name": "คลองสี่"
+       },
+       {
+        "code": "130205",
+        "level": "subdistrict",
+        "name": "คลองห้า"
+       },
+       {
+        "code": "130206",
+        "level": "subdistrict",
+        "name": "คลองหก"
+       },
+       {
+        "code": "130207",
+        "level": "subdistrict",
+        "name": "คลองเจ็ด"
+       }
+      ]
+     },
+     {
+      "code": "1303",
+      "level": "district",
+      "name": "ธัญบุรี",
+      "inferredUnits": 8,
+      "children": [
+       {
+        "code": "130301",
+        "level": "subdistrict",
+        "name": "ประชาธิปัตย์"
+       },
+       {
+        "code": "130302",
+        "level": "subdistrict",
+        "name": "บึงยี่โถ"
+       },
+       {
+        "code": "130303",
+        "level": "subdistrict",
+        "name": "รังสิต"
+       },
+       {
+        "code": "130304",
+        "level": "subdistrict",
+        "name": "ลำผักกูด"
+       },
+       {
+        "code": "130305",
+        "level": "subdistrict",
+        "name": "บึงสนั่น"
+       },
+       {
+        "code": "130306",
+        "level": "subdistrict",
+        "name": "บึงน้ำรักษ์"
+       }
+      ]
+     },
+     {
+      "code": "1304",
+      "level": "district",
+      "name": "หนองเสือ",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "130401",
+        "level": "subdistrict",
+        "name": "บึงบา"
+       },
+       {
+        "code": "130402",
+        "level": "subdistrict",
+        "name": "บึงบอน"
+       },
+       {
+        "code": "130403",
+        "level": "subdistrict",
+        "name": "บึงกาสาม"
+       },
+       {
+        "code": "130404",
+        "level": "subdistrict",
+        "name": "บึงชำอ้อ"
+       },
+       {
+        "code": "130405",
+        "level": "subdistrict",
+        "name": "หนองสามวัง"
+       },
+       {
+        "code": "130406",
+        "level": "subdistrict",
+        "name": "ศาลาครุ"
+       },
+       {
+        "code": "130407",
+        "level": "subdistrict",
+        "name": "นพรัตน์"
+       }
+      ]
+     },
+     {
+      "code": "1305",
+      "level": "district",
+      "name": "ลาดหลุมแก้ว",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "130501",
+        "level": "subdistrict",
+        "name": "ระแหง"
+       },
+       {
+        "code": "130502",
+        "level": "subdistrict",
+        "name": "ลาดหลุมแก้ว"
+       },
+       {
+        "code": "130503",
+        "level": "subdistrict",
+        "name": "คูบางหลวง"
+       },
+       {
+        "code": "130504",
+        "level": "subdistrict",
+        "name": "คูขวาง"
+       },
+       {
+        "code": "130505",
+        "level": "subdistrict",
+        "name": "คลองพระอุดม"
+       },
+       {
+        "code": "130506",
+        "level": "subdistrict",
+        "name": "บ่อเงิน"
+       },
+       {
+        "code": "130507",
+        "level": "subdistrict",
+        "name": "หน้าไม้"
+       }
+      ]
+     },
+     {
+      "code": "1306",
+      "level": "district",
+      "name": "ลำลูกกา",
+      "inferredUnits": 13,
+      "children": [
+       {
+        "code": "130601",
+        "level": "subdistrict",
+        "name": "คูคต"
+       },
+       {
+        "code": "130602",
+        "level": "subdistrict",
+        "name": "ลาดสวาย"
+       },
+       {
+        "code": "130603",
+        "level": "subdistrict",
+        "name": "บึงคำพร้อย"
+       },
+       {
+        "code": "130604",
+        "level": "subdistrict",
+        "name": "ลำลูกกา"
+       },
+       {
+        "code": "130605",
+        "level": "subdistrict",
+        "name": "บึงทองหลาง"
+       },
+       {
+        "code": "130606",
+        "level": "subdistrict",
+        "name": "ลำไทร"
+       },
+       {
+        "code": "130607",
+        "level": "subdistrict",
+        "name": "บึงคอไห"
+       },
+       {
+        "code": "130608",
+        "level": "subdistrict",
+        "name": "พืชอุดม"
+       }
+      ]
+     },
+     {
+      "code": "1307",
+      "level": "district",
+      "name": "สามโคก",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "130701",
+        "level": "subdistrict",
+        "name": "บางเตย"
+       },
+       {
+        "code": "130702",
+        "level": "subdistrict",
+        "name": "คลองควาย"
+       },
+       {
+        "code": "130703",
+        "level": "subdistrict",
+        "name": "สามโคก"
+       },
+       {
+        "code": "130704",
+        "level": "subdistrict",
+        "name": "กระแชง"
+       },
+       {
+        "code": "130705",
+        "level": "subdistrict",
+        "name": "บางโพธิ์เหนือ"
+       },
+       {
+        "code": "130706",
+        "level": "subdistrict",
+        "name": "เชียงรากใหญ่"
+       },
+       {
+        "code": "130707",
+        "level": "subdistrict",
+        "name": "บ้านปทุม"
+       },
+       {
+        "code": "130708",
+        "level": "subdistrict",
+        "name": "บ้านงิ้ว"
+       },
+       {
+        "code": "130709",
+        "level": "subdistrict",
+        "name": "เชียงรากน้อย"
+       },
+       {
+        "code": "130710",
+        "level": "subdistrict",
+        "name": "บางกระบือ"
+       },
+       {
+        "code": "130711",
+        "level": "subdistrict",
+        "name": "ท้ายเกาะ"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "14",
+    "level": "province",
+    "name": "พระนครศรีอยุธยา",
+    "children": [
+     {
+      "code": "1401",
+      "level": "district",
+      "name": "พระนครศรีอยุธยา",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "140101",
+        "level": "subdistrict",
+        "name": "ประตูชัย"
+       },
+       {
+        "code": "140102",
+        "level": "subdistrict",
+        "name": "กะมัง"
+       },
+       {
+        "code": "140103",
+        "level": "subdistrict",
+        "name": "หอรัตนไชย"
+       },
+       {
+        "code": "140104",
+        "level": "subdistrict",
+        "name": "หัวรอ"
+       },
+       {
+        "code": "140105",
+        "level": "subdistrict",
+        "name": "ท่าวาสุกรี"
+       },
+       {
+        "code": "140106",
+        "level": "subdistrict",
+        "name": "ไผ่ลิง"
+       },
+       {
+        "code": "140107",
+        "level": "subdistrict",
+        "name": "ปากกราน"
+       },
+       {
+        "code": "140108",
+        "level": "subdistrict",
+        "name": "ภูเขาทอง"
+       },
+       {
+        "code": "140109",
+        "level": "subdistrict",
+        "name": "สำเภาล่ม"
+       },
+       {
+        "code": "140110",
+        "level": "subdistrict",
+        "name": "สวนพริก"
+       },
+       {
+        "code": "140111",
+        "level": "subdistrict",
+        "name": "คลองตะเคียน"
+       },
+       {
+        "code": "140112",
+        "level": "subdistrict",
+        "name": "วัดตูม"
+       },
+       {
+        "code": "140113",
+        "level": "subdistrict",
+        "name": "หันตรา"
+       },
+       {
+        "code": "140114",
+        "level": "subdistrict",
+        "name": "ลุมพลี"
+       },
+       {
+        "code": "140115",
+        "level": "subdistrict",
+        "name": "บ้านใหม่"
+       },
+       {
+        "code": "140116",
+        "level": "subdistrict",
+        "name": "บ้านเกาะ"
+       },
+       {
+        "code": "140117",
+        "level": "subdistrict",
+        "name": "คลองสวนพลู"
+       },
+       {
+        "code": "140118",
+        "level": "subdistrict",
+        "name": "คลองสระบัว"
+       },
+       {
+        "code": "140119",
+        "level": "subdistrict",
+        "name": "เกาะเรียน"
+       },
+       {
+        "code": "140120",
+        "level": "subdistrict",
+        "name": "บ้านป้อม"
+       },
+       {
+        "code": "140121",
+        "level": "subdistrict",
+        "name": "บ้านรุน"
+       }
+      ]
+     },
+     {
+      "code": "1402",
+      "level": "district",
+      "name": "ท่าเรือ",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "140201",
+        "level": "subdistrict",
+        "name": "ท่าเรือ"
+       },
+       {
+        "code": "140202",
+        "level": "subdistrict",
+        "name": "จำปา"
+       },
+       {
+        "code": "140203",
+        "level": "subdistrict",
+        "name": "ท่าหลวง"
+       },
+       {
+        "code": "140204",
+        "level": "subdistrict",
+        "name": "บ้านร่อม"
+       },
+       {
+        "code": "140205",
+        "level": "subdistrict",
+        "name": "ศาลาลอย"
+       },
+       {
+        "code": "140206",
+        "level": "subdistrict",
+        "name": "วังแดง"
+       },
+       {
+        "code": "140207",
+        "level": "subdistrict",
+        "name": "โพธิ์เอน"
+       },
+       {
+        "code": "140208",
+        "level": "subdistrict",
+        "name": "ปากท่า"
+       },
+       {
+        "code": "140209",
+        "level": "subdistrict",
+        "name": "หนองขนาก"
+       },
+       {
+        "code": "140210",
+        "level": "subdistrict",
+        "name": "ท่าเจ้าสนุก"
+       }
+      ]
+     },
+     {
+      "code": "1403",
+      "level": "district",
+      "name": "นครหลวง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "140301",
+        "level": "subdistrict",
+        "name": "นครหลวง"
+       },
+       {
+        "code": "140302",
+        "level": "subdistrict",
+        "name": "ท่าช้าง"
+       },
+       {
+        "code": "140303",
+        "level": "subdistrict",
+        "name": "บ่อโพง"
+       },
+       {
+        "code": "140304",
+        "level": "subdistrict",
+        "name": "บ้านชุ้ง"
+       },
+       {
+        "code": "140305",
+        "level": "subdistrict",
+        "name": "ปากจั่น"
+       },
+       {
+        "code": "140306",
+        "level": "subdistrict",
+        "name": "บางระกำ"
+       },
+       {
+        "code": "140307",
+        "level": "subdistrict",
+        "name": "บางพระครู"
+       },
+       {
+        "code": "140308",
+        "level": "subdistrict",
+        "name": "แม่ลา"
+       },
+       {
+        "code": "140309",
+        "level": "subdistrict",
+        "name": "หนองปลิง"
+       },
+       {
+        "code": "140310",
+        "level": "subdistrict",
+        "name": "คลองสะแก"
+       },
+       {
+        "code": "140311",
+        "level": "subdistrict",
+        "name": "สามไถ"
+       },
+       {
+        "code": "140312",
+        "level": "subdistrict",
+        "name": "พระนอน"
+       }
+      ]
+     },
+     {
+      "code": "1404",
+      "level": "district",
+      "name": "บางไทร",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "140401",
+        "level": "subdistrict",
+        "name": "บางไทร"
+       },
+       {
+        "code": "140402",
+        "level": "subdistrict",
+        "name": "บางพลี"
+       },
+       {
+        "code": "140403",
+        "level": "subdistrict",
+        "name": "สนามชัย"
+       },
+       {
+        "code": "140404",
+        "level": "subdistrict",
+        "name": "บ้านแป้ง"
+       },
+       {
+        "code": "140405",
+        "level": "subdistrict",
+        "name": "หน้าไม้"
+       },
+       {
+        "code": "140406",
+        "level": "subdistrict",
+        "name": "บางยี่โท"
+       },
+       {
+        "code": "140407",
+        "level": "subdistrict",
+        "name": "แคออก"
+       },
+       {
+        "code": "140408",
+        "level": "subdistrict",
+        "name": "แคตก"
+       },
+       {
+        "code": "140409",
+        "level": "subdistrict",
+        "name": "ช่างเหล็ก"
+       },
+       {
+        "code": "140410",
+        "level": "subdistrict",
+        "name": "กระแชง"
+       },
+       {
+        "code": "140411",
+        "level": "subdistrict",
+        "name": "บ้านกลึง"
+       },
+       {
+        "code": "140412",
+        "level": "subdistrict",
+        "name": "ช้างน้อย"
+       },
+       {
+        "code": "140413",
+        "level": "subdistrict",
+        "name": "ห่อหมก"
+       },
+       {
+        "code": "140414",
+        "level": "subdistrict",
+        "name": "ไผ่พระ"
+       },
+       {
+        "code": "140415",
+        "level": "subdistrict",
+        "name": "กกแก้วบูรพา"
+       },
+       {
+        "code": "140416",
+        "level": "subdistrict",
+        "name": "ไม้ตรา"
+       },
+       {
+        "code": "140417",
+        "level": "subdistrict",
+        "name": "บ้านม้า"
+       },
+       {
+        "code": "140418",
+        "level": "subdistrict",
+        "name": "บ้านเกาะ"
+       },
+       {
+        "code": "140419",
+        "level": "subdistrict",
+        "name": "ราชคราม"
+       },
+       {
+        "code": "140420",
+        "level": "subdistrict",
+        "name": "ช้างใหญ่"
+       },
+       {
+        "code": "140421",
+        "level": "subdistrict",
+        "name": "โพแตง"
+       },
+       {
+        "code": "140422",
+        "level": "subdistrict",
+        "name": "เชียงรากน้อย"
+       },
+       {
+        "code": "140423",
+        "level": "subdistrict",
+        "name": "โคกช้าง"
+       }
+      ]
+     },
+     {
+      "code": "1405",
+      "level": "district",
+      "name": "บางบาล",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "140501",
+        "level": "subdistrict",
+        "name": "บางบาล"
+       },
+       {
+        "code": "140502",
+        "level": "subdistrict",
+        "name": "วัดยม"
+       },
+       {
+        "code": "140503",
+        "level": "subdistrict",
+        "name": "ไทรน้อย"
+       },
+       {
+        "code": "140504",
+        "level": "subdistrict",
+        "name": "สะพานไทย"
+       },
+       {
+        "code": "140505",
+        "level": "subdistrict",
+        "name": "มหาพราหมณ์"
+       },
+       {
+        "code": "140506",
+        "level": "subdistrict",
+        "name": "กบเจา"
+       },
+       {
+        "code": "140507",
+        "level": "subdistrict",
+        "name": "บ้านคลัง"
+       },
+       {
+        "code": "140508",
+        "level": "subdistrict",
+        "name": "พระขาว"
+       },
+       {
+        "code": "140509",
+        "level": "subdistrict",
+        "name": "น้ำเต้า"
+       },
+       {
+        "code": "140510",
+        "level": "subdistrict",
+        "name": "ทางช้าง"
+       },
+       {
+        "code": "140511",
+        "level": "subdistrict",
+        "name": "วัดตะกู"
+       },
+       {
+        "code": "140512",
+        "level": "subdistrict",
+        "name": "บางหลวง"
+       },
+       {
+        "code": "140513",
+        "level": "subdistrict",
+        "name": "บางหลวงโดด"
+       },
+       {
+        "code": "140514",
+        "level": "subdistrict",
+        "name": "บางหัก"
+       },
+       {
+        "code": "140515",
+        "level": "subdistrict",
+        "name": "บางชะนี"
+       },
+       {
+        "code": "140516",
+        "level": "subdistrict",
+        "name": "บ้านกุ่ม"
+       }
+      ]
+     },
+     {
+      "code": "1406",
+      "level": "district",
+      "name": "บางปะอิน",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "140601",
+        "level": "subdistrict",
+        "name": "บ้านเลน"
+       },
+       {
+        "code": "140602",
+        "level": "subdistrict",
+        "name": "เชียงรากน้อย"
+       },
+       {
+        "code": "140603",
+        "level": "subdistrict",
+        "name": "บ้านโพ"
+       },
+       {
+        "code": "140604",
+        "level": "subdistrict",
+        "name": "บ้านกรด"
+       },
+       {
+        "code": "140605",
+        "level": "subdistrict",
+        "name": "บางกระสั้น"
+       },
+       {
+        "code": "140606",
+        "level": "subdistrict",
+        "name": "คลองจิก"
+       },
+       {
+        "code": "140607",
+        "level": "subdistrict",
+        "name": "บ้านหว้า"
+       },
+       {
+        "code": "140608",
+        "level": "subdistrict",
+        "name": "วัดยม"
+       },
+       {
+        "code": "140609",
+        "level": "subdistrict",
+        "name": "บางประแดง"
+       },
+       {
+        "code": "140610",
+        "level": "subdistrict",
+        "name": "สามเรือน"
+       },
+       {
+        "code": "140611",
+        "level": "subdistrict",
+        "name": "เกาะเกิด"
+       },
+       {
+        "code": "140612",
+        "level": "subdistrict",
+        "name": "บ้านพลับ"
+       },
+       {
+        "code": "140613",
+        "level": "subdistrict",
+        "name": "บ้านแป้ง"
+       },
+       {
+        "code": "140614",
+        "level": "subdistrict",
+        "name": "คุ้งลาน"
+       },
+       {
+        "code": "140615",
+        "level": "subdistrict",
+        "name": "ตลิ่งชัน"
+       },
+       {
+        "code": "140616",
+        "level": "subdistrict",
+        "name": "บ้านสร้าง"
+       },
+       {
+        "code": "140617",
+        "level": "subdistrict",
+        "name": "ตลาดเกรียบ"
+       },
+       {
+        "code": "140618",
+        "level": "subdistrict",
+        "name": "ขนอนหลวง"
+       }
+      ]
+     },
+     {
+      "code": "1407",
+      "level": "district",
+      "name": "บางปะหัน",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "140701",
+        "level": "subdistrict",
+        "name": "บางปะหัน"
+       },
+       {
+        "code": "140702",
+        "level": "subdistrict",
+        "name": "ขยาย"
+       },
+       {
+        "code": "140703",
+        "level": "subdistrict",
+        "name": "บางเดื่อ"
+       },
+       {
+        "code": "140704",
+        "level": "subdistrict",
+        "name": "เสาธง"
+       },
+       {
+        "code": "140705",
+        "level": "subdistrict",
+        "name": "ทางกลาง"
+       },
+       {
+        "code": "140706",
+        "level": "subdistrict",
+        "name": "บางเพลิง"
+       },
+       {
+        "code": "140707",
+        "level": "subdistrict",
+        "name": "หันสัง"
+       },
+       {
+        "code": "140708",
+        "level": "subdistrict",
+        "name": "บางนางร้า"
+       },
+       {
+        "code": "140709",
+        "level": "subdistrict",
+        "name": "ตานิม"
+       },
+       {
+        "code": "140710",
+        "level": "subdistrict",
+        "name": "ทับน้ำ"
+       },
+       {
+        "code": "140711",
+        "level": "subdistrict",
+        "name": "บ้านม้า"
+       },
+       {
+        "code": "140712",
+        "level": "subdistrict",
+        "name": "ขวัญเมือง"
+       },
+       {
+        "code": "140713",
+        "level": "subdistrict",
+        "name": "บ้านลี่"
+       },
+       {
+        "code": "140714",
+        "level": "subdistrict",
+        "name": "โพธิ์สามต้น"
+       },
+       {
+        "code": "140715",
+        "level": "subdistrict",
+        "name": "พุทเลา"
+       },
+       {
+        "code": "140716",
+        "level": "subdistrict",
+        "name": "ตาลเอน"
+       },
+       {
+        "code": "140717",
+        "level": "subdistrict",
+        "name": "บ้านขล้อ"
+       }
+      ]
+     },
+     {
+      "code": "1408",
+      "level": "district",
+      "name": "ผักไห่",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "140801",
+        "level": "subdistrict",
+        "name": "ผักไห่"
+       },
+       {
+        "code": "140802",
+        "level": "subdistrict",
+        "name": "อมฤต"
+       },
+       {
+        "code": "140803",
+        "level": "subdistrict",
+        "name": "บ้านแค"
+       },
+       {
+        "code": "140804",
+        "level": "subdistrict",
+        "name": "ลาดน้ำเค็ม"
+       },
+       {
+        "code": "140805",
+        "level": "subdistrict",
+        "name": "ตาลาน"
+       },
+       {
+        "code": "140806",
+        "level": "subdistrict",
+        "name": "ท่าดินแดง"
+       },
+       {
+        "code": "140807",
+        "level": "subdistrict",
+        "name": "ดอนลาน"
+       },
+       {
+        "code": "140808",
+        "level": "subdistrict",
+        "name": "นาคู"
+       },
+       {
+        "code": "140809",
+        "level": "subdistrict",
+        "name": "กุฎี"
+       },
+       {
+        "code": "140810",
+        "level": "subdistrict",
+        "name": "ลำตะเคียน"
+       },
+       {
+        "code": "140811",
+        "level": "subdistrict",
+        "name": "โคกช้าง"
+       },
+       {
+        "code": "140812",
+        "level": "subdistrict",
+        "name": "จักราช"
+       },
+       {
+        "code": "140813",
+        "level": "subdistrict",
+        "name": "หนองน้ำใหญ่"
+       },
+       {
+        "code": "140814",
+        "level": "subdistrict",
+        "name": "ลาดชิด"
+       },
+       {
+        "code": "140815",
+        "level": "subdistrict",
+        "name": "หน้าโคก"
+       },
+       {
+        "code": "140816",
+        "level": "subdistrict",
+        "name": "บ้านใหญ่"
+       }
+      ]
+     },
+     {
+      "code": "1409",
+      "level": "district",
+      "name": "ภาชี",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "140901",
+        "level": "subdistrict",
+        "name": "ภาชี"
+       },
+       {
+        "code": "140902",
+        "level": "subdistrict",
+        "name": "โคกม่วง"
+       },
+       {
+        "code": "140903",
+        "level": "subdistrict",
+        "name": "ระโสม"
+       },
+       {
+        "code": "140904",
+        "level": "subdistrict",
+        "name": "หนองน้ำใส"
+       },
+       {
+        "code": "140905",
+        "level": "subdistrict",
+        "name": "ดอนหญ้านาง"
+       },
+       {
+        "code": "140906",
+        "level": "subdistrict",
+        "name": "ไผ่ล้อม"
+       },
+       {
+        "code": "140907",
+        "level": "subdistrict",
+        "name": "กระจิว"
+       },
+       {
+        "code": "140908",
+        "level": "subdistrict",
+        "name": "พระแก้ว"
+       }
+      ]
+     },
+     {
+      "code": "1410",
+      "level": "district",
+      "name": "ลาดบัวหลวง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "141001",
+        "level": "subdistrict",
+        "name": "ลาดบัวหลวง"
+       },
+       {
+        "code": "141002",
+        "level": "subdistrict",
+        "name": "หลักชัย"
+       },
+       {
+        "code": "141003",
+        "level": "subdistrict",
+        "name": "สามเมือง"
+       },
+       {
+        "code": "141004",
+        "level": "subdistrict",
+        "name": "พระยาบันลือ"
+       },
+       {
+        "code": "141005",
+        "level": "subdistrict",
+        "name": "สิงหนาท"
+       },
+       {
+        "code": "141006",
+        "level": "subdistrict",
+        "name": "คู้สลอด"
+       }
+      ]
+     },
+     {
+      "code": "1411",
+      "level": "district",
+      "name": "วังน้อย",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "141101",
+        "level": "subdistrict",
+        "name": "ลำตาเสา"
+       },
+       {
+        "code": "141102",
+        "level": "subdistrict",
+        "name": "บ่อตาโล่"
+       },
+       {
+        "code": "141103",
+        "level": "subdistrict",
+        "name": "วังน้อย"
+       },
+       {
+        "code": "141104",
+        "level": "subdistrict",
+        "name": "ลำไทร"
+       },
+       {
+        "code": "141105",
+        "level": "subdistrict",
+        "name": "สนับทึบ"
+       },
+       {
+        "code": "141106",
+        "level": "subdistrict",
+        "name": "พยอม"
+       },
+       {
+        "code": "141107",
+        "level": "subdistrict",
+        "name": "หันตะเภา"
+       },
+       {
+        "code": "141108",
+        "level": "subdistrict",
+        "name": "วังจุฬา"
+       },
+       {
+        "code": "141109",
+        "level": "subdistrict",
+        "name": "ข้าวงาม"
+       },
+       {
+        "code": "141110",
+        "level": "subdistrict",
+        "name": "ชะแมบ"
+       }
+      ]
+     },
+     {
+      "code": "1412",
+      "level": "district",
+      "name": "เสนา",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "141201",
+        "level": "subdistrict",
+        "name": "เสนา"
+       },
+       {
+        "code": "141202",
+        "level": "subdistrict",
+        "name": "บ้านแพน"
+       },
+       {
+        "code": "141203",
+        "level": "subdistrict",
+        "name": "เจ้าเจ็ด"
+       },
+       {
+        "code": "141204",
+        "level": "subdistrict",
+        "name": "สามกอ"
+       },
+       {
+        "code": "141205",
+        "level": "subdistrict",
+        "name": "บางนมโค"
+       },
+       {
+        "code": "141206",
+        "level": "subdistrict",
+        "name": "หัวเวียง"
+       },
+       {
+        "code": "141207",
+        "level": "subdistrict",
+        "name": "มารวิชัย"
+       },
+       {
+        "code": "141208",
+        "level": "subdistrict",
+        "name": "บ้านโพธิ์"
+       },
+       {
+        "code": "141209",
+        "level": "subdistrict",
+        "name": "รางจรเข้"
+       },
+       {
+        "code": "141210",
+        "level": "subdistrict",
+        "name": "บ้านกระทุ่ม"
+       },
+       {
+        "code": "141211",
+        "level": "subdistrict",
+        "name": "บ้านแถว"
+       },
+       {
+        "code": "141212",
+        "level": "subdistrict",
+        "name": "ชายนา"
+       },
+       {
+        "code": "141213",
+        "level": "subdistrict",
+        "name": "สามตุ่ม"
+       },
+       {
+        "code": "141214",
+        "level": "subdistrict",
+        "name": "ลาดงา"
+       },
+       {
+        "code": "141215",
+        "level": "subdistrict",
+        "name": "ดอนทอง"
+       },
+       {
+        "code": "141216",
+        "level": "subdistrict",
+        "name": "บ้านหลวง"
+       },
+       {
+        "code": "141217",
+        "level": "subdistrict",
+        "name": "เจ้าเสด็จ"
+       }
+      ]
+     },
+     {
+      "code": "1413",
+      "level": "district",
+      "name": "บางซ้าย",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "141301",
+        "level": "subdistrict",
+        "name": "บางซ้าย"
+       },
+       {
+        "code": "141302",
+        "level": "subdistrict",
+        "name": "แก้วฟ้า"
+       },
+       {
+        "code": "141303",
+        "level": "subdistrict",
+        "name": "เต่าเล่า"
+       },
+       {
+        "code": "141304",
+        "level": "subdistrict",
+        "name": "ปลายกลัด"
+       },
+       {
+        "code": "141305",
+        "level": "subdistrict",
+        "name": "เทพมงคล"
+       },
+       {
+        "code": "141306",
+        "level": "subdistrict",
+        "name": "วังพัฒนา"
+       }
+      ]
+     },
+     {
+      "code": "1414",
+      "level": "district",
+      "name": "อุทัย",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "141401",
+        "level": "subdistrict",
+        "name": "คานหาม"
+       },
+       {
+        "code": "141402",
+        "level": "subdistrict",
+        "name": "บ้านช้าง"
+       },
+       {
+        "code": "141403",
+        "level": "subdistrict",
+        "name": "สามบัณฑิต"
+       },
+       {
+        "code": "141404",
+        "level": "subdistrict",
+        "name": "บ้านหีบ"
+       },
+       {
+        "code": "141405",
+        "level": "subdistrict",
+        "name": "หนองไม้ซุง"
+       },
+       {
+        "code": "141406",
+        "level": "subdistrict",
+        "name": "อุทัย"
+       },
+       {
+        "code": "141407",
+        "level": "subdistrict",
+        "name": "เสนา"
+       },
+       {
+        "code": "141408",
+        "level": "subdistrict",
+        "name": "หนองน้ำส้ม"
+       },
+       {
+        "code": "141409",
+        "level": "subdistrict",
+        "name": "โพสาวหาญ"
+       },
+       {
+        "code": "141410",
+        "level": "subdistrict",
+        "name": "ธนู"
+       },
+       {
+        "code": "141411",
+        "level": "subdistrict",
+        "name": "ข้าวเม่า"
+       }
+      ]
+     },
+     {
+      "code": "1415",
+      "level": "district",
+      "name": "มหาราช",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "141501",
+        "level": "subdistrict",
+        "name": "หัวไผ่"
+       },
+       {
+        "code": "141502",
+        "level": "subdistrict",
+        "name": "กะทุ่ม"
+       },
+       {
+        "code": "141503",
+        "level": "subdistrict",
+        "name": "มหาราช"
+       },
+       {
+        "code": "141504",
+        "level": "subdistrict",
+        "name": "น้ำเต้า"
+       },
+       {
+        "code": "141505",
+        "level": "subdistrict",
+        "name": "บางนา"
+       },
+       {
+        "code": "141506",
+        "level": "subdistrict",
+        "name": "โรงช้าง"
+       },
+       {
+        "code": "141507",
+        "level": "subdistrict",
+        "name": "เจ้าปลุก"
+       },
+       {
+        "code": "141508",
+        "level": "subdistrict",
+        "name": "พิตเพียน"
+       },
+       {
+        "code": "141509",
+        "level": "subdistrict",
+        "name": "บ้านนา"
+       },
+       {
+        "code": "141510",
+        "level": "subdistrict",
+        "name": "บ้านขวาง"
+       },
+       {
+        "code": "141511",
+        "level": "subdistrict",
+        "name": "ท่าตอ"
+       },
+       {
+        "code": "141512",
+        "level": "subdistrict",
+        "name": "บ้านใหม่"
+       }
+      ]
+     },
+     {
+      "code": "1416",
+      "level": "district",
+      "name": "บ้านแพรก",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "141601",
+        "level": "subdistrict",
+        "name": "บ้านแพรก"
+       },
+       {
+        "code": "141602",
+        "level": "subdistrict",
+        "name": "บ้านใหม่"
+       },
+       {
+        "code": "141603",
+        "level": "subdistrict",
+        "name": "สำพะเนียง"
+       },
+       {
+        "code": "141604",
+        "level": "subdistrict",
+        "name": "คลองน้อย"
+       },
+       {
+        "code": "141605",
+        "level": "subdistrict",
+        "name": "สองห้อง"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "15",
+    "level": "province",
+    "name": "อ่างทอง",
+    "children": [
+     {
+      "code": "1501",
+      "level": "district",
+      "name": "เมืองอ่างทอง",
+      "inferredUnits": 2,
+      "children": [
+       {
+        "code": "150101",
+        "level": "subdistrict",
+        "name": "ตลาดหลวง"
+       },
+       {
+        "code": "150102",
+        "level": "subdistrict",
+        "name": "บางแก้ว"
+       },
+       {
+        "code": "150103",
+        "level": "subdistrict",
+        "name": "ศาลาแดง"
+       },
+       {
+        "code": "150104",
+        "level": "subdistrict",
+        "name": "ป่างิ้ว"
+       },
+       {
+        "code": "150105",
+        "level": "subdistrict",
+        "name": "บ้านแห"
+       },
+       {
+        "code": "150106",
+        "level": "subdistrict",
+        "name": "ตลาดกรวด"
+       },
+       {
+        "code": "150107",
+        "level": "subdistrict",
+        "name": "มหาดไทย"
+       },
+       {
+        "code": "150108",
+        "level": "subdistrict",
+        "name": "บ้านอิฐ"
+       },
+       {
+        "code": "150109",
+        "level": "subdistrict",
+        "name": "หัวไผ่"
+       },
+       {
+        "code": "150110",
+        "level": "subdistrict",
+        "name": "จำปาหล่อ"
+       },
+       {
+        "code": "150111",
+        "level": "subdistrict",
+        "name": "โพสะ"
+       },
+       {
+        "code": "150112",
+        "level": "subdistrict",
+        "name": "บ้านรี"
+       },
+       {
+        "code": "150113",
+        "level": "subdistrict",
+        "name": "คลองวัว"
+       },
+       {
+        "code": "150114",
+        "level": "subdistrict",
+        "name": "ย่านซื่อ"
+       }
+      ]
+     },
+     {
+      "code": "1502",
+      "level": "district",
+      "name": "ไชโย",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "150201",
+        "level": "subdistrict",
+        "name": "จรเข้ร้อง"
+       },
+       {
+        "code": "150202",
+        "level": "subdistrict",
+        "name": "ไชยภูมิ"
+       },
+       {
+        "code": "150203",
+        "level": "subdistrict",
+        "name": "ชัยฤทธิ์"
+       },
+       {
+        "code": "150204",
+        "level": "subdistrict",
+        "name": "เทวราช"
+       },
+       {
+        "code": "150205",
+        "level": "subdistrict",
+        "name": "ราชสถิตย์"
+       },
+       {
+        "code": "150206",
+        "level": "subdistrict",
+        "name": "ไชโย"
+       },
+       {
+        "code": "150207",
+        "level": "subdistrict",
+        "name": "หลักฟ้า"
+       },
+       {
+        "code": "150208",
+        "level": "subdistrict",
+        "name": "ชะไว"
+       },
+       {
+        "code": "150209",
+        "level": "subdistrict",
+        "name": "ตรีณรงค์"
+       }
+      ]
+     },
+     {
+      "code": "1503",
+      "level": "district",
+      "name": "ป่าโมก",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "150301",
+        "level": "subdistrict",
+        "name": "บางปลากด"
+       },
+       {
+        "code": "150302",
+        "level": "subdistrict",
+        "name": "ป่าโมก"
+       },
+       {
+        "code": "150303",
+        "level": "subdistrict",
+        "name": "สายทอง"
+       },
+       {
+        "code": "150304",
+        "level": "subdistrict",
+        "name": "โรงช้าง"
+       },
+       {
+        "code": "150305",
+        "level": "subdistrict",
+        "name": "บางเสด็จ"
+       },
+       {
+        "code": "150306",
+        "level": "subdistrict",
+        "name": "นรสิงห์"
+       },
+       {
+        "code": "150307",
+        "level": "subdistrict",
+        "name": "เอกราช"
+       },
+       {
+        "code": "150308",
+        "level": "subdistrict",
+        "name": "โผงเผง"
+       }
+      ]
+     },
+     {
+      "code": "1504",
+      "level": "district",
+      "name": "โพธิ์ทอง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "150401",
+        "level": "subdistrict",
+        "name": "อ่างแก้ว"
+       },
+       {
+        "code": "150402",
+        "level": "subdistrict",
+        "name": "อินทประมูล"
+       },
+       {
+        "code": "150403",
+        "level": "subdistrict",
+        "name": "บางพลับ"
+       },
+       {
+        "code": "150404",
+        "level": "subdistrict",
+        "name": "หนองแม่ไก่"
+       },
+       {
+        "code": "150405",
+        "level": "subdistrict",
+        "name": "รำมะสัก"
+       },
+       {
+        "code": "150406",
+        "level": "subdistrict",
+        "name": "บางระกำ"
+       },
+       {
+        "code": "150407",
+        "level": "subdistrict",
+        "name": "โพธิ์รังนก"
+       },
+       {
+        "code": "150408",
+        "level": "subdistrict",
+        "name": "องครักษ์"
+       },
+       {
+        "code": "150409",
+        "level": "subdistrict",
+        "name": "โคกพุทรา"
+       },
+       {
+        "code": "150410",
+        "level": "subdistrict",
+        "name": "ยางช้าย"
+       },
+       {
+        "code": "150411",
+        "level": "subdistrict",
+        "name": "บ่อแร่"
+       },
+       {
+        "code": "150412",
+        "level": "subdistrict",
+        "name": "ทางพระ"
+       },
+       {
+        "code": "150413",
+        "level": "subdistrict",
+        "name": "สามง่าม"
+       },
+       {
+        "code": "150414",
+        "level": "subdistrict",
+        "name": "บางเจ้าฉ่า"
+       },
+       {
+        "code": "150415",
+        "level": "subdistrict",
+        "name": "คำหยาด"
+       }
+      ]
+     },
+     {
+      "code": "1505",
+      "level": "district",
+      "name": "แสวงหา",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "150501",
+        "level": "subdistrict",
+        "name": "แสวงหา"
+       },
+       {
+        "code": "150502",
+        "level": "subdistrict",
+        "name": "ศรีพราน"
+       },
+       {
+        "code": "150503",
+        "level": "subdistrict",
+        "name": "บ้านพราน"
+       },
+       {
+        "code": "150504",
+        "level": "subdistrict",
+        "name": "วังน้ำเย็น"
+       },
+       {
+        "code": "150505",
+        "level": "subdistrict",
+        "name": "สีบัวทอง"
+       },
+       {
+        "code": "150506",
+        "level": "subdistrict",
+        "name": "ห้วยไผ่"
+       },
+       {
+        "code": "150507",
+        "level": "subdistrict",
+        "name": "จำลอง"
+       }
+      ]
+     },
+     {
+      "code": "1506",
+      "level": "district",
+      "name": "วิเศษชัยชาญ",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "150601",
+        "level": "subdistrict",
+        "name": "ไผ่จำศิล"
+       },
+       {
+        "code": "150602",
+        "level": "subdistrict",
+        "name": "ศาลเจ้าโรงทอง"
+       },
+       {
+        "code": "150603",
+        "level": "subdistrict",
+        "name": "ไผ่ดำพัฒนา"
+       },
+       {
+        "code": "150604",
+        "level": "subdistrict",
+        "name": "สาวร้องไห้"
+       },
+       {
+        "code": "150605",
+        "level": "subdistrict",
+        "name": "ท่าช้าง"
+       },
+       {
+        "code": "150606",
+        "level": "subdistrict",
+        "name": "ยี่ล้น"
+       },
+       {
+        "code": "150607",
+        "level": "subdistrict",
+        "name": "บางจัก"
+       },
+       {
+        "code": "150608",
+        "level": "subdistrict",
+        "name": "ห้วยคันแหลน"
+       },
+       {
+        "code": "150609",
+        "level": "subdistrict",
+        "name": "คลองขนาก"
+       },
+       {
+        "code": "150610",
+        "level": "subdistrict",
+        "name": "ไผ่วง"
+       },
+       {
+        "code": "150611",
+        "level": "subdistrict",
+        "name": "สี่ร้อย"
+       },
+       {
+        "code": "150612",
+        "level": "subdistrict",
+        "name": "ม่วงเตี้ย"
+       },
+       {
+        "code": "150613",
+        "level": "subdistrict",
+        "name": "หัวตะพาน"
+       },
+       {
+        "code": "150614",
+        "level": "subdistrict",
+        "name": "หลักแก้ว"
+       },
+       {
+        "code": "150615",
+        "level": "subdistrict",
+        "name": "ตลาดใหม่"
+       }
+      ]
+     },
+     {
+      "code": "1507",
+      "level": "district",
+      "name": "สามโก้",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "150701",
+        "level": "subdistrict",
+        "name": "สามโก้"
+       },
+       {
+        "code": "150702",
+        "level": "subdistrict",
+        "name": "ราษฎรพัฒนา"
+       },
+       {
+        "code": "150703",
+        "level": "subdistrict",
+        "name": "อบทม"
+       },
+       {
+        "code": "150704",
+        "level": "subdistrict",
+        "name": "โพธิ์ม่วงพันธ์"
+       },
+       {
+        "code": "150705",
+        "level": "subdistrict",
+        "name": "มงคลธรรมนิมิต"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "16",
+    "level": "province",
+    "name": "ลพบุรี",
+    "children": [
+     {
+      "code": "1601",
+      "level": "district",
+      "name": "เมืองลพบุรี",
+      "inferredUnits": 3,
+      "children": [
+       {
+        "code": "160101",
+        "level": "subdistrict",
+        "name": "ทะเลชุบศร"
+       },
+       {
+        "code": "160103",
+        "level": "subdistrict",
+        "name": "กกโก"
+       },
+       {
+        "code": "160104",
+        "level": "subdistrict",
+        "name": "โก่งธนู"
+       },
+       {
+        "code": "160105",
+        "level": "subdistrict",
+        "name": "เขาพระงาม"
+       },
+       {
+        "code": "160106",
+        "level": "subdistrict",
+        "name": "เขาสามยอด"
+       },
+       {
+        "code": "160107",
+        "level": "subdistrict",
+        "name": "โคกกะเทียม"
+       },
+       {
+        "code": "160108",
+        "level": "subdistrict",
+        "name": "โคกลำพาน"
+       },
+       {
+        "code": "160109",
+        "level": "subdistrict",
+        "name": "โคกตูม"
+       },
+       {
+        "code": "160110",
+        "level": "subdistrict",
+        "name": "งิ้วราย"
+       },
+       {
+        "code": "160111",
+        "level": "subdistrict",
+        "name": "ดอนโพธิ์"
+       },
+       {
+        "code": "160112",
+        "level": "subdistrict",
+        "name": "ตะลุง"
+       },
+       {
+        "code": "160114",
+        "level": "subdistrict",
+        "name": "ท่าแค"
+       },
+       {
+        "code": "160115",
+        "level": "subdistrict",
+        "name": "ท่าศาลา"
+       },
+       {
+        "code": "160116",
+        "level": "subdistrict",
+        "name": "นิคมสร้างตนเอง"
+       },
+       {
+        "code": "160117",
+        "level": "subdistrict",
+        "name": "บางขันหมาก"
+       },
+       {
+        "code": "160118",
+        "level": "subdistrict",
+        "name": "บ้านข่อย"
+       },
+       {
+        "code": "160119",
+        "level": "subdistrict",
+        "name": "ท้ายตลาด"
+       },
+       {
+        "code": "160120",
+        "level": "subdistrict",
+        "name": "ป่าตาล"
+       },
+       {
+        "code": "160121",
+        "level": "subdistrict",
+        "name": "พรหมมาสตร์"
+       },
+       {
+        "code": "160122",
+        "level": "subdistrict",
+        "name": "โพธิ์เก้าต้น"
+       },
+       {
+        "code": "160123",
+        "level": "subdistrict",
+        "name": "โพธิ์ตรุ"
+       },
+       {
+        "code": "160124",
+        "level": "subdistrict",
+        "name": "สี่คลอง"
+       },
+       {
+        "code": "160125",
+        "level": "subdistrict",
+        "name": "ถนนใหญ่"
+       }
+      ]
+     },
+     {
+      "code": "1602",
+      "level": "district",
+      "name": "พัฒนานิคม",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "160201",
+        "level": "subdistrict",
+        "name": "พัฒนานิคม"
+       },
+       {
+        "code": "160202",
+        "level": "subdistrict",
+        "name": "ช่องสาริกา"
+       },
+       {
+        "code": "160203",
+        "level": "subdistrict",
+        "name": "มะนาวหวาน"
+       },
+       {
+        "code": "160204",
+        "level": "subdistrict",
+        "name": "ดีลัง"
+       },
+       {
+        "code": "160205",
+        "level": "subdistrict",
+        "name": "โคกสลุง"
+       },
+       {
+        "code": "160206",
+        "level": "subdistrict",
+        "name": "ชอนน้อย"
+       },
+       {
+        "code": "160207",
+        "level": "subdistrict",
+        "name": "หนองบัว"
+       },
+       {
+        "code": "160208",
+        "level": "subdistrict",
+        "name": "ห้วยขุนราม"
+       },
+       {
+        "code": "160209",
+        "level": "subdistrict",
+        "name": "น้ำสุด"
+       }
+      ]
+     },
+     {
+      "code": "1603",
+      "level": "district",
+      "name": "โคกสำโรง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "160301",
+        "level": "subdistrict",
+        "name": "โคกสำโรง"
+       },
+       {
+        "code": "160302",
+        "level": "subdistrict",
+        "name": "เกาะแก้ว"
+       },
+       {
+        "code": "160303",
+        "level": "subdistrict",
+        "name": "ถลุงเหล็ก"
+       },
+       {
+        "code": "160304",
+        "level": "subdistrict",
+        "name": "หลุมข้าว"
+       },
+       {
+        "code": "160305",
+        "level": "subdistrict",
+        "name": "ห้วยโป่ง"
+       },
+       {
+        "code": "160306",
+        "level": "subdistrict",
+        "name": "คลองเกตุ"
+       },
+       {
+        "code": "160307",
+        "level": "subdistrict",
+        "name": "สะแกราบ"
+       },
+       {
+        "code": "160308",
+        "level": "subdistrict",
+        "name": "เพนียด"
+       },
+       {
+        "code": "160309",
+        "level": "subdistrict",
+        "name": "วังเพลิง"
+       },
+       {
+        "code": "160310",
+        "level": "subdistrict",
+        "name": "ดงมะรุม"
+       },
+       {
+        "code": "160318",
+        "level": "subdistrict",
+        "name": "วังขอนขว้าง"
+       },
+       {
+        "code": "160320",
+        "level": "subdistrict",
+        "name": "วังจั่น"
+       },
+       {
+        "code": "160322",
+        "level": "subdistrict",
+        "name": "หนองแขม"
+       }
+      ]
+     },
+     {
+      "code": "1604",
+      "level": "district",
+      "name": "ชัยบาดาล",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "160401",
+        "level": "subdistrict",
+        "name": "ลำนารายณ์"
+       },
+       {
+        "code": "160402",
+        "level": "subdistrict",
+        "name": "ชัยนารายณ์"
+       },
+       {
+        "code": "160403",
+        "level": "subdistrict",
+        "name": "ศิลาทิพย์"
+       },
+       {
+        "code": "160404",
+        "level": "subdistrict",
+        "name": "ห้วยหิน"
+       },
+       {
+        "code": "160405",
+        "level": "subdistrict",
+        "name": "ม่วงค่อม"
+       },
+       {
+        "code": "160406",
+        "level": "subdistrict",
+        "name": "บัวชุม"
+       },
+       {
+        "code": "160407",
+        "level": "subdistrict",
+        "name": "ท่าดินดำ"
+       },
+       {
+        "code": "160409",
+        "level": "subdistrict",
+        "name": "ซับตะเคียน"
+       },
+       {
+        "code": "160410",
+        "level": "subdistrict",
+        "name": "นาโสม"
+       },
+       {
+        "code": "160411",
+        "level": "subdistrict",
+        "name": "หนองยายโต๊ะ"
+       },
+       {
+        "code": "160412",
+        "level": "subdistrict",
+        "name": "เกาะรัง"
+       },
+       {
+        "code": "160414",
+        "level": "subdistrict",
+        "name": "ท่ามะนาว"
+       },
+       {
+        "code": "160417",
+        "level": "subdistrict",
+        "name": "นิคมลำนารายณ์"
+       },
+       {
+        "code": "160418",
+        "level": "subdistrict",
+        "name": "ชัยบาดาล"
+       },
+       {
+        "code": "160419",
+        "level": "subdistrict",
+        "name": "บ้านใหม่สามัคคี"
+       },
+       {
+        "code": "160422",
+        "level": "subdistrict",
+        "name": "เขาแหลม"
+       }
+      ]
+     },
+     {
+      "code": "1605",
+      "level": "district",
+      "name": "ท่าวุ้ง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "160501",
+        "level": "subdistrict",
+        "name": "ท่าวุ้ง"
+       },
+       {
+        "code": "160502",
+        "level": "subdistrict",
+        "name": "บางคู้"
+       },
+       {
+        "code": "160503",
+        "level": "subdistrict",
+        "name": "โพตลาดแก้ว"
+       },
+       {
+        "code": "160504",
+        "level": "subdistrict",
+        "name": "บางลี่"
+       },
+       {
+        "code": "160505",
+        "level": "subdistrict",
+        "name": "บางงา"
+       },
+       {
+        "code": "160506",
+        "level": "subdistrict",
+        "name": "โคกสลุด"
+       },
+       {
+        "code": "160507",
+        "level": "subdistrict",
+        "name": "เขาสมอคอน"
+       },
+       {
+        "code": "160508",
+        "level": "subdistrict",
+        "name": "หัวสำโรง"
+       },
+       {
+        "code": "160509",
+        "level": "subdistrict",
+        "name": "ลาดสาลี่"
+       },
+       {
+        "code": "160510",
+        "level": "subdistrict",
+        "name": "บ้านเบิก"
+       },
+       {
+        "code": "160511",
+        "level": "subdistrict",
+        "name": "มุจลินท์"
+       }
+      ]
+     },
+     {
+      "code": "1606",
+      "level": "district",
+      "name": "บ้านหมี่",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "160601",
+        "level": "subdistrict",
+        "name": "ไผ่ใหญ่"
+       },
+       {
+        "code": "160602",
+        "level": "subdistrict",
+        "name": "บ้านทราย"
+       },
+       {
+        "code": "160603",
+        "level": "subdistrict",
+        "name": "บ้านกล้วย"
+       },
+       {
+        "code": "160604",
+        "level": "subdistrict",
+        "name": "ดงพลับ"
+       },
+       {
+        "code": "160605",
+        "level": "subdistrict",
+        "name": "บ้านชี"
+       },
+       {
+        "code": "160606",
+        "level": "subdistrict",
+        "name": "พุคา"
+       },
+       {
+        "code": "160607",
+        "level": "subdistrict",
+        "name": "หินปัก"
+       },
+       {
+        "code": "160608",
+        "level": "subdistrict",
+        "name": "บางพึ่ง"
+       },
+       {
+        "code": "160609",
+        "level": "subdistrict",
+        "name": "หนองทรายขาว"
+       },
+       {
+        "code": "160610",
+        "level": "subdistrict",
+        "name": "บางกะพี้"
+       },
+       {
+        "code": "160611",
+        "level": "subdistrict",
+        "name": "หนองเต่า"
+       },
+       {
+        "code": "160612",
+        "level": "subdistrict",
+        "name": "โพนทอง"
+       },
+       {
+        "code": "160613",
+        "level": "subdistrict",
+        "name": "บางขาม"
+       },
+       {
+        "code": "160614",
+        "level": "subdistrict",
+        "name": "ดอนดึง"
+       },
+       {
+        "code": "160615",
+        "level": "subdistrict",
+        "name": "ชอนม่วง"
+       },
+       {
+        "code": "160616",
+        "level": "subdistrict",
+        "name": "หนองกระเบียน"
+       },
+       {
+        "code": "160617",
+        "level": "subdistrict",
+        "name": "สายห้วยแก้ว"
+       },
+       {
+        "code": "160618",
+        "level": "subdistrict",
+        "name": "มหาสอน"
+       },
+       {
+        "code": "160620",
+        "level": "subdistrict",
+        "name": "เชียงงา"
+       },
+       {
+        "code": "160621",
+        "level": "subdistrict",
+        "name": "หนองเมือง"
+       },
+       {
+        "code": "160622",
+        "level": "subdistrict",
+        "name": "สนามแจง"
+       }
+      ]
+     },
+     {
+      "code": "1607",
+      "level": "district",
+      "name": "ท่าหลวง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "160701",
+        "level": "subdistrict",
+        "name": "ท่าหลวง"
+       },
+       {
+        "code": "160702",
+        "level": "subdistrict",
+        "name": "แก่งผักกูด"
+       },
+       {
+        "code": "160703",
+        "level": "subdistrict",
+        "name": "ซับจำปา"
+       },
+       {
+        "code": "160704",
+        "level": "subdistrict",
+        "name": "หนองผักแว่น"
+       },
+       {
+        "code": "160705",
+        "level": "subdistrict",
+        "name": "ทะเลวังวัด"
+       },
+       {
+        "code": "160706",
+        "level": "subdistrict",
+        "name": "หัวลำ"
+       }
+      ]
+     },
+     {
+      "code": "1608",
+      "level": "district",
+      "name": "สระโบสถ์",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "160802",
+        "level": "subdistrict",
+        "name": "มหาโพธิ"
+       },
+       {
+        "code": "160803",
+        "level": "subdistrict",
+        "name": "ทุ่งท่าช้าง"
+       },
+       {
+        "code": "160804",
+        "level": "subdistrict",
+        "name": "ห้วยใหญ่"
+       },
+       {
+        "code": "160805",
+        "level": "subdistrict",
+        "name": "นิยมชัย"
+       }
+      ]
+     },
+     {
+      "code": "1609",
+      "level": "district",
+      "name": "โคกเจริญ",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "160901",
+        "level": "subdistrict",
+        "name": "โคกเจริญ"
+       },
+       {
+        "code": "160902",
+        "level": "subdistrict",
+        "name": "ยางราก"
+       },
+       {
+        "code": "160903",
+        "level": "subdistrict",
+        "name": "หนองมะค่า"
+       },
+       {
+        "code": "160904",
+        "level": "subdistrict",
+        "name": "วังทอง"
+       },
+       {
+        "code": "160905",
+        "level": "subdistrict",
+        "name": "โคกแสมสาร"
+       }
+      ]
+     },
+     {
+      "code": "1610",
+      "level": "district",
+      "name": "ลำสนธิ",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "161001",
+        "level": "subdistrict",
+        "name": "ลำสนธิ"
+       },
+       {
+        "code": "161002",
+        "level": "subdistrict",
+        "name": "ซับสมบูรณ์"
+       },
+       {
+        "code": "161003",
+        "level": "subdistrict",
+        "name": "หนองรี"
+       },
+       {
+        "code": "161004",
+        "level": "subdistrict",
+        "name": "กุดตาเพชร"
+       },
+       {
+        "code": "161005",
+        "level": "subdistrict",
+        "name": "เขารวก"
+       },
+       {
+        "code": "161006",
+        "level": "subdistrict",
+        "name": "เขาน้อย"
+       }
+      ]
+     },
+     {
+      "code": "1611",
+      "level": "district",
+      "name": "หนองม่วง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "161101",
+        "level": "subdistrict",
+        "name": "หนองม่วง"
+       },
+       {
+        "code": "161102",
+        "level": "subdistrict",
+        "name": "บ่อทอง"
+       },
+       {
+        "code": "161103",
+        "level": "subdistrict",
+        "name": "ดงดินแดง"
+       },
+       {
+        "code": "161104",
+        "level": "subdistrict",
+        "name": "ชอนสมบูรณ์"
+       },
+       {
+        "code": "161105",
+        "level": "subdistrict",
+        "name": "ยางโทน"
+       },
+       {
+        "code": "161106",
+        "level": "subdistrict",
+        "name": "ชอนสารเดช"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "17",
+    "level": "province",
+    "name": "สิงห์บุรี",
+    "children": [
+     {
+      "code": "1701",
+      "level": "district",
+      "name": "เมืองสิงห์บุรี",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "170101",
+        "level": "subdistrict",
+        "name": "บางพุทรา"
+       },
+       {
+        "code": "170102",
+        "level": "subdistrict",
+        "name": "บางมัญ"
+       },
+       {
+        "code": "170103",
+        "level": "subdistrict",
+        "name": "โพกรวม"
+       },
+       {
+        "code": "170104",
+        "level": "subdistrict",
+        "name": "ม่วงหมู่"
+       },
+       {
+        "code": "170105",
+        "level": "subdistrict",
+        "name": "หัวไผ่"
+       },
+       {
+        "code": "170106",
+        "level": "subdistrict",
+        "name": "ต้นโพธิ์"
+       },
+       {
+        "code": "170107",
+        "level": "subdistrict",
+        "name": "จักรสีห์"
+       },
+       {
+        "code": "170108",
+        "level": "subdistrict",
+        "name": "บางกระบือ"
+       }
+      ]
+     },
+     {
+      "code": "1702",
+      "level": "district",
+      "name": "บางระจัน",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "170201",
+        "level": "subdistrict",
+        "name": "สิงห์"
+       },
+       {
+        "code": "170202",
+        "level": "subdistrict",
+        "name": "ไม้ดัด"
+       },
+       {
+        "code": "170203",
+        "level": "subdistrict",
+        "name": "เชิงกลัด"
+       },
+       {
+        "code": "170204",
+        "level": "subdistrict",
+        "name": "โพชนไก่"
+       },
+       {
+        "code": "170205",
+        "level": "subdistrict",
+        "name": "แม่ลา"
+       },
+       {
+        "code": "170206",
+        "level": "subdistrict",
+        "name": "บ้านจ่า"
+       },
+       {
+        "code": "170207",
+        "level": "subdistrict",
+        "name": "พักทัน"
+       },
+       {
+        "code": "170208",
+        "level": "subdistrict",
+        "name": "สระแจง"
+       }
+      ]
+     },
+     {
+      "code": "1703",
+      "level": "district",
+      "name": "ค่ายบางระจัน",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "170301",
+        "level": "subdistrict",
+        "name": "โพทะเล"
+       },
+       {
+        "code": "170302",
+        "level": "subdistrict",
+        "name": "บางระจัน"
+       },
+       {
+        "code": "170303",
+        "level": "subdistrict",
+        "name": "โพสังโฆ"
+       },
+       {
+        "code": "170304",
+        "level": "subdistrict",
+        "name": "ท่าข้าม"
+       },
+       {
+        "code": "170305",
+        "level": "subdistrict",
+        "name": "คอทราย"
+       },
+       {
+        "code": "170306",
+        "level": "subdistrict",
+        "name": "หนองกระทุ่ม"
+       }
+      ]
+     },
+     {
+      "code": "1704",
+      "level": "district",
+      "name": "พรหมบุรี",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "170401",
+        "level": "subdistrict",
+        "name": "พระงาม"
+       },
+       {
+        "code": "170402",
+        "level": "subdistrict",
+        "name": "พรหมบุรี"
+       },
+       {
+        "code": "170404",
+        "level": "subdistrict",
+        "name": "บ้านหม้อ"
+       },
+       {
+        "code": "170405",
+        "level": "subdistrict",
+        "name": "บ้านแป้ง"
+       },
+       {
+        "code": "170406",
+        "level": "subdistrict",
+        "name": "หัวป่า"
+       },
+       {
+        "code": "170407",
+        "level": "subdistrict",
+        "name": "โรงช้าง"
+       }
+      ]
+     },
+     {
+      "code": "1705",
+      "level": "district",
+      "name": "ท่าช้าง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "170501",
+        "level": "subdistrict",
+        "name": "ถอนสมอ"
+       },
+       {
+        "code": "170502",
+        "level": "subdistrict",
+        "name": "โพประจักษ์"
+       },
+       {
+        "code": "170503",
+        "level": "subdistrict",
+        "name": "วิหารขาว"
+       },
+       {
+        "code": "170504",
+        "level": "subdistrict",
+        "name": "พิกุลทอง"
+       }
+      ]
+     },
+     {
+      "code": "1706",
+      "level": "district",
+      "name": "อินทร์บุรี",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "170601",
+        "level": "subdistrict",
+        "name": "อินทร์บุรี"
+       },
+       {
+        "code": "170602",
+        "level": "subdistrict",
+        "name": "ประศุก"
+       },
+       {
+        "code": "170603",
+        "level": "subdistrict",
+        "name": "ทับยา"
+       },
+       {
+        "code": "170604",
+        "level": "subdistrict",
+        "name": "งิ้วราย"
+       },
+       {
+        "code": "170605",
+        "level": "subdistrict",
+        "name": "ชีน้ำร้าย"
+       },
+       {
+        "code": "170606",
+        "level": "subdistrict",
+        "name": "ท่างาม"
+       },
+       {
+        "code": "170607",
+        "level": "subdistrict",
+        "name": "น้ำตาล"
+       },
+       {
+        "code": "170608",
+        "level": "subdistrict",
+        "name": "ทองเอน"
+       },
+       {
+        "code": "170609",
+        "level": "subdistrict",
+        "name": "ห้วยชัน"
+       },
+       {
+        "code": "170610",
+        "level": "subdistrict",
+        "name": "โพธิ์ชัย"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "19",
+    "level": "province",
+    "name": "สระบุรี",
+    "children": [
+     {
+      "code": "1901",
+      "level": "district",
+      "name": "เมืองสระบุรี",
+      "inferredUnits": 3,
+      "children": [
+       {
+        "code": "190101",
+        "level": "subdistrict",
+        "name": "ปากเพรียว"
+       },
+       {
+        "code": "190105",
+        "level": "subdistrict",
+        "name": "ดาวเรือง"
+       },
+       {
+        "code": "190107",
+        "level": "subdistrict",
+        "name": "โคกสว่าง"
+       },
+       {
+        "code": "190108",
+        "level": "subdistrict",
+        "name": "หนองโน"
+       },
+       {
+        "code": "190109",
+        "level": "subdistrict",
+        "name": "หนองยาว"
+       },
+       {
+        "code": "190110",
+        "level": "subdistrict",
+        "name": "ปากข้าวสาร"
+       },
+       {
+        "code": "190111",
+        "level": "subdistrict",
+        "name": "หนองปลาไหล"
+       },
+       {
+        "code": "190112",
+        "level": "subdistrict",
+        "name": "กุดนกเปล้า"
+       },
+       {
+        "code": "190113",
+        "level": "subdistrict",
+        "name": "ตลิ่งชัน"
+       },
+       {
+        "code": "190114",
+        "level": "subdistrict",
+        "name": "ตะกุด"
+       }
+      ]
+     },
+     {
+      "code": "1902",
+      "level": "district",
+      "name": "แก่งคอย",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "190201",
+        "level": "subdistrict",
+        "name": "แก่งคอย"
+       },
+       {
+        "code": "190202",
+        "level": "subdistrict",
+        "name": "ทับกวาง"
+       },
+       {
+        "code": "190203",
+        "level": "subdistrict",
+        "name": "ตาลเดี่ยว"
+       },
+       {
+        "code": "190204",
+        "level": "subdistrict",
+        "name": "ห้วยแห้ง"
+       },
+       {
+        "code": "190205",
+        "level": "subdistrict",
+        "name": "ท่าคล้อ"
+       },
+       {
+        "code": "190206",
+        "level": "subdistrict",
+        "name": "หินซ้อน"
+       },
+       {
+        "code": "190207",
+        "level": "subdistrict",
+        "name": "บ้านธาตุ"
+       },
+       {
+        "code": "190208",
+        "level": "subdistrict",
+        "name": "บ้านป่า"
+       },
+       {
+        "code": "190209",
+        "level": "subdistrict",
+        "name": "ท่าตูม"
+       },
+       {
+        "code": "190210",
+        "level": "subdistrict",
+        "name": "ชะอม"
+       },
+       {
+        "code": "190211",
+        "level": "subdistrict",
+        "name": "สองคอน"
+       },
+       {
+        "code": "190212",
+        "level": "subdistrict",
+        "name": "เตาปูน"
+       },
+       {
+        "code": "190213",
+        "level": "subdistrict",
+        "name": "ชำผักแพว"
+       },
+       {
+        "code": "190215",
+        "level": "subdistrict",
+        "name": "ท่ามะปราง"
+       }
+      ]
+     },
+     {
+      "code": "1903",
+      "level": "district",
+      "name": "หนองแค",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "190301",
+        "level": "subdistrict",
+        "name": "หนองแค"
+       },
+       {
+        "code": "190302",
+        "level": "subdistrict",
+        "name": "กุ่มหัก"
+       },
+       {
+        "code": "190303",
+        "level": "subdistrict",
+        "name": "คชสิทธิ์"
+       },
+       {
+        "code": "190304",
+        "level": "subdistrict",
+        "name": "โคกตูม"
+       },
+       {
+        "code": "190305",
+        "level": "subdistrict",
+        "name": "โคกแย้"
+       },
+       {
+        "code": "190306",
+        "level": "subdistrict",
+        "name": "บัวลอย"
+       },
+       {
+        "code": "190307",
+        "level": "subdistrict",
+        "name": "ไผ่ต่ำ"
+       },
+       {
+        "code": "190308",
+        "level": "subdistrict",
+        "name": "โพนทอง"
+       },
+       {
+        "code": "190309",
+        "level": "subdistrict",
+        "name": "ห้วยขมิ้น"
+       },
+       {
+        "code": "190310",
+        "level": "subdistrict",
+        "name": "ห้วยทราย"
+       },
+       {
+        "code": "190311",
+        "level": "subdistrict",
+        "name": "หนองไข่น้ำ"
+       },
+       {
+        "code": "190312",
+        "level": "subdistrict",
+        "name": "หนองแขม"
+       },
+       {
+        "code": "190313",
+        "level": "subdistrict",
+        "name": "หนองจิก"
+       },
+       {
+        "code": "190314",
+        "level": "subdistrict",
+        "name": "หนองจรเข้"
+       },
+       {
+        "code": "190315",
+        "level": "subdistrict",
+        "name": "หนองนาก"
+       },
+       {
+        "code": "190316",
+        "level": "subdistrict",
+        "name": "หนองปลาหมอ"
+       },
+       {
+        "code": "190317",
+        "level": "subdistrict",
+        "name": "หนองปลิง"
+       },
+       {
+        "code": "190318",
+        "level": "subdistrict",
+        "name": "หนองโรง"
+       }
+      ]
+     },
+     {
+      "code": "1904",
+      "level": "district",
+      "name": "วิหารแดง",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "190401",
+        "level": "subdistrict",
+        "name": "หนองหมู"
+       },
+       {
+        "code": "190402",
+        "level": "subdistrict",
+        "name": "บ้านลำ"
+       },
+       {
+        "code": "190403",
+        "level": "subdistrict",
+        "name": "คลองเรือ"
+       },
+       {
+        "code": "190404",
+        "level": "subdistrict",
+        "name": "วิหารแดง"
+       },
+       {
+        "code": "190405",
+        "level": "subdistrict",
+        "name": "หนองสรวง"
+       },
+       {
+        "code": "190406",
+        "level": "subdistrict",
+        "name": "เจริญธรรม"
+       }
+      ]
+     },
+     {
+      "code": "1905",
+      "level": "district",
+      "name": "หนองแซง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "190502",
+        "level": "subdistrict",
+        "name": "หนองควายโซ"
+       },
+       {
+        "code": "190503",
+        "level": "subdistrict",
+        "name": "หนองหัวโพ"
+       },
+       {
+        "code": "190504",
+        "level": "subdistrict",
+        "name": "หนองสีดา"
+       },
+       {
+        "code": "190505",
+        "level": "subdistrict",
+        "name": "หนองกบ"
+       },
+       {
+        "code": "190506",
+        "level": "subdistrict",
+        "name": "ไก่เส่า"
+       },
+       {
+        "code": "190507",
+        "level": "subdistrict",
+        "name": "โคกสะอาด"
+       },
+       {
+        "code": "190508",
+        "level": "subdistrict",
+        "name": "ม่วงหวาน"
+       },
+       {
+        "code": "190509",
+        "level": "subdistrict",
+        "name": "เขาดิน"
+       }
+      ]
+     },
+     {
+      "code": "1906",
+      "level": "district",
+      "name": "บ้านหมอ",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "190601",
+        "level": "subdistrict",
+        "name": "บ้านหมอ"
+       },
+       {
+        "code": "190602",
+        "level": "subdistrict",
+        "name": "บางโขมด"
+       },
+       {
+        "code": "190603",
+        "level": "subdistrict",
+        "name": "สร่างโศก"
+       },
+       {
+        "code": "190604",
+        "level": "subdistrict",
+        "name": "ตลาดน้อย"
+       },
+       {
+        "code": "190605",
+        "level": "subdistrict",
+        "name": "หรเทพ"
+       },
+       {
+        "code": "190606",
+        "level": "subdistrict",
+        "name": "โคกใหญ่"
+       },
+       {
+        "code": "190607",
+        "level": "subdistrict",
+        "name": "ไผ่ขวาง"
+       },
+       {
+        "code": "190608",
+        "level": "subdistrict",
+        "name": "บ้านครัว"
+       },
+       {
+        "code": "190609",
+        "level": "subdistrict",
+        "name": "หนองบัว"
+       }
+      ]
+     },
+     {
+      "code": "1907",
+      "level": "district",
+      "name": "ดอนพุด",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "190701",
+        "level": "subdistrict",
+        "name": "ดอนพุด"
+       },
+       {
+        "code": "190702",
+        "level": "subdistrict",
+        "name": "ไผ่หลิ่ว"
+       },
+       {
+        "code": "190703",
+        "level": "subdistrict",
+        "name": "บ้านหลวง"
+       },
+       {
+        "code": "190704",
+        "level": "subdistrict",
+        "name": "ดงตะงาว"
+       }
+      ]
+     },
+     {
+      "code": "1908",
+      "level": "district",
+      "name": "หนองโดน",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "190801",
+        "level": "subdistrict",
+        "name": "หนองโดน"
+       },
+       {
+        "code": "190802",
+        "level": "subdistrict",
+        "name": "บ้านกลับ"
+       },
+       {
+        "code": "190803",
+        "level": "subdistrict",
+        "name": "ดอนทอง"
+       },
+       {
+        "code": "190804",
+        "level": "subdistrict",
+        "name": "บ้านโปร่ง"
+       }
+      ]
+     },
+     {
+      "code": "1909",
+      "level": "district",
+      "name": "พระพุทธบาท",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "190901",
+        "level": "subdistrict",
+        "name": "พระพุทธบาท"
+       },
+       {
+        "code": "190902",
+        "level": "subdistrict",
+        "name": "ขุนโขลน"
+       },
+       {
+        "code": "190903",
+        "level": "subdistrict",
+        "name": "ธารเกษม"
+       },
+       {
+        "code": "190904",
+        "level": "subdistrict",
+        "name": "นายาว"
+       },
+       {
+        "code": "190905",
+        "level": "subdistrict",
+        "name": "พุคำจาน"
+       },
+       {
+        "code": "190906",
+        "level": "subdistrict",
+        "name": "เขาวง"
+       },
+       {
+        "code": "190907",
+        "level": "subdistrict",
+        "name": "ห้วยป่าหวาย"
+       },
+       {
+        "code": "190908",
+        "level": "subdistrict",
+        "name": "พุกร่าง"
+       },
+       {
+        "code": "190909",
+        "level": "subdistrict",
+        "name": "หนองแก"
+       }
+      ]
+     },
+     {
+      "code": "1910",
+      "level": "district",
+      "name": "เสาไห้",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "191001",
+        "level": "subdistrict",
+        "name": "เสาไห้"
+       },
+       {
+        "code": "191002",
+        "level": "subdistrict",
+        "name": "บ้านยาง"
+       },
+       {
+        "code": "191003",
+        "level": "subdistrict",
+        "name": "หัวปลวก"
+       },
+       {
+        "code": "191004",
+        "level": "subdistrict",
+        "name": "งิ้วงาม"
+       },
+       {
+        "code": "191005",
+        "level": "subdistrict",
+        "name": "ศาลารีไทย"
+       },
+       {
+        "code": "191006",
+        "level": "subdistrict",
+        "name": "ต้นตาล"
+       },
+       {
+        "code": "191007",
+        "level": "subdistrict",
+        "name": "ท่าช้าง"
+       },
+       {
+        "code": "191008",
+        "level": "subdistrict",
+        "name": "พระยาทด"
+       },
+       {
+        "code": "191009",
+        "level": "subdistrict",
+        "name": "ม่วงงาม"
+       },
+       {
+        "code": "191010",
+        "level": "subdistrict",
+        "name": "เริงราง"
+       },
+       {
+        "code": "191011",
+        "level": "subdistrict",
+        "name": "เมืองเก่า"
+       },
+       {
+        "code": "191012",
+        "level": "subdistrict",
+        "name": "สวนดอกไม้"
+       }
+      ]
+     },
+     {
+      "code": "1911",
+      "level": "district",
+      "name": "มวกเหล็ก",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "191101",
+        "level": "subdistrict",
+        "name": "มวกเหล็ก"
+       },
+       {
+        "code": "191102",
+        "level": "subdistrict",
+        "name": "มิตรภาพ"
+       },
+       {
+        "code": "191104",
+        "level": "subdistrict",
+        "name": "หนองย่างเสือ"
+       },
+       {
+        "code": "191105",
+        "level": "subdistrict",
+        "name": "ลำสมพุง"
+       },
+       {
+        "code": "191107",
+        "level": "subdistrict",
+        "name": "ลำพญากลาง"
+       },
+       {
+        "code": "191109",
+        "level": "subdistrict",
+        "name": "ซับสนุ่น"
+       }
+      ]
+     },
+     {
+      "code": "1912",
+      "level": "district",
+      "name": "วังม่วง",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "191201",
+        "level": "subdistrict",
+        "name": "แสลงพัน"
+       },
+       {
+        "code": "191202",
+        "level": "subdistrict",
+        "name": "คำพราน"
+       },
+       {
+        "code": "191203",
+        "level": "subdistrict",
+        "name": "วังม่วง"
+       }
+      ]
+     },
+     {
+      "code": "1913",
+      "level": "district",
+      "name": "เฉลิมพระเกียรติ",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "191301",
+        "level": "subdistrict",
+        "name": "เขาดินพัฒนา"
+       },
+       {
+        "code": "191302",
+        "level": "subdistrict",
+        "name": "บ้านแก้ง"
+       },
+       {
+        "code": "191303",
+        "level": "subdistrict",
+        "name": "ผึ้งรวง"
+       },
+       {
+        "code": "191304",
+        "level": "subdistrict",
+        "name": "พุแค"
+       },
+       {
+        "code": "191305",
+        "level": "subdistrict",
+        "name": "ห้วยบง"
+       },
+       {
+        "code": "191306",
+        "level": "subdistrict",
+        "name": "หน้าพระลาน"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "26",
+    "level": "province",
+    "name": "นครนายก",
+    "children": [
+     {
+      "code": "2601",
+      "level": "district",
+      "name": "เมืองนครนายก",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "260101",
+        "level": "subdistrict",
+        "name": "นครนายก"
+       },
+       {
+        "code": "260102",
+        "level": "subdistrict",
+        "name": "ท่าช้าง"
+       },
+       {
+        "code": "260103",
+        "level": "subdistrict",
+        "name": "บ้านใหญ่"
+       },
+       {
+        "code": "260104",
+        "level": "subdistrict",
+        "name": "วังกระโจม"
+       },
+       {
+        "code": "260105",
+        "level": "subdistrict",
+        "name": "ท่าทราย"
+       },
+       {
+        "code": "260106",
+        "level": "subdistrict",
+        "name": "ดอนยอ"
+       },
+       {
+        "code": "260107",
+        "level": "subdistrict",
+        "name": "ศรีจุฬา"
+       },
+       {
+        "code": "260108",
+        "level": "subdistrict",
+        "name": "ดงละคร"
+       },
+       {
+        "code": "260109",
+        "level": "subdistrict",
+        "name": "ศรีนาวา"
+       },
+       {
+        "code": "260110",
+        "level": "subdistrict",
+        "name": "สาริกา"
+       },
+       {
+        "code": "260111",
+        "level": "subdistrict",
+        "name": "หินตั้ง"
+       },
+       {
+        "code": "260112",
+        "level": "subdistrict",
+        "name": "เขาพระ"
+       },
+       {
+        "code": "260113",
+        "level": "subdistrict",
+        "name": "พรหมณี"
+       }
+      ]
+     },
+     {
+      "code": "2602",
+      "level": "district",
+      "name": "ปากพลี",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "260201",
+        "level": "subdistrict",
+        "name": "เกาะหวาย"
+       },
+       {
+        "code": "260202",
+        "level": "subdistrict",
+        "name": "เกาะโพธิ์"
+       },
+       {
+        "code": "260203",
+        "level": "subdistrict",
+        "name": "ปากพลี"
+       },
+       {
+        "code": "260204",
+        "level": "subdistrict",
+        "name": "โคกกรวด"
+       },
+       {
+        "code": "260205",
+        "level": "subdistrict",
+        "name": "ท่าเรือ"
+       },
+       {
+        "code": "260206",
+        "level": "subdistrict",
+        "name": "หนองแสง"
+       },
+       {
+        "code": "260207",
+        "level": "subdistrict",
+        "name": "นาหินลาด"
+       }
+      ]
+     },
+     {
+      "code": "2603",
+      "level": "district",
+      "name": "บ้านนา",
+      "inferredUnits": 0,
+      "children": [
+       {
+        "code": "260302",
+        "level": "subdistrict",
+        "name": "บ้านพร้าว"
+       },
+       {
+        "code": "260303",
+        "level": "subdistrict",
+        "name": "บ้านพริก"
+       },
+       {
+        "code": "260304",
+        "level": "subdistrict",
+        "name": "อาษา"
+       },
+       {
+        "code": "260305",
+        "level": "subdistrict",
+        "name": "ทองหลาง"
+       },
+       {
+        "code": "260306",
+        "level": "subdistrict",
+        "name": "บางอ้อ"
+       },
+       {
+        "code": "260307",
+        "level": "subdistrict",
+        "name": "พิกุลออก"
+       },
+       {
+        "code": "260308",
+        "level": "subdistrict",
+        "name": "ป่าขะ"
+       },
+       {
+        "code": "260309",
+        "level": "subdistrict",
+        "name": "เขาเพิ่ม"
+       },
+       {
+        "code": "260310",
+        "level": "subdistrict",
+        "name": "ศรีกะอาง"
+       }
+      ]
+     },
+     {
+      "code": "2604",
+      "level": "district",
+      "name": "องครักษ์",
+      "inferredUnits": 1,
+      "children": [
+       {
+        "code": "260401",
+        "level": "subdistrict",
+        "name": "พระอาจารย์"
+       },
+       {
+        "code": "260402",
+        "level": "subdistrict",
+        "name": "บึงศาล"
+       },
+       {
+        "code": "260403",
+        "level": "subdistrict",
+        "name": "ศีรษะกระบือ"
+       },
+       {
+        "code": "260404",
+        "level": "subdistrict",
+        "name": "โพธิ์แทน"
+       },
+       {
+        "code": "260405",
+        "level": "subdistrict",
+        "name": "บางสมบูรณ์"
+       },
+       {
+        "code": "260406",
+        "level": "subdistrict",
+        "name": "ทรายมูล"
+       },
+       {
+        "code": "260407",
+        "level": "subdistrict",
+        "name": "บางปลากด"
+       },
+       {
+        "code": "260408",
+        "level": "subdistrict",
+        "name": "บางลูกเสือ"
+       },
+       {
+        "code": "260409",
+        "level": "subdistrict",
+        "name": "องครักษ์"
+       },
+       {
+        "code": "260410",
+        "level": "subdistrict",
+        "name": "ชุมพล"
+       },
+       {
+        "code": "260411",
+        "level": "subdistrict",
+        "name": "คลองใหญ่"
        }
       ]
      }
@@ -405,47 +4605,16 @@
    }
   ]
  },
+ "verified": {
+  "dspm": {
+   "2569": [
+    "1402",
+    "1501",
+    "1903"
+   ]
+  }
+ },
  "datasets": [
-  {
-   "indicator": "coverage",
-   "year": 2567,
-   "level": "country",
-   "scope": "TH",
-   "kind": "level",
-   "file": "coverage_2567_country_TH.json",
-   "asOf": "2567-12-18T14:48",
-   "source": "api"
-  },
-  {
-   "indicator": "coverage",
-   "year": 2567,
-   "level": "region",
-   "scope": "4",
-   "kind": "level",
-   "file": "coverage_2567_region_4.json",
-   "asOf": "2567-12-18T14:48",
-   "source": "api"
-  },
-  {
-   "indicator": "coverage",
-   "year": 2568,
-   "level": "country",
-   "scope": "TH",
-   "kind": "level",
-   "file": "coverage_2568_country_TH.json",
-   "asOf": "2569-01-08T14:24",
-   "source": "api"
-  },
-  {
-   "indicator": "coverage",
-   "year": 2568,
-   "level": "region",
-   "scope": "4",
-   "kind": "level",
-   "file": "coverage_2568_region_4.json",
-   "asOf": "2569-01-08T14:24",
-   "source": "api"
-  },
   {
    "indicator": "coverage",
    "year": 2569,
@@ -470,6 +4639,36 @@
    "indicator": "coverage",
    "year": 2569,
    "level": "province",
+   "scope": "12",
+   "kind": "level",
+   "file": "coverage_2569_province_12.json",
+   "asOf": "2569-09-29T06:00",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2569,
+   "level": "province",
+   "scope": "13",
+   "kind": "level",
+   "file": "coverage_2569_province_13.json",
+   "asOf": "2569-09-29T06:00",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2569,
+   "level": "province",
+   "scope": "14",
+   "kind": "level",
+   "file": "coverage_2569_province_14.json",
+   "asOf": "2569-09-29T06:00",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2569,
+   "level": "province",
    "scope": "15",
    "kind": "level",
    "file": "coverage_2569_province_15.json",
@@ -477,83 +4676,43 @@
    "source": "api"
   },
   {
-   "indicator": "dspm",
-   "year": 2567,
-   "level": "country",
-   "scope": "TH",
-   "kind": "level",
-   "file": "dspm_2567_country_TH.json",
-   "asOf": "2567-11-27T10:18",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
-   "year": 2567,
-   "level": "region",
-   "scope": "4",
-   "kind": "level",
-   "file": "dspm_2567_region_4.json",
-   "asOf": "2567-11-27T10:18",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
-   "year": 2567,
+   "indicator": "coverage",
+   "year": 2569,
    "level": "province",
-   "scope": "15",
+   "scope": "16",
    "kind": "level",
-   "file": "dspm_2567_province_15.json",
-   "asOf": "2567-11-16T08:25",
+   "file": "coverage_2569_province_16.json",
+   "asOf": "2569-09-29T06:00",
    "source": "api"
   },
   {
-   "indicator": "dspm",
-   "year": 2567,
-   "level": "district",
-   "scope": "1501",
-   "kind": "level",
-   "file": "dspm_2567_district_1501.json",
-   "asOf": "2567-11-16T08:25",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
-   "year": 2568,
-   "level": "country",
-   "scope": "TH",
-   "kind": "level",
-   "file": "dspm_2568_country_TH.json",
-   "asOf": "2568-11-17T20:08",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
-   "year": 2568,
-   "level": "region",
-   "scope": "4",
-   "kind": "level",
-   "file": "dspm_2568_region_4.json",
-   "asOf": "2568-11-17T20:08",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
-   "year": 2568,
+   "indicator": "coverage",
+   "year": 2569,
    "level": "province",
-   "scope": "15",
+   "scope": "17",
    "kind": "level",
-   "file": "dspm_2568_province_15.json",
-   "asOf": "2568-11-16T08:21",
+   "file": "coverage_2569_province_17.json",
+   "asOf": "2569-09-29T06:00",
    "source": "api"
   },
   {
-   "indicator": "dspm",
-   "year": 2568,
-   "level": "district",
-   "scope": "1501",
+   "indicator": "coverage",
+   "year": 2569,
+   "level": "province",
+   "scope": "19",
    "kind": "level",
-   "file": "dspm_2568_district_1501.json",
-   "asOf": "2568-11-16T08:21",
+   "file": "coverage_2569_province_19.json",
+   "asOf": "2569-09-29T06:00",
+   "source": "api"
+  },
+  {
+   "indicator": "coverage",
+   "year": 2569,
+   "level": "province",
+   "scope": "26",
+   "kind": "level",
+   "file": "coverage_2569_province_26.json",
+   "asOf": "2569-09-29T06:00",
    "source": "api"
   },
   {
@@ -580,10 +4739,370 @@
    "indicator": "dspm",
    "year": 2569,
    "level": "province",
+   "scope": "12",
+   "kind": "level",
+   "file": "dspm_2569_province_12.json",
+   "asOf": "2569-09-29T16:33",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
+   "scope": "13",
+   "kind": "level",
+   "file": "dspm_2569_province_13.json",
+   "asOf": "2569-09-29T08:55",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
+   "scope": "14",
+   "kind": "level",
+   "file": "dspm_2569_province_14.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
    "scope": "15",
    "kind": "level",
    "file": "dspm_2569_province_15.json",
    "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
+   "scope": "16",
+   "kind": "level",
+   "file": "dspm_2569_province_16.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
+   "scope": "17",
+   "kind": "level",
+   "file": "dspm_2569_province_17.json",
+   "asOf": "2569-09-29T08:00",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
+   "scope": "19",
+   "kind": "level",
+   "file": "dspm_2569_province_19.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "province",
+   "scope": "26",
+   "kind": "level",
+   "file": "dspm_2569_province_26.json",
+   "asOf": "2569-09-29T07:28",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1201",
+   "kind": "level",
+   "file": "dspm_2569_district_1201.json",
+   "asOf": "2569-09-29T16:33",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1202",
+   "kind": "level",
+   "file": "dspm_2569_district_1202.json",
+   "asOf": "2569-09-29T16:33",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1203",
+   "kind": "level",
+   "file": "dspm_2569_district_1203.json",
+   "asOf": "2569-09-29T16:33",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1204",
+   "kind": "level",
+   "file": "dspm_2569_district_1204.json",
+   "asOf": "2569-09-29T16:33",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1205",
+   "kind": "level",
+   "file": "dspm_2569_district_1205.json",
+   "asOf": "2569-09-29T16:33",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1206",
+   "kind": "level",
+   "file": "dspm_2569_district_1206.json",
+   "asOf": "2569-09-29T16:33",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1301",
+   "kind": "level",
+   "file": "dspm_2569_district_1301.json",
+   "asOf": "2569-09-29T08:55",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1302",
+   "kind": "level",
+   "file": "dspm_2569_district_1302.json",
+   "asOf": "2569-09-29T08:55",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1303",
+   "kind": "level",
+   "file": "dspm_2569_district_1303.json",
+   "asOf": "2569-09-29T08:55",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1304",
+   "kind": "level",
+   "file": "dspm_2569_district_1304.json",
+   "asOf": "2569-09-29T08:55",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1305",
+   "kind": "level",
+   "file": "dspm_2569_district_1305.json",
+   "asOf": "2569-09-29T08:55",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1306",
+   "kind": "level",
+   "file": "dspm_2569_district_1306.json",
+   "asOf": "2569-09-29T08:55",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1307",
+   "kind": "level",
+   "file": "dspm_2569_district_1307.json",
+   "asOf": "2569-09-29T08:55",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1401",
+   "kind": "level",
+   "file": "dspm_2569_district_1401.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1402",
+   "kind": "level",
+   "file": "dspm_2569_district_1402.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1403",
+   "kind": "level",
+   "file": "dspm_2569_district_1403.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1404",
+   "kind": "level",
+   "file": "dspm_2569_district_1404.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1405",
+   "kind": "level",
+   "file": "dspm_2569_district_1405.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1406",
+   "kind": "level",
+   "file": "dspm_2569_district_1406.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1407",
+   "kind": "level",
+   "file": "dspm_2569_district_1407.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1408",
+   "kind": "level",
+   "file": "dspm_2569_district_1408.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1409",
+   "kind": "level",
+   "file": "dspm_2569_district_1409.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1410",
+   "kind": "level",
+   "file": "dspm_2569_district_1410.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1411",
+   "kind": "level",
+   "file": "dspm_2569_district_1411.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1412",
+   "kind": "level",
+   "file": "dspm_2569_district_1412.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1413",
+   "kind": "level",
+   "file": "dspm_2569_district_1413.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1414",
+   "kind": "level",
+   "file": "dspm_2569_district_1414.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1415",
+   "kind": "level",
+   "file": "dspm_2569_district_1415.json",
+   "asOf": "2569-09-27T18:32",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1416",
+   "kind": "level",
+   "file": "dspm_2569_district_1416.json",
+   "asOf": "2569-09-27T18:32",
    "source": "api"
   },
   {
@@ -598,51 +5117,11 @@
   },
   {
    "indicator": "dspm",
-   "year": 2567,
-   "level": "province",
-   "scope": "15",
-   "kind": "monthly",
-   "file": "dspm_2567_monthly_15.json",
-   "asOf": "2567-11-16T08:25",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
-   "year": 2567,
-   "level": "district",
-   "scope": "1501",
-   "kind": "monthly",
-   "file": "dspm_2567_monthly_1501.json",
-   "asOf": "2567-11-16T08:25",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
-   "year": 2568,
-   "level": "province",
-   "scope": "15",
-   "kind": "monthly",
-   "file": "dspm_2568_monthly_15.json",
-   "asOf": "2568-11-16T08:21",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
-   "year": 2568,
-   "level": "district",
-   "scope": "1501",
-   "kind": "monthly",
-   "file": "dspm_2568_monthly_1501.json",
-   "asOf": "2568-11-16T08:21",
-   "source": "api"
-  },
-  {
-   "indicator": "dspm",
    "year": 2569,
-   "level": "province",
-   "scope": "15",
-   "kind": "monthly",
-   "file": "dspm_2569_monthly_15.json",
+   "level": "district",
+   "scope": "1502",
+   "kind": "level",
+   "file": "dspm_2569_district_1502.json",
    "asOf": "2569-09-29T09:08",
    "source": "api"
   },
@@ -650,10 +5129,390 @@
    "indicator": "dspm",
    "year": 2569,
    "level": "district",
-   "scope": "1501",
-   "kind": "monthly",
-   "file": "dspm_2569_monthly_1501.json",
+   "scope": "1503",
+   "kind": "level",
+   "file": "dspm_2569_district_1503.json",
    "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1504",
+   "kind": "level",
+   "file": "dspm_2569_district_1504.json",
+   "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1505",
+   "kind": "level",
+   "file": "dspm_2569_district_1505.json",
+   "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1506",
+   "kind": "level",
+   "file": "dspm_2569_district_1506.json",
+   "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1507",
+   "kind": "level",
+   "file": "dspm_2569_district_1507.json",
+   "asOf": "2569-09-29T09:08",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1601",
+   "kind": "level",
+   "file": "dspm_2569_district_1601.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1602",
+   "kind": "level",
+   "file": "dspm_2569_district_1602.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1603",
+   "kind": "level",
+   "file": "dspm_2569_district_1603.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1604",
+   "kind": "level",
+   "file": "dspm_2569_district_1604.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1605",
+   "kind": "level",
+   "file": "dspm_2569_district_1605.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1606",
+   "kind": "level",
+   "file": "dspm_2569_district_1606.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1607",
+   "kind": "level",
+   "file": "dspm_2569_district_1607.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1608",
+   "kind": "level",
+   "file": "dspm_2569_district_1608.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1609",
+   "kind": "level",
+   "file": "dspm_2569_district_1609.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1610",
+   "kind": "level",
+   "file": "dspm_2569_district_1610.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1611",
+   "kind": "level",
+   "file": "dspm_2569_district_1611.json",
+   "asOf": "2569-09-27T21:09",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1701",
+   "kind": "level",
+   "file": "dspm_2569_district_1701.json",
+   "asOf": "2569-09-29T08:00",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1702",
+   "kind": "level",
+   "file": "dspm_2569_district_1702.json",
+   "asOf": "2569-09-29T08:00",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1703",
+   "kind": "level",
+   "file": "dspm_2569_district_1703.json",
+   "asOf": "2569-09-29T08:00",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1704",
+   "kind": "level",
+   "file": "dspm_2569_district_1704.json",
+   "asOf": "2569-09-29T08:00",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1705",
+   "kind": "level",
+   "file": "dspm_2569_district_1705.json",
+   "asOf": "2569-09-29T08:00",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1706",
+   "kind": "level",
+   "file": "dspm_2569_district_1706.json",
+   "asOf": "2569-09-29T08:00",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1901",
+   "kind": "level",
+   "file": "dspm_2569_district_1901.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1902",
+   "kind": "level",
+   "file": "dspm_2569_district_1902.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1903",
+   "kind": "level",
+   "file": "dspm_2569_district_1903.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1904",
+   "kind": "level",
+   "file": "dspm_2569_district_1904.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1905",
+   "kind": "level",
+   "file": "dspm_2569_district_1905.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1906",
+   "kind": "level",
+   "file": "dspm_2569_district_1906.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1907",
+   "kind": "level",
+   "file": "dspm_2569_district_1907.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1908",
+   "kind": "level",
+   "file": "dspm_2569_district_1908.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1909",
+   "kind": "level",
+   "file": "dspm_2569_district_1909.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1910",
+   "kind": "level",
+   "file": "dspm_2569_district_1910.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1911",
+   "kind": "level",
+   "file": "dspm_2569_district_1911.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1912",
+   "kind": "level",
+   "file": "dspm_2569_district_1912.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "1913",
+   "kind": "level",
+   "file": "dspm_2569_district_1913.json",
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "2601",
+   "kind": "level",
+   "file": "dspm_2569_district_2601.json",
+   "asOf": "2569-09-29T07:28",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "2602",
+   "kind": "level",
+   "file": "dspm_2569_district_2602.json",
+   "asOf": "2569-09-29T07:28",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "2603",
+   "kind": "level",
+   "file": "dspm_2569_district_2603.json",
+   "asOf": "2569-09-29T07:28",
+   "source": "api"
+  },
+  {
+   "indicator": "dspm",
+   "year": 2569,
+   "level": "district",
+   "scope": "2604",
+   "kind": "level",
+   "file": "dspm_2569_district_2604.json",
+   "asOf": "2569-09-29T07:28",
    "source": "api"
   }
  ]

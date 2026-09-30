@@ -18,6 +18,9 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "lookup" / "areas.json"
+UNITS = ROOT / "data" / "lookup" / "units.json"
+GIS_URL = "https://opendata-service.moph.go.th/gis/v1/getgis/hoscode/{hoscode}"
+GIS_BACKOFF = (5, 15, 45)
 SRC_MD = ROOT / "data" / "lookup" / "SOURCE.md"
 CACHE = ROOT / "data" / "raw_api" / "_lookup"
 
@@ -117,6 +120,85 @@ taken as `district.id // 100`; district code = `district.id` (4 digits); subdist
     return out
 
 
+# ------------------------------------------------------------------ unit registry (spec Phase 2 §4.3)
+def load_units() -> dict:
+    if UNITS.exists():
+        return json.loads(UNITS.read_text(encoding="utf-8"))
+    return {"schema": 1, "source": GIS_URL, "fetchedAt": None, "units": {}, "missing": {}}
+
+
+def _gis(hoscode: str):
+    """GeoJSON of one unit from the MOPH GIS registry -> dict | None (None = not in the registry).
+    Retries 3x (5/15/45 s) on network errors / 5xx; a 404 or an empty feature list means 'not found'."""
+    import time
+    last = None
+    for attempt in range(len(GIS_BACKOFF) + 1):
+        try:
+            r = requests.get(GIS_URL.format(hoscode=hoscode), timeout=60, verify=certifi.where())
+            if r.status_code == 404:
+                return None
+            if r.status_code == 200:
+                j = r.json()
+                feats = j.get("features") if isinstance(j, dict) else None
+                if not feats:
+                    return None
+                pr = feats[0].get("properties") or {}
+                sub = str(pr.get("subdistcode") or "").zfill(2)
+                dist = str(pr.get("distcode") or "").zfill(2)
+                prov = str(pr.get("provcode") or "").zfill(2)
+                if not (pr.get("provcode") and pr.get("distcode") and pr.get("subdistcode")):
+                    return None
+                return {"name": (pr.get("hosname") or "").strip(), "tambon": prov + dist + sub,
+                        "hostype": str(pr.get("hostype") or ""), "dep": str(pr.get("dep") or "")}
+            last = f"HTTP {r.status_code}"
+        except (requests.RequestException, ValueError) as e:
+            last = f"{type(e).__name__}: {e}"
+        if attempt < len(GIS_BACKOFF):
+            time.sleep(GIS_BACKOFF[attempt])
+    raise SystemExit(f"GIS registry failed for {hoscode}: {last}")
+
+
+def units(hospcodes: dict, refresh: bool = False, log=print) -> dict:
+    """Incrementally update data/lookup/units.json.
+    hospcodes: {hospcode: {"target": int, "areas": {areacode6: target}}} — every unit seen in the raw data (used to
+    record the fallback info of units the registry does not know). Codes already present are not fetched again
+    unless refresh=True. Returns the registry dict."""
+    from datetime import datetime, timezone
+    reg = load_units()
+    known = set(reg["units"]) | set(reg["missing"])
+    todo = sorted(h for h in hospcodes if refresh or h not in known)
+    if todo:
+        log(f"units: fetching {len(todo)} hospcode(s) from the MOPH GIS registry ...")
+    for i, h in enumerate(todo, 1):
+        info = _gis(h)
+        if info:
+            reg["units"][h] = info
+            reg["missing"].pop(h, None)
+        else:
+            reg["units"].pop(h, None)
+        if i % 50 == 0 or i == len(todo):
+            log(f"  [{i}/{len(todo)}]")
+    # fallback record for every unit not in the registry (refreshed from the current data every run)
+    for h, info in hospcodes.items():
+        if h in reg["units"]:
+            continue
+        areas = dict(sorted(info["areas"].items()))
+        top = sorted(areas.items(), key=lambda kv: (-kv[1], kv[0]))[0][0] if areas else None
+        reg["missing"][h] = {"maxTargetArea": top, "target": info["target"], "areas": areas}
+    reg["units"] = dict(sorted(reg["units"].items()))
+    reg["missing"] = dict(sorted(reg["missing"].items()))
+    if todo or not UNITS.exists():
+        reg["fetchedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    reg["source"] = GIS_URL
+    UNITS.write_text(json.dumps(reg, ensure_ascii=False, indent=1), encoding="utf-8")
+    log(f"units: {len(reg['units'])} in registry, {len(reg['missing'])} not found (fallback) -> {UNITS.relative_to(ROOT)}")
+    return reg
+
+
 if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "units":
+        print("run:  python3 scripts/kpi.py units   (needs the DSPM caches to list the hospcodes)")
+        sys.exit(2)
     a = build()
     print(len(a["provinces"]), len(a["districts"]), len(a["subdistricts"]))
