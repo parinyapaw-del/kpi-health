@@ -6055,5 +6055,107 @@
     "260409": 2
    }
   }
+ },
+ "overrides": {
+  "01005": {
+   "tambon": "120110",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "เมืองนนทบุรี, was 120101 (registry)"
+  },
+  "01068": {
+   "tambon": "120610",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "ปากเกร็ด, was 120607 (registry)"
+  },
+  "10760": {
+   "tambon": "120610",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "ปากเกร็ด, was 120601 (registry)"
+  },
+  "11168": {
+   "tambon": "120601",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "ปากเกร็ด, was 120604 (fallback)"
+  },
+  "11237": {
+   "tambon": "120401",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "บางบัวทอง, was 120402 (fallback)"
+  },
+  "13623": {
+   "tambon": "190902",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "พระพุทธบาท, was 190901 (fallback)"
+  },
+  "14809": {
+   "tambon": "130604",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "ลำลูกกา, was 130603 (fallback)"
+  },
+  "15240": {
+   "tambon": "120102",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "เมืองนนทบุรี, was 120105 (fallback)"
+  },
+  "21428": {
+   "tambon": "120103",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "เมืองนนทบุรี, was 120105 (fallback)"
+  },
+  "23218": {
+   "tambon": "120602",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "ปากเกร็ด, was 120601 (fallback)"
+  },
+  "23567": {
+   "tambon": "130601",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "ลำลูกกา, was 130606 (fallback)"
+  },
+  "23821": {
+   "tambon": "120105",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "เมืองนนทบุรี, was 120102 (fallback)"
+  },
+  "23933": {
+   "tambon": "120407",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "บางบัวทอง, was 120105 (fallback) in เมืองนนทบุรี"
+  },
+  "33160": {
+   "tambon": "130602",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "ลำลูกกา, was 131000 (fallback) in (pseudo district 1310)"
+  },
+  "41434": {
+   "tambon": "120110",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "เมืองนนทบุรี, was 120109 (fallback)"
+  },
+  "41435": {
+   "tambon": "120208",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "บางกรวย, was 120209 (fallback)"
+  },
+  "41438": {
+   "tambon": "120103",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "เมืองนนทบุรี, was 120104 (fallback)"
+  },
+  "41798": {
+   "tambon": "130202",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "คลองหลวง, was 130203 (fallback)"
+  },
+  "77776": {
+   "tambon": "160619",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "บ้านหมี่, was 160620 (fallback)"
+  },
+  "99842": {
+   "tambon": "260411",
+   "source": "HDC Excel ตำบล 2569 export 2569-09-30",
+   "note": "องครักษ์, was 260409 (fallback)"
+  }
  }
 }

@@ -55,7 +55,7 @@ git add -A && git commit -m "data: update" && git push
 
 ### เพิ่ม Excel HDC มาตรวจสอบ
 วางไฟล์ export ของ HDC ใน `data/excel_reference/<dspm|coverage>/<ปี>/` ชื่อไฟล์อิสระ — `verify` อ่านระดับจาก header A1 (`เขตสุขภาพ`/`จังหวัด`/`อำเภอ`/`ตำบล`) และหาพื้นที่จากชุดชื่อในคอลัมน์ A เอง ·
-**ใส่วันที่ export ใน `sites/angthong.json → excel.snapshots.<ปี>`** (เช่น `"2569": "2569-09-29"`) — ตัวเลขต้องตรง 100% (hard) เฉพาะเมื่อข้อมูล API ไม่ใหม่กว่าวันนั้น
+**ใส่วันที่ export ใน `sites/angthong.json → excel.snapshots.<ปี>`** (เช่น `"2569": "2569-09-29"`) — หรือวางไฟล์ใน โฟลเดอร์วันที่ `data/excel_reference/<dspm|coverage>/<ปี>/<YYYY-MM-DD>/` (เช่น `2569/2569-09-30/`) แล้ววันที่ของโฟลเดอร์จะเป็นวัน export ของไฟล์ในนั้นเอง (ชนะ `excel.snapshots`; ไฟล์ที่วางตรงใน `<ปี>/` ยังใช้ `excel.snapshots` เหมือนเดิม) — ตัวเลขต้องตรง 100% (hard) เฉพาะเมื่อข้อมูล API ไม่ใหม่กว่าวันนั้น
 ถ้าข้อมูล API ใหม่กว่า (ปีเปิดที่อัปเดตทุกวัน) ความต่างของตัวเลขจะเป็น warning ส่วนโครงสร้าง (ชุดแถว/ชื่อตำบล/ผลรวมข้ามระดับ) ยังเป็น hard เสมอ · อยาก verify ตัวเลขใหม่อีกครั้ง → export Excel ชุดใหม่แล้วแก้วันที่ ·
 อำเภอที่มีไฟล์รายตำบลตรง 100% จะถูกใส่ใน `index.json → verified` และป้ายบนเว็บเปลี่ยนเป็น "ตรวจกับ HDC แล้ว" ·
 อำเภอที่ควร export มาเพิ่ม (มีหน่วยนอกทะเบียนมาก): ดู spec §4.4
@@ -69,8 +69,8 @@ kpi-health/
 ├── functions/api/hit.js                # Pages Function นับผู้ใช้ (D1 binding `DB`)
 ├── sites/angthong.json                 # ชื่อ, โลโก้, home = เขต 4, drill 8 จังหวัด, ปี, เป้าหมาย, กฎสี
 ├── data/
-│   ├── excel_reference/{dspm,coverage}/<ปี>/*.xlsx   # oracle (ชื่อไฟล์อิสระ)
-│   ├── lookup/areas.json + units.json + SOURCE.md   # รหัส→ชื่อพื้นที่ · ที่ตั้งหน่วยบริการ (MOPH GIS)
+│   ├── excel_reference/{dspm,coverage}/<ปี>/[<YYYY-MM-DD>/]*.xlsx   # oracle (ชื่อไฟล์อิสระ · โฟลเดอร์วันที่ = วัน export)
+│   ├── lookup/areas.json + units.json + SOURCE.md   # รหัส→ชื่อพื้นที่ · ที่ตั้งหน่วยบริการ (MOPH GIS + `overrides` รายหน่วยจาก Excel HDC)
 │   ├── cache/dspm/<ปี>/{12,13,14,15,16,17,19,26,provinces}.json · coverage/<ปี>/all.json   # commit
 │   ├── logo-r4.jpg · logo.webp         # โลโก้ต้นฉบับ (เขต 4 · รพ.อ่างทอง)
 │   ├── prepared/angthong/              # JSON ประชากร 3 แท็บ ยังไม่ขึ้นเว็บ (§5, ไม่ commit)

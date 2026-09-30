@@ -44,6 +44,13 @@ Body: `{"tableName":"s_childdev_specialpp","year":"2569","province":"15","type":
     = ตามที่ตั้งหน่วย (กฎ Phase 1 "เป้ามากสุด" จะได้จำปาผิด)
 - หน่วยที่ไม่มีในทะเบียน (100/982 รหัส ปี 2569 ส่วนใหญ่คลินิกเอกชน/อปท.) ใช้ fallback = ตำบลที่หน่วยมีเป้ามากสุด → นับเป็น `inferredUnits` ของอำเภอ
   แสดงป้าย [INFERRED] บนเว็บ (ยืนยันแล้วเฉพาะเมืองอ่างทอง 2 หน่วย)
+- **`overrides`** (key ระดับบนของ `units.json`, ไม่บังคับ): `{"<hospcode>": {"tambon": "<areacode6>", "source": "...", "note": "..."}}`
+  = ที่ตั้งรายหน่วยที่ **ยืนยันจาก Excel HDC ระดับตำบล** → มีลำดับก่อนทะเบียน GIS และ fallback (`resolve_tambons` → `source: "override"`, ไม่นับเป็น inferred)
+  หน่วยที่ override ถูกแสดงใน `overriddenUnits` (รายรหัส) ของ `dspm_<ปี>_district_<อำเภอ>.json` · `kpi.py units` เขียนไฟล์ใหม่แต่คง `overrides` เดิมไว้เสมอ (`build_lookup._write_units`)
+- Excel oracle วางในโฟลเดอร์วันที่ได้: `data/excel_reference/<ind>/<ปี>/<YYYY-MM-DD>/*.xlsx` (วัน พ.ศ. เช่น `2569/2569-09-30/`) →
+  วันที่ของโฟลเดอร์ = `asOf` ของไฟล์ในนั้น (ชนะ `excel.snapshots[ปี]`) · ไฟล์ที่วางตรงใน `<ปี>/` ยังใช้ `excel.snapshots` เหมือนเดิม
+- ผลตรวจ 22 อำเภอ (Excel ตำบล 2569-09-30): 21 อำเภอตรง 100% ด้วย 20 overrides · เมืองนนทบุรี/ปากเกร็ด/บางบัวทอง ยังต่าง 1 แถว เพราะ HDC ไม่นับหน่วย
+  41609/41804/41833 เลย (ไฟล์อยู่ใน `unit miss/` นอก oracle) → รายละเอียด + ตัวแก้: [`UNIT_LOCATION_HDC_2569.md`](UNIT_LOCATION_HDC_2569.md), `scripts/unit_location_solver.py`
 - ทุกหน่วยของ 8 จังหวัดเขต 4 ตั้งอยู่ในจังหวัดเดียวกับที่ API ตอบ (parameter `province`) → ยอดจังหวัด = ผลรวมอำเภอเสมอ
 - รหัสผิดปกติที่ต้องรองรับ: hospcode `14O3F` (ตัวอักษร O) เก็บเป็น string · areacode อำเภอ `1310` (ปทุมธานี ไม่มีใน DOPA) → แถว pseudo
   "ไม่ระบุพื้นที่ (รหัส 1310)" ท้ายตารางจังหวัด นับในยอดรวมจังหวัด ไม่จัดอันดับ

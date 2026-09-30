@@ -1,4 +1,9 @@
-"""Reader for HDC Excel exports (oracle files in data/excel_reference/<site>/{dspm,coverage}/<year>/).
+"""Reader for HDC Excel exports (oracle files in data/excel_reference/{dspm,coverage}/<year>/).
+
+Two layouts (both are read):
+  <indicator>/<year>/*.xlsx               snapshot date = sites/<site>.json excel.snapshots[year] (one date per year)
+  <indicator>/<year>/<YYYY-MM-DD>/*.xlsx  the folder name (BE date) is the export date of its files and wins over
+                                          excel.snapshots -> read_workbook returns it as info["snapshot"]
 
 Output structure mirrors what the API aggregate produces:
   DSPM     value = {group: {key: number|None}}   (groups total,m9,m18,m30,m42,m60; keys as in indicators/dspm.py)
@@ -123,16 +128,26 @@ def _rows(ws, first_row, ncols):
     return out
 
 
+DATE_DIR = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _year_snapshot(path: Path):
+    """(year, snapshot|None) from <year>/f.xlsx or <year>/<YYYY-MM-DD>/f.xlsx (year = nearest 4-digit ancestor)."""
+    if DATE_DIR.match(path.parent.name):
+        return int(path.parent.parent.name), path.parent.name
+    return int(path.parent.name), None
+
+
 def read_workbook(path: Path, indicator: str) -> dict:
     path = Path(path)
     ws = openpyxl.load_workbook(path, data_only=True).active
     header = _norm(ws.cell(1, 1).value)
     if header not in LEVEL_BY_HEADER:
         raise XlsxLayoutError(f"{path}: unknown column-A header {header!r}")
-    year = int(path.parent.name)
+    year, snapshot = _year_snapshot(path)
     rows_raw = _rows(ws, 5 if indicator == "dspm" else 3, ws.max_column)
-    info = {"path": str(path), "year": year, "indicator": indicator, "header": header,
-            "level": LEVEL_BY_HEADER[header]}
+    info = {"path": str(path), "year": year, "snapshot": snapshot, "indicator": indicator,
+            "header": header, "level": LEVEL_BY_HEADER[header]}
     if indicator == "dspm":
         layout, has_gender = _dspm_layout(ws, path)
         info["has_gender"] = has_gender
@@ -167,12 +182,13 @@ def read_workbook(path: Path, indicator: str) -> dict:
 
 
 def discover(excel_dir: Path, indicator: str) -> list[dict]:
-    """Read every workbook of an indicator under excel_dir/<indicator>/<year>/*.xlsx."""
+    """Read every workbook of an indicator under excel_dir/<indicator>/<year>/[<YYYY-MM-DD>/]*.xlsx."""
     out = []
     base = Path(excel_dir) / indicator
     if not base.exists():
         return out
-    for f in sorted(base.glob("*/*.xlsx")):
+    files = list(base.glob("*/*.xlsx")) + [f for f in base.glob("*/*/*.xlsx") if DATE_DIR.match(f.parent.name)]
+    for f in sorted(files):
         if f.name.startswith("~$"):
             continue
         out.append(read_workbook(f, indicator))

@@ -11,6 +11,9 @@ subdistrict ("ตำบล") levels by where the reporting unit (hospcode) is LO
 to the Phase 1 rule (the areacode[:6] where the unit has its largest target, ties -> lowest code) and are counted as
 `inferredUnits` of the district.  Units whose rows carry areacodes of other districts are listed as `crossDistrict`
 (information only; every unit of the 8 provinces is located inside its API province, so province totals are exact).
+OVERRIDES: `overrides` in units.json ({hospcode: {"tambon": areacode6, "source", "note"}}) pin a unit to the tambon
+the HDC ตำบล Excel puts it in; they win over the GIS registry and the fallback (source "override", not inferred) and
+are listed as `overriddenUnits` of the district.
 """
 from __future__ import annotations
 
@@ -351,17 +354,22 @@ def unit_areas(cache) -> dict:
 
 
 def resolve_tambons(cache, registry: dict) -> dict:
-    """hospcode -> {"tambon": areacode6, "inferred": bool, "name": str}. Registry first (§4.3 rule 1-2), else the
-    Phase 1 fallback: areacode[:6] with the unit's largest target (ties -> lowest code)."""
+    """hospcode -> {"tambon": areacode6, "inferred": bool, "name": str, "source": "override"|"registry"|"fallback"}.
+    Override (HDC-confirmed) > registry (§4.3 rule 1-2) > Phase 1 fallback: areacode[:6] with the unit's largest
+    target (ties -> lowest code). Only the fallback is `inferred`."""
     units = (registry or {}).get("units", {})
+    overrides = (registry or {}).get("overrides", {})
     out = {}
     for h, u in unit_areas(cache).items():
         reg = units.get(h)
-        if reg:
-            out[h] = {"tambon": reg["tambon"], "inferred": False, "name": reg.get("name", "")}
+        if h in overrides:
+            out[h] = {"tambon": overrides[h]["tambon"], "inferred": False, "source": "override",
+                      "name": reg.get("name", "") if reg else ""}
+        elif reg:
+            out[h] = {"tambon": reg["tambon"], "inferred": False, "name": reg.get("name", ""), "source": "registry"}
         else:
             top = sorted(u["areas"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
-            out[h] = {"tambon": top, "inferred": True, "name": ""}
+            out[h] = {"tambon": top, "inferred": True, "name": "", "source": "fallback"}
     return out
 
 
@@ -394,6 +402,7 @@ def api_views(cache, ctx, registry=None) -> list[dict]:
         ssums = _sums(cache, lambda a6, h, m, d=d: tam[h]["tambon"] if tam[h]["tambon"][:4] == d else None)
         units_in = sorted(h for h, t in tam.items() if t["tambon"][:4] == d)
         inferred = [h for h in units_in if tam[h]["inferred"]]
+        overridden = [h for h in units_in if tam[h]["source"] == "override"]     # units_in is sorted
         cross = []
         for h in units_in:                                   # located in d, rows (also) elsewhere
             other = {k: v for k, v in by_unit_dist[h].items() if k != d}
@@ -407,7 +416,7 @@ def api_views(cache, ctx, registry=None) -> list[dict]:
         views.append({"level": "district", "scope": d, "fill": False,
                       "rows": [{"code": c, "values": _values(cache, s)} for c, s in sorted(ssums.items())],
                       "extra": {"inferredUnits": len(inferred), "inferredUnitCodes": inferred,
-                                "units": len(units_in), "crossDistrict": cross}})
+                                "overriddenUnits": overridden, "units": len(units_in), "crossDistrict": cross}})
     return views
 
 

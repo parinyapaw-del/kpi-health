@@ -245,7 +245,7 @@ def excel_datasets(plugin, ctx, workbooks, snapshots):
         else:
             xl_keys = list(w["columns"])
         out[key] = _mk_dataset(plugin, ctx, w["year"], level, scope, rows, total,
-                               (snapshots or {}).get(str(w["year"])), "excel",
+                               w.get("snapshot") or (snapshots or {}).get(str(w["year"])), "excel",
                                {"excel_path": w["path"], "xl_keys": xl_keys,
                                 "has_total_row": w["total"] is not None})
     return out
@@ -323,6 +323,7 @@ def dataset_json(site_id: str, plugin, ds: dict) -> dict:
            "asOf": ds["asOf"], "source": ds["source"]}
     if ds["level"] == "district":
         out["inferredUnits"] = ds.get("inferredUnits", 0)
+        out["overriddenUnits"] = ds.get("overriddenUnits", [])
         out["units"] = ds.get("units", 0)
         out["verified"] = bool(ds.get("verified", False))
         out["crossDistrict"] = [{"hospcode": c["hospcode"], "name": c["name"], "tambon": c["tambon"],

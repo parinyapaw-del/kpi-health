@@ -481,7 +481,7 @@
       "code": "1201",
       "level": "district",
       "name": "เมืองนนทบุรี",
-      "inferredUnits": 21,
+      "inferredUnits": 15,
       "children": [
        {
         "code": "120101",
@@ -539,7 +539,7 @@
       "code": "1202",
       "level": "district",
       "name": "บางกรวย",
-      "inferredUnits": 5,
+      "inferredUnits": 4,
       "children": [
        {
         "code": "120201",
@@ -630,7 +630,7 @@
       "code": "1204",
       "level": "district",
       "name": "บางบัวทอง",
-      "inferredUnits": 6,
+      "inferredUnits": 5,
       "children": [
        {
         "code": "120401",
@@ -721,7 +721,7 @@
       "code": "1206",
       "level": "district",
       "name": "ปากเกร็ด",
-      "inferredUnits": 8,
+      "inferredUnits": 6,
       "children": [
        {
         "code": "120601",
@@ -869,7 +869,7 @@
       "code": "1302",
       "level": "district",
       "name": "คลองหลวง",
-      "inferredUnits": 11,
+      "inferredUnits": 10,
       "children": [
        {
         "code": "130201",
@@ -1036,7 +1036,7 @@
       "code": "1306",
       "level": "district",
       "name": "ลำลูกกา",
-      "inferredUnits": 13,
+      "inferredUnits": 11,
       "children": [
        {
         "code": "130601",
@@ -1062,11 +1062,6 @@
         "code": "130605",
         "level": "subdistrict",
         "name": "บึงทองหลาง"
-       },
-       {
-        "code": "130606",
-        "level": "subdistrict",
-        "name": "ลำไทร"
        },
        {
         "code": "130607",
@@ -3157,7 +3152,7 @@
       "code": "1606",
       "level": "district",
       "name": "บ้านหมี่",
-      "inferredUnits": 1,
+      "inferredUnits": 0,
       "children": [
        {
         "code": "160601",
@@ -3250,9 +3245,9 @@
         "name": "มหาสอน"
        },
        {
-        "code": "160620",
+        "code": "160619",
         "level": "subdistrict",
-        "name": "เชียงงา"
+        "name": "บ้านหมี่"
        },
        {
         "code": "160621",
@@ -4146,7 +4141,7 @@
       "code": "1909",
       "level": "district",
       "name": "พระพุทธบาท",
-      "inferredUnits": 1,
+      "inferredUnits": 0,
       "children": [
        {
         "code": "190901",
@@ -4542,7 +4537,7 @@
       "code": "2604",
       "level": "district",
       "name": "องครักษ์",
-      "inferredUnits": 1,
+      "inferredUnits": 0,
       "children": [
        {
         "code": "260401",
@@ -4608,9 +4603,27 @@
  "verified": {
   "dspm": {
    "2569": [
+    "1202",
+    "1203",
+    "1301",
+    "1302",
+    "1303",
+    "1306",
+    "1307",
     "1402",
+    "1406",
+    "1412",
     "1501",
-    "1903"
+    "1601",
+    "1604",
+    "1606",
+    "1701",
+    "1901",
+    "1903",
+    "1904",
+    "1907",
+    "1909",
+    "2604"
    ]
   }
  },

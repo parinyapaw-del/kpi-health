@@ -122,6 +122,7 @@ taken as `district.id // 100`; district code = `district.id` (4 digits); subdist
 
 # ------------------------------------------------------------------ unit registry (spec Phase 2 §4.3)
 def load_units() -> dict:
+    """Whole units.json (units, missing and the optional hand-kept `overrides` — every key is returned)."""
     if UNITS.exists():
         return json.loads(UNITS.read_text(encoding="utf-8"))
     return {"schema": 1, "source": GIS_URL, "fetchedAt": None, "units": {}, "missing": {}}
@@ -158,6 +159,17 @@ def _gis(hoscode: str):
     raise SystemExit(f"GIS registry failed for {hoscode}: {last}")
 
 
+def _write_units(reg: dict, path: Path | None = None) -> None:
+    """Write the registry. `overrides` (hand-kept per-unit locations, dspm.resolve_tambons) is never produced by the
+    fetcher, so the value currently ON DISK is kept as it is (also if reg was loaded before it was edited)."""
+    path = path or UNITS
+    if path.exists():
+        keep = json.loads(path.read_text(encoding="utf-8")).get("overrides")
+        if keep is not None:
+            reg["overrides"] = keep
+    path.write_text(json.dumps(reg, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def units(hospcodes: dict, refresh: bool = False, log=print) -> dict:
     """Incrementally update data/lookup/units.json.
     hospcodes: {hospcode: {"target": int, "areas": {areacode6: target}}} — every unit seen in the raw data (used to
@@ -190,7 +202,7 @@ def units(hospcodes: dict, refresh: bool = False, log=print) -> dict:
     if todo or not UNITS.exists():
         reg["fetchedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     reg["source"] = GIS_URL
-    UNITS.write_text(json.dumps(reg, ensure_ascii=False, indent=1), encoding="utf-8")
+    _write_units(reg)
     log(f"units: {len(reg['units'])} in registry, {len(reg['missing'])} not found (fallback) -> {UNITS.relative_to(ROOT)}")
     return reg
 
