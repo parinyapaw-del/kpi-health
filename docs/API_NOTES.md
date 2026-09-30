@@ -47,16 +47,16 @@ Body: `{"tableName":"s_childdev_specialpp","year":"2569","province":"15","type":
 - **`overrides`** (key ระดับบนของ `units.json`, ไม่บังคับ): `{"<hospcode>": {"tambon": "<areacode6>", "source": "...", "note": "..."}}`
   = ที่ตั้งรายหน่วยที่ **ยืนยันจาก Excel HDC ระดับตำบล** → มีลำดับก่อนทะเบียน GIS และ fallback (`resolve_tambons` → `source: "override"`, ไม่นับเป็น inferred)
   หน่วยที่ override ถูกแสดงใน `overriddenUnits` (รายรหัส) ของ `dspm_<ปี>_district_<อำเภอ>.json` · `kpi.py units` เขียนไฟล์ใหม่แต่คง `overrides` เดิมไว้เสมอ (`build_lookup._write_units`)
-- Excel oracle วางในโฟลเดอร์วันที่ได้: `data/excel_reference/<ind>/<ปี>/<YYYY-MM-DD>/*.xlsx` (วัน พ.ศ. เช่น `2569/2569-09-30/`) →
-  วันที่ของโฟลเดอร์ = `asOf` ของไฟล์ในนั้น (ชนะ `excel.snapshots[ปี]`) · ไฟล์ที่วางตรงใน `<ปี>/` ยังใช้ `excel.snapshots` เหมือนเดิม
+- Excel oracle วางได้**เฉพาะ**ในโฟลเดอร์วันที่: `data/excel_reference/<ind>/<ปี>/<YYYY-MM-DD>/*.xlsx` (วัน พ.ศ. เช่น `2569/2569-09-30/`) →
+  วันที่ของโฟลเดอร์ = `asOf` ของไฟล์ในนั้น · นี่คือ layout เดียว — ไฟล์ที่วางตรงใน `<ปี>/` ทำให้ `build`/`verify` หยุดพร้อม error
 - ผลตรวจ 22 อำเภอ (Excel ตำบล 2569-09-30): 21 อำเภอตรง 100% ด้วย 20 overrides · เมืองนนทบุรี/ปากเกร็ด/บางบัวทอง ยังต่าง 1 แถว เพราะ HDC ไม่นับหน่วย
-  41609/41804/41833 เลย (ไฟล์อยู่ใน `unit miss/` นอก oracle) → รายละเอียด + ตัวแก้: [`UNIT_LOCATION_HDC_2569.md`](UNIT_LOCATION_HDC_2569.md), `scripts/unit_location_solver.py`
+  41609/41804/41833 เลย (ไฟล์อยู่ใน `data/excel_reference/_unresolved/dspm_2569_2569-09-30/` นอก oracle) → รายละเอียด + ตัวแก้: [`UNIT_LOCATION_HDC_2569.md`](UNIT_LOCATION_HDC_2569.md), `scripts/unit_location_solver.py`
 - ทุกหน่วยของ 8 จังหวัดเขต 4 ตั้งอยู่ในจังหวัดเดียวกับที่ API ตอบ (parameter `province`) → ยอดจังหวัด = ผลรวมอำเภอเสมอ
 - รหัสผิดปกติที่ต้องรองรับ: hospcode `14O3F` (ตัวอักษร O) เก็บเป็น string · areacode อำเภอ `1310` (ปทุมธานี ไม่มีใน DOPA) → แถว pseudo
   "ไม่ระบุพื้นที่ (รหัส 1310)" ท้ายตารางจังหวัด นับในยอดรวมจังหวัด ไม่จัดอันดับ
 
 ## 3) DSPM ทุกจังหวัด (ทดสอบ 2026-09-29) — ⚠️ ไม่ตรงกับ Excel HDC ทุกจังหวัด
-- ดึงด้วย `python3 scripts/fetch_all_dspm.py` (resume ได้, ข้ามจังหวัดที่มี cache แล้ว) · **ห้ามยิงขนาน** (`--workers` > 1 → HTTP 429) · 76 จังหวัด × 3 ปี ≈ 3.3 ชม.
+- ดึงด้วย `python3 scripts/kpi.py fetch --national --year <ปี> --no-auto-year` (resume ได้: จังหวัดที่มี cache schema 2 แล้วจะถูกข้ามเว้นแต่ใส่ `--refresh`) · **ห้ามยิงขนาน** (ยิงพร้อมกันหลาย process → HTTP 429; `fetch_provinces` ดึงทีละจังหวัดอยู่แล้ว) · 76 จังหวัด × 3 ปี ≈ 3.3 ชม.
 - cache ทุกจังหวัดเก็บในเครื่องเท่านั้น (`.gitignore` ยกเว้น `15.json`) · raw ≈ 2.7 GB ใน `data/raw_api/`
 - กรุงเทพฯ (`10`) API ได้ 0 แถวทุกปี — Excel ประเทศ เขต 13 ก็เป็น 0 → สอดคล้องกัน
 - เทียบกับ Excel: อ่างทอง + 4–5 จังหวัดเขต 4 ตรง 100% แต่ นนทบุรี/ปทุมธานี/สระบุรี และ 11/12 เขต ต่าง 0.1–3% **ทั้งสองทิศ แม้ปีปิดแล้ว (2567)**

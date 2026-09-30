@@ -52,11 +52,6 @@
   },
   "excel": {
     "dir": "data/excel_reference",
-    "sourceLabel": "HDC export",
-    "snapshots": {
-      "2567": "2569-09-29",
-      "2568": "2569-09-29",
-      "2569": "2569-09-29"
-    }
+    "sourceLabel": "HDC export"
   }
 }

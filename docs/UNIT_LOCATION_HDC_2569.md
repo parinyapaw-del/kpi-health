@@ -4,7 +4,7 @@
 pipeline จึงเพิ่ม `overrides` รายหน่วยใน `data/lookup/units.json` (20 หน่วย: 3 หน่วยที่ GIS ผิด + 17 หน่วยที่ fallback "เป้ามากสุด" ผิด)
 → **21 อำเภอของปี 2569 verify ตรง 100%** (19 ใหม่ + ท่าเรือ + หนองแค; เมืองอ่างทองใช้ไฟล์ export 2569-09-30 แทนไฟล์ 09-29)
 → **3 อำเภอยังไม่ตรง 1 แถวต่ออำเภอ** เพราะ HDC **ไม่นับหน่วย** 41609 (เมืองนนทบุรี), 41804 (ปากเกร็ด), 41833 (บางบัวทอง) ที่ไหนเลยใน 22 ไฟล์ —
-ไฟล์ Excel 3 อำเภอนี้เก็บไว้ที่ `unit miss/` (ไม่ใส่ในโฟลเดอร์ oracle, spec §4.3 ข้อ 4: ไม่เลือกกฎเอง) · รันซ้ำ: `python3 scripts/unit_location_solver.py`
+ไฟล์ Excel 3 อำเภอนี้เก็บไว้ที่ `data/excel_reference/_unresolved/dspm_2569_2569-09-30/` (ไม่ใส่ในโฟลเดอร์ oracle `<ปี>/<YYYY-MM-DD>/`, verify ไม่อ่าน, spec §4.3 ข้อ 4: ไม่เลือกกฎเอง) · รันซ้ำ: `python3 scripts/unit_location_solver.py`
 
 ---
 รันซ้ำได้ด้วย `python3 solver.py` (ใช้เวลาประมาณ 18 วินาที, อ่าน repo อย่างเดียว, ไม่ใช้ network, ใช้ cache ที่ commit ไว้ + `units.json`)

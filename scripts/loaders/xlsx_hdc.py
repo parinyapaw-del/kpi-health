@@ -1,9 +1,9 @@
-"""Reader for HDC Excel exports (oracle files in data/excel_reference/{dspm,coverage}/<year>/).
+"""Reader for HDC Excel exports (oracle files in data/excel_reference/{dspm,coverage}/<year>/<YYYY-MM-DD>/).
 
-Two layouts (both are read):
-  <indicator>/<year>/*.xlsx               snapshot date = sites/<site>.json excel.snapshots[year] (one date per year)
-  <indicator>/<year>/<YYYY-MM-DD>/*.xlsx  the folder name (BE date) is the export date of its files and wins over
-                                          excel.snapshots -> read_workbook returns it as info["snapshot"]
+One layout only:
+  <indicator>/<year>/<YYYY-MM-DD>/*.xlsx  the folder name (BE date of the HDC export) is the snapshot date of its
+                                          files -> read_workbook returns it as info["snapshot"].
+  A workbook placed directly in <indicator>/<year>/ is an error (XlsxLayoutError: put it in a dated folder).
 
 Output structure mirrors what the API aggregate produces:
   DSPM     value = {group: {key: number|None}}   (groups total,m9,m18,m30,m42,m60; keys as in indicators/dspm.py)
@@ -107,8 +107,7 @@ def _dspm_layout(ws, path):
             col = s + off
             head = "".join(_norm(ws.cell(r, col + 1).value) for r in (2, 3, 4))
             need = _DSPM_HEADER[k]
-            ok = need in head and not (k == "pct_normal" and "ครั้งแรก" in head) \
-                and not (k == "pct_screened" and False)
+            ok = need in head and not (k == "pct_normal" and "ครั้งแรก" in head)
             if k == "normal_after" and "ร้อยละ" in head:
                 ok = False
             if not ok:
@@ -118,7 +117,7 @@ def _dspm_layout(ws, path):
     return layout, has_gender
 
 
-def _rows(ws, first_row, ncols):
+def _rows(ws, first_row):
     out = []
     for r in range(first_row, ws.max_row + 1):
         vals = [c.value for c in ws[r]]
@@ -132,10 +131,11 @@ DATE_DIR = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def _year_snapshot(path: Path):
-    """(year, snapshot|None) from <year>/f.xlsx or <year>/<YYYY-MM-DD>/f.xlsx (year = nearest 4-digit ancestor)."""
-    if DATE_DIR.match(path.parent.name):
-        return int(path.parent.parent.name), path.parent.name
-    return int(path.parent.name), None
+    """(year, snapshot) from <year>/<YYYY-MM-DD>/f.xlsx (snapshot = the dated folder name)."""
+    if not DATE_DIR.match(path.parent.name):
+        raise XlsxLayoutError(f"{path}: HDC workbooks must sit in a dated folder <year>/<YYYY-MM-DD>/ "
+                              f"(BE date of the HDC export)")
+    return int(path.parent.parent.name), path.parent.name
 
 
 def read_workbook(path: Path, indicator: str) -> dict:
@@ -145,7 +145,7 @@ def read_workbook(path: Path, indicator: str) -> dict:
     if header not in LEVEL_BY_HEADER:
         raise XlsxLayoutError(f"{path}: unknown column-A header {header!r}")
     year, snapshot = _year_snapshot(path)
-    rows_raw = _rows(ws, 5 if indicator == "dspm" else 3, ws.max_column)
+    rows_raw = _rows(ws, 5 if indicator == "dspm" else 3)
     info = {"path": str(path), "year": year, "snapshot": snapshot, "indicator": indicator,
             "header": header, "level": LEVEL_BY_HEADER[header]}
     if indicator == "dspm":
@@ -182,12 +182,17 @@ def read_workbook(path: Path, indicator: str) -> dict:
 
 
 def discover(excel_dir: Path, indicator: str) -> list[dict]:
-    """Read every workbook of an indicator under excel_dir/<indicator>/<year>/[<YYYY-MM-DD>/]*.xlsx."""
+    """Read every workbook of an indicator under excel_dir/<indicator>/<year>/<YYYY-MM-DD>/*.xlsx.
+    A workbook directly in <year>/ raises XlsxLayoutError (it has no snapshot date)."""
     out = []
     base = Path(excel_dir) / indicator
     if not base.exists():
         return out
-    files = list(base.glob("*/*.xlsx")) + [f for f in base.glob("*/*/*.xlsx") if DATE_DIR.match(f.parent.name)]
+    loose = sorted(f for f in base.glob("*/*.xlsx") if not f.name.startswith("~$"))
+    if loose:
+        raise XlsxLayoutError(f"{len(loose)} HDC workbook(s) directly in <year>/, e.g. {loose[0]} - move them into "
+                              f"{loose[0].parent}/<YYYY-MM-DD>/ (BE date of the HDC export)")
+    files = [f for f in base.glob("*/*/*.xlsx") if DATE_DIR.match(f.parent.name)]
     for f in sorted(files):
         if f.name.startswith("~$"):
             continue

@@ -21,7 +21,7 @@ import json
 from pathlib import Path
 
 from ..loaders import moph_api
-from .common import PCT_TOL, add, close, fmt_asof, pct, ssum
+from .common import add, close, fmt_asof, pct, ssum
 
 ID = "dspm"
 TABLE = "s_childdev_specialpp"
@@ -42,7 +42,6 @@ RAW = {
     "normal_female": "1b260_f", "normal_male": "1b260_m",
 }
 COUNT_KEYS = list(RAW)                       # summable
-DERIVED_COUNT = ["suspect_total", "normal_total"]
 PCT_KEYS = ["pct_screened", "pct_normal_first", "pct_suspect", "pct_followed", "pct_normal"]
 
 # display order (spec §3.2 order) + Thai labels taken from the HDC Excel headers
@@ -407,16 +406,15 @@ def api_views(cache, ctx, registry=None) -> list[dict]:
         for h in units_in:                                   # located in d, rows (also) elsewhere
             other = {k: v for k, v in by_unit_dist[h].items() if k != d}
             if other:
-                cross.append({"hospcode": h, "name": tam[h]["name"], "tambon": tam[h]["tambon"],
-                              "locatedIn": d, "rowsIn": dict(sorted(by_unit_dist[h].items()))})
+                cross.append({"hospcode": h, "name": tam[h]["name"], "tambon": tam[h]["tambon"], "locatedIn": d})
         for h, t in tam.items():                             # rows in d, located elsewhere
             if t["tambon"][:4] != d and d in by_unit_dist[h]:
                 cross.append({"hospcode": h, "name": t["name"], "tambon": t["tambon"],
-                              "locatedIn": t["tambon"][:4], "rowsIn": dict(sorted(by_unit_dist[h].items()))})
+                              "locatedIn": t["tambon"][:4]})
         views.append({"level": "district", "scope": d, "fill": False,
                       "rows": [{"code": c, "values": _values(cache, s)} for c, s in sorted(ssums.items())],
-                      "extra": {"inferredUnits": len(inferred), "inferredUnitCodes": inferred,
-                                "overriddenUnits": overridden, "units": len(units_in), "crossDistrict": cross}})
+                      "extra": {"inferredUnits": len(inferred), "overriddenUnits": overridden,
+                                "units": len(units_in), "crossDistrict": cross}})
     return views
 
 

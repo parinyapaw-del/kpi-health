@@ -40,10 +40,10 @@ def _years(site, arg):
     return sorted(ys)
 
 
-def _ensure_lookup(refresh=False):
-    if refresh or not (ROOT / "data" / "lookup" / "areas.json").exists():
+def _ensure_lookup():
+    if not (ROOT / "data" / "lookup" / "areas.json").exists():
         print("lookup: building data/lookup/areas.json ...")
-        build_lookup.build(refresh=refresh)
+        build_lookup.build()
 
 
 # ------------------------------------------------------------------ auto-year (spec §7.3)

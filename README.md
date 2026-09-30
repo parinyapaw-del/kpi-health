@@ -54,9 +54,7 @@ git add -A && git commit -m "data: update" && git push
 `sites/angthong.json` → `years`, `currentYear`, `targets.<indicator>.<ปี>.value` (ไม่มีค่า = "ยังไม่กำหนด" สีกลาง ไม่มีเส้นเป้า)
 
 ### เพิ่ม Excel HDC มาตรวจสอบ
-วางไฟล์ export ของ HDC ใน `data/excel_reference/<dspm|coverage>/<ปี>/` ชื่อไฟล์อิสระ — `verify` อ่านระดับจาก header A1 (`เขตสุขภาพ`/`จังหวัด`/`อำเภอ`/`ตำบล`) และหาพื้นที่จากชุดชื่อในคอลัมน์ A เอง ·
-**ใส่วันที่ export ใน `sites/angthong.json → excel.snapshots.<ปี>`** (เช่น `"2569": "2569-09-29"`) — หรือวางไฟล์ใน โฟลเดอร์วันที่ `data/excel_reference/<dspm|coverage>/<ปี>/<YYYY-MM-DD>/` (เช่น `2569/2569-09-30/`) แล้ววันที่ของโฟลเดอร์จะเป็นวัน export ของไฟล์ในนั้นเอง (ชนะ `excel.snapshots`; ไฟล์ที่วางตรงใน `<ปี>/` ยังใช้ `excel.snapshots` เหมือนเดิม) — ตัวเลขต้องตรง 100% (hard) เฉพาะเมื่อข้อมูล API ไม่ใหม่กว่าวันนั้น
-ถ้าข้อมูล API ใหม่กว่า (ปีเปิดที่อัปเดตทุกวัน) ความต่างของตัวเลขจะเป็น warning ส่วนโครงสร้าง (ชุดแถว/ชื่อตำบล/ผลรวมข้ามระดับ) ยังเป็น hard เสมอ · อยาก verify ตัวเลขใหม่อีกครั้ง → export Excel ชุดใหม่แล้วแก้วันที่ ·
+วางไฟล์ Excel ที่ export จาก HDC ไว้ที่ `data/excel_reference/<dspm|coverage>/<ปี>/<YYYY-MM-DD>/` เท่านั้น — ชื่อโฟลเดอร์คือวันที่ export (ปี พ.ศ. เช่น `2569/2569-09-30/`) และถือเป็น asOf ของไฟล์ชุดนั้น · ชื่อไฟล์อิสระ (`verify` อ่านระดับจาก header A1 `เขตสุขภาพ`/`จังหวัด`/`อำเภอ`/`ตำบล` และหาพื้นที่จากชื่อแถว) · ไฟล์ที่วางใน `<ปี>/` ตรง ๆ จะทำให้ `build`/`verify` หยุดพร้อม error · ถ้าข้อมูล API ใหม่กว่าวันที่ของโฟลเดอร์ ตัวเลขที่ต่างเป็น warning (โครงสร้างยัง hard: ชุดแถว/ชื่อตำบล/ผลรวมข้ามระดับ) — อยาก verify แบบตรง 100% ให้ export ชุดใหม่ลงโฟลเดอร์วันที่ใหม่ ·
 อำเภอที่มีไฟล์รายตำบลตรง 100% จะถูกใส่ใน `index.json → verified` และป้ายบนเว็บเปลี่ยนเป็น "ตรวจกับ HDC แล้ว" ·
 อำเภอที่ควร export มาเพิ่ม (มีหน่วยนอกทะเบียนมาก): ดู spec §4.4
 
@@ -64,14 +62,16 @@ git add -A && git commit -m "data: update" && git push
 
 ```
 kpi-health/
-├── README.md · web_spec_phase2.md · web_spec.md · docs/API_NOTES.md
+├── README.md · web_spec_phase2.md · web_spec.md
+├── docs/                               # API_NOTES.md · UNIT_LOCATION_HDC_2569.md · units_missing_2569.xlsx (100 หน่วย fallback รายอำเภอ)
 ├── .github/workflows/update.yml        # อัปเดตอัตโนมัติ (§1)
 ├── functions/api/hit.js                # Pages Function นับผู้ใช้ (D1 binding `DB`)
 ├── sites/angthong.json                 # ชื่อ, โลโก้, home = เขต 4, drill 8 จังหวัด, ปี, เป้าหมาย, กฎสี
 ├── data/
-│   ├── excel_reference/{dspm,coverage}/<ปี>/[<YYYY-MM-DD>/]*.xlsx   # oracle (ชื่อไฟล์อิสระ · โฟลเดอร์วันที่ = วัน export)
+│   ├── excel_reference/{dspm,coverage}/<ปี>/<YYYY-MM-DD>/*.xlsx   # oracle (ชื่อไฟล์อิสระ · โฟลเดอร์วันที่ = วัน export)
+│   ├── excel_reference/_unresolved/    # Excel ที่ยังไม่ตรง API (นนทบุรี 3 อำเภอ) — verify ไม่อ่าน, ใช้กับ unit_location_solver.py
 │   ├── lookup/areas.json + units.json + SOURCE.md   # รหัส→ชื่อพื้นที่ · ที่ตั้งหน่วยบริการ (MOPH GIS + `overrides` รายหน่วยจาก Excel HDC)
-│   ├── cache/dspm/<ปี>/{12,13,14,15,16,17,19,26,provinces}.json · coverage/<ปี>/all.json   # commit
+│   ├── cache/dspm/<ปี>/{12,13,14,15,16,17,19,26,provinces}.json · coverage/<ปี>/all.json   # commit (ปี 2567–2568 มีเฉพาะ provinces.json + coverage)
 │   ├── logo-r4.jpg · logo.webp         # โลโก้ต้นฉบับ (เขต 4 · รพ.อ่างทอง)
 │   └── raw_api/                        # response ดิบ (.gitignore)
 ├── scripts/

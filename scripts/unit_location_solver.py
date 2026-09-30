@@ -1,7 +1,7 @@
 """Exact whole-unit location solver — HDC ตำบล Excel 2569 (export 2569-09-30) vs API per-unit vectors.
 
 Read-only on the repo, no network: committed cache data/cache/dspm/2569/<prov>.json + data/lookup/units.json.
-Run: python3 scripts/unit_location_solver.py [xlsx-dir ...]  (default: data/excel_reference/dspm/2569/2569-09-30 + "unit miss/")
+Run: python3 scripts/unit_location_solver.py [xlsx-dir ...]  (default: data/excel_reference/dspm/2569/2569-09-30 + data/excel_reference/_unresolved/dspm_2569_2569-09-30)
   -> prints everything; writes overrides_proposal.json + solver_result.json to data/raw_api/unit_solver/ (gitignored).
 Local tool only (needs numpy, not in requirements.txt; the Actions bot never runs it).
 
@@ -24,7 +24,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 S = os.path.join(REPO, "data", "raw_api", "unit_solver")
 os.makedirs(S, exist_ok=True)
 os.chdir(REPO); sys.path.insert(0, REPO)
-XLSX_DIRS = sys.argv[1:] or [d for d in ("data/excel_reference/dspm/2569/2569-09-30", "unit miss") if os.path.isdir(d)]
+XLSX_DIRS = sys.argv[1:] or [d for d in ("data/excel_reference/dspm/2569/2569-09-30", "data/excel_reference/_unresolved/dspm_2569_2569-09-30") if os.path.isdir(d)]
 from scripts.indicators import dspm
 from scripts import build_lookup, build_site as B
 from scripts.loaders import xlsx_hdc

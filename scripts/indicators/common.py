@@ -3,9 +3,6 @@ from __future__ import annotations
 
 PCT_TOL = 0.06  # percent-field tolerance (Excel rounds to 2 decimals)
 
-THAI_MONTHS_SHORT = {1: "ม.ค.", 2: "ก.พ.", 3: "มี.ค.", 4: "เม.ย.", 5: "พ.ค.", 6: "มิ.ย.",
-                     7: "ก.ค.", 8: "ส.ค.", 9: "ก.ย.", 10: "ต.ค.", 11: "พ.ย.", 12: "ธ.ค."}
-
 
 def pct(num, den):
     """100*num/den rounded to 2 decimals; None when either side missing or den == 0."""

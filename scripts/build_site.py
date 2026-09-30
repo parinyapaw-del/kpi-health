@@ -1,8 +1,8 @@
 """Build the web data layer  site/data/<site>/  from the aggregate cache (API) + HDC Excel (oracle).
 
 `build_datasets()` is shared with verify.py: it returns every dataset the API cache can produce (`api`), every
-dataset read from Excel (`excel`), and the `published` selection per the source matrix (all levels = api since
-2026-09-30, Excel is the oracle only).
+dataset read from Excel (`excel`, the oracle only - never published) and `published` (= the API datasets: every
+level is published from the API since 2026-09-30).
 
 Phase 2 (web_spec_phase2.md §4): scope = health region 4 -> its 8 provinces -> every district -> every subdistrict
 (DSPM; Coverage stops at district rows because its API table is one row per district).
@@ -19,11 +19,6 @@ from .loaders import xlsx_hdc
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGINS = {"dspm": dspm, "coverage": coverage}
-# source matrix: which source publishes which level (Excel is verify-only)
-SOURCE_LEVELS = {
-    "dspm": {"country": "api", "region": "api", "province": "api", "district": "api"},
-    "coverage": {"country": "api", "region": "api", "province": "api", "district": "api"},
-}
 LEVEL_ORDER = ["country", "region", "province", "district"]
 INDEX_SCHEMA = 2
 
@@ -227,7 +222,7 @@ def _resolve_codes(ctx, level: str, scope: str, labels: list[str], path: str):
     return codes
 
 
-def excel_datasets(plugin, ctx, workbooks, snapshots):
+def excel_datasets(plugin, ctx, workbooks):
     out = {}
     for w in workbooks:
         level = w["level"]
@@ -244,8 +239,7 @@ def excel_datasets(plugin, ctx, workbooks, snapshots):
             xl_keys = {g: list(kv) for g, kv in w["rows"][0]["values"].items()}
         else:
             xl_keys = list(w["columns"])
-        out[key] = _mk_dataset(plugin, ctx, w["year"], level, scope, rows, total,
-                               w.get("snapshot") or (snapshots or {}).get(str(w["year"])), "excel",
+        out[key] = _mk_dataset(plugin, ctx, w["year"], level, scope, rows, total, w["snapshot"], "excel",
                                {"excel_path": w["path"], "xl_keys": xl_keys,
                                 "has_total_row": w["total"] is not None})
     return out
@@ -255,12 +249,11 @@ def excel_datasets(plugin, ctx, workbooks, snapshots):
 def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int], log=print) -> dict:
     api, excel, warnings = {}, {}, []
     excel_dir = ROOT / site["excel"]["dir"]
-    snapshots = site["excel"].get("snapshots") or {}     # year -> date the HDC Excel files were exported
     registry = build_lookup.load_units()
     for ind in indicators:
         plugin = PLUGINS[ind]
         wbs = [w for w in xlsx_hdc.discover(excel_dir, ind) if w["year"] in years]
-        excel.update(excel_datasets(plugin, ctx, wbs, snapshots))
+        excel.update(excel_datasets(plugin, ctx, wbs))
         for y in years:
             if ind == "dspm":
                 summ = dspm.load_summary(y)
@@ -281,13 +274,7 @@ def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int
                     warnings.append(f"coverage {y}: no cache (run fetch)")
                     continue
                 api.update(api_datasets(coverage, ctx, y, cache, warnings, coverage.api_views(cache, ctx)))
-    published = {}
-    for key, ds in list(api.items()) + list(excel.items()):
-        ind, y, level, scope = key
-        want = SOURCE_LEVELS[ind][level]
-        src = api if want == "api" else excel
-        if key in src and key not in published:
-            published[key] = src[key]
+    published = dict(api)                                # Excel is verify-only
     # district datasets that have an Excel oracle -> verified (the pipeline fails hard if they ever differ)
     verified: dict = {}
     for (ind, y, level, scope) in excel:

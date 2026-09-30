@@ -6,10 +6,9 @@ from __future__ import annotations
 
 import json
 import re
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 from . import build_site as B
-from .indicators.common import PCT_TOL
 
 EXPECTED_ROWS = {"country": 13, "region": 8}   # fixed row counts (Phase 2 §4.5); province/district follow the lookup
 REGION4 = ["นครนายก", "นนทบุรี", "ปทุมธานี", "พระนครศรีอยุธยา", "ลพบุรี", "สระบุรี", "สิงห์บุรี", "อ่างทอง"]
@@ -34,12 +33,6 @@ def _full_keys(plugin):
     return list(plugin.ALL_KEYS)
 
 
-def _count_cmp(plugin, keys):
-    if plugin.ID == "dspm":
-        return sum(len(v) for v in keys.values())
-    return len(keys)
-
-
 # API-built DSPM country/region differ 0.1-3% from the HDC Excel for some provinces even in closed years
 # (HDC report vs Open Data API data versions, docs/API_NOTES.md §3) -> reported as one warning per dataset.
 SOFT_EXCEL = {("dspm", "country"), ("dspm", "region")}
@@ -50,7 +43,7 @@ def _day(asof):
 
 
 def _stale(ads, xds):
-    """The Excel oracle is a snapshot (sites/<site>.json excel.snapshots[year]); once the API data is newer than
+    """The Excel oracle is a snapshot (its dated folder <year>/<YYYY-MM-DD>/); once the API data is newer than
     that day the numbers legitimately move (open fiscal year, daily refresh) -> value differences become warnings.
     Structural checks (row sets, names, hasData, cross-level sums) stay hard regardless."""
     snap = _day(xds.get("asOf"))
@@ -181,7 +174,7 @@ def _api_vs_excel(ctx, built, rep):
         if soft:
             rows = sorted({m.split(": ", 1)[0].removeprefix(where + " ") for m in soft})
             why = (f"Excel snapshot {_day(xds.get('asOf'))} is older than the API data {_day(ads.get('asOf'))} "
-                   f"(open year moves daily; export new HDC files + set excel.snapshots to re-verify exactly)"
+                   f"(open year moves daily; export new HDC files into a new dated folder to re-verify exactly)"
                    if stale else "known HDC-vs-API difference")
             rep.warn(f"{where}: API != HDC Excel in {len(soft)} values / {len(rows)} rows ({', '.join(rows)}) "
                      f"- {why}, e.g. {soft[0]}")
@@ -203,7 +196,7 @@ def _cross_level(ctx, built, rep):
             child = pub.get(ck)
             if child is None or not r["hasData"]:
                 continue
-            keys = ds["xl_keys"] if ds["source"] == "excel" else _full_keys(plugin)
+            keys = _full_keys(plugin)
             n0 = rep.comparisons
             cross = child.get("crossDistrict") or []
             soft = [] if cross else None

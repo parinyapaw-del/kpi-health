@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 from ..loaders import moph_api
-from .common import PCT_TOL, close, fmt_asof, pct, ssum
+from .common import close, fmt_asof, pct, ssum
 
 ID = "coverage"
 TABLE = "s_child0_5_pshyche_develop_coverage"

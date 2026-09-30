@@ -205,12 +205,3 @@ def units(hospcodes: dict, refresh: bool = False, log=print) -> dict:
     _write_units(reg)
     log(f"units: {len(reg['units'])} in registry, {len(reg['missing'])} not found (fallback) -> {UNITS.relative_to(ROOT)}")
     return reg
-
-
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "units":
-        print("run:  python3 scripts/kpi.py units   (needs the DSPM caches to list the hospcodes)")
-        sys.exit(2)
-    a = build()
-    print(len(a["provinces"]), len(a["districts"]), len(a["subdistricts"]))
