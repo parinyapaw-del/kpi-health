@@ -107,6 +107,8 @@ kpi-health/
 3. Pages `kpi-health` → Settings → **Variables and Secrets** → เพิ่ม `GOOGLE_CLIENT_ID` = Client ID จากข้อ 1 และ `ADMIN_EMAILS` = อีเมลผู้ดูแลตั้งต้นคั่นด้วย comma (ใช้เมื่อ KV ยังไม่มี key `admins`; เมื่อบันทึกรายชื่อจากหน้า admin ครั้งแรก รายชื่อจะไปอยู่ใน KV key `admins` และตัวแปรนี้ไม่มีผลอีก) → **Redeploy** 1 ครั้ง (binding/env มีผลเมื่อ deploy ใหม่)
 4. เปิด `/admin/` → Sign in with Google → ต้องเห็นหน้า dashboard · อีเมลนอกรายชื่อจะเห็น "ไม่อยู่ในรายชื่อผู้ดูแล"
 
+**ทำแล้ว 2026-09-30**: OAuth client `kpi-health-admin` ในโปรเจกต์ Google Cloud `pcu-supply-request` (Client ID `572074800379-ttr7shbi75gm7dql56elbnf4tvo5gjhf.apps.googleusercontent.com` — ไม่ใช่ความลับ) · KV `kpi-health-config` bind `CONFIG` · env `GOOGLE_CLIENT_ID`, `ADMIN_EMAILS` ตั้งใน Pages แล้ว (ค่าอีเมลอยู่ใน Cloudflare เท่านั้น)
+
 โครงสร้าง: `functions/api/config.js` (สาธารณะ, `{override, googleClientId}`, cache 60 วิ) · `functions/api/admin/_middleware.js` ตรวจ ID token กับ Google tokeninfo (`aud` = `GOOGLE_CLIENT_ID`, `email_verified`, อีเมล ∈ รายชื่อ) → `config.js` (GET/PUT/DELETE KV `site`) · `admins.js` (KV `admins`, ห้ามลบตัวเอง) · `stats.js` (D1 `hits`) · `spec.js` · `pipeline.js` (GitHub API สาธารณะ) · เว็บ merge override ใน `site/assets/modules/configOverride.js` ก่อน render — ถ้า `/api/config` ล้มเว็บใช้ค่า repo ตามเดิม · KV `site` เก็บเฉพาะ field ที่แก้ (`name, org, footerNote, currentYear, indicators.<id>.{name_th,short,cards[]}, targets.<id>.<ปี>.value`) · ไม่มีอีเมลผู้ดูแลใน repo
 
 ## 4. ข้อควรรู้เกี่ยวกับข้อมูล
