@@ -233,29 +233,6 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .t-note { color: var(--warn-ink); cursor: help; font-weight: 800; padding-left: 1px; }
 
 /* compact one-line headline (province / district) */
-.hl-compact {
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-  border-left: 6px solid var(--series-1); box-shadow: var(--shadow);
-  padding: 12px 18px; display: flex; flex-direction: column; gap: 4px;
-}
-.hl-compact.s-ok { border-left-color: var(--ok); }
-.hl-compact.s-warn { border-left-color: var(--warn); }
-.hl-compact.s-bad { border-left-color: var(--bad); }
-.hl-compact.s-na { border-left-color: var(--axis); }
-.hlc-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
-.hlc-row h1 { font-size: clamp(1.5rem, 2.6vw, 2.1rem); font-weight: 800; line-height: 1.2; }
-.hlc-value { font-size: clamp(1.5rem, 2.6vw, 2.1rem); font-weight: 800; line-height: 1.2; white-space: nowrap; }
-.hlc-value i { font-style: normal; margin-right: 6px; }
-.s-ok .hlc-value { color: var(--ok-ink); }
-.s-warn .hlc-value { color: var(--warn-ink); }
-.s-bad .hlc-value { color: var(--bad-ink); }
-.hl-compact.is-small .hlc-value { opacity: 0.6; }
-.hlc-item { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
-@media (min-width: 601px) {
-  .hlc-item + .hlc-item::before, .hlc-value + .hlc-item::before, .badge-small + .hlc-item::before { content: '·'; color: var(--muted); margin-right: 12px; margin-left: -8px; }
-}
-.hlc-cards { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 18px; color: var(--muted); font-size: 0.92rem; }
-.hlc-cards b { color: var(--ink); }
 .badge-small {
   display: inline-block; font-size: 0.72rem; font-weight: 700; line-height: 1.5;
   padding: 0 6px; border-radius: 999px; background: var(--na-bg); color: var(--ink-2);
@@ -421,7 +398,6 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .panel { padding: 14px 12px; }
   .hm { min-width: 64px; padding: 4px; }
   .scroll-hint { display: block; margin-bottom: -4px; }
-  .hlc-row { column-gap: 14px; }
   .heat { font-size: 0.88rem; }
   .ftr { flex-direction: column; align-items: flex-start; }
 }

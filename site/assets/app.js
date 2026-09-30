@@ -9,7 +9,7 @@ import { headerHTML } from './modules/components/header.js';
 import { footerHTML, countsText } from './modules/components/footer.js';
 import { breadcrumbHTML } from './modules/components/breadcrumb.js';
 import { groupTabsHTML } from './modules/components/groupTabs.js';
-import { headlineHTML, compactHeadlineHTML, cardsHTML } from './modules/components/kpiCards.js';
+import { headlineHTML, cardsHTML } from './modules/components/kpiCards.js';
 import { barItems, barsPanelHTML, mountBars, childBarsPanel } from './modules/components/childBars.js';
 import { heatmapHTML } from './modules/components/heatmap.js';
 import { fullTableHTML, downloadCSV } from './modules/components/fullTable.js';
@@ -116,11 +116,12 @@ async function render() {
     return;
   }
 
-  // Province / district: compact headline → heatmap → child bars → table.
+  // Province / district: same head as the home page (headline card + cards) → heatmap → child bars → table.
   $main.innerHTML = `
     ${breadcrumbHTML(trail, route)}
+    <div class="scope-head"><p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(data.scope.name)}</h1></div>
     ${groupTabsHTML(ind, groupKey)}
-    ${compactHeadlineHTML(ctx, eyebrow)}
+    <div class="grid-top">${headlineHTML(ctx)}${cardsHTML(ctx)}</div>
     ${heatmapHTML(ctx)}
     ${child.html}
     ${fullTableHTML(ctx)}`;

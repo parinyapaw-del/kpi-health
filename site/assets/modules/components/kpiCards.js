@@ -1,5 +1,4 @@
-// Headline (big card on the region home page, one-line compact on province/district pages)
-// + secondary cards from metadata `cards[]`.
+// Headline (big card, every level) + secondary cards from metadata `cards[]`.
 import { vals, shortLabel } from '../data.js';
 import { classify, esc, fmtPct, fmtFrac, fmtInt, isNum, STATUS_ICON, STATUS_TEXT } from '../format.js';
 
@@ -36,6 +35,13 @@ export function rankOf(ctx) {
   return { k, n: list.length, where };
 }
 
+/** "อันดับในประเทศ" on the home page, "อันดับในเขต 4" / "อันดับในสระบุรี" below it. */
+function rankTitle(ctx) {
+  const p = ctx.parentData;
+  const plevel = p?.level ?? p?.scope?.level;
+  return plevel === 'country' ? 'อันดับในประเทศ' : `อันดับใน${shortArea(p?.scope?.name)}`;
+}
+
 function rankHTML(rank, small) {
   if (!rank) return '';
   if (rank.k == null) return `ไม่จัดอันดับ${small ? ' (n&lt;20)' : ''}`;
@@ -64,7 +70,7 @@ export function headlineHTML(ctx) {
       v[h.den],
     )}</dd></div>`,
     `<div><dt>เป้าหมายปี ${route.year}</dt><dd>${targetText(target)}</dd></div>`,
-    rank ? `<div><dt>อันดับในประเทศ</dt><dd>${rankHTML(rank, c.small)}</dd></div>` : '',
+    rank ? `<div><dt>${esc(rankTitle(ctx))}</dt><dd>${rankHTML(rank, c.small)}</dd></div>` : '',
   ].join('');
 
   return `<section class="headline s-${c.status}${c.small ? ' is-small' : ''}" aria-label="ตัวชี้วัดหลัก">
@@ -77,35 +83,6 @@ export function headlineHTML(ctx) {
     <div class="hl-status">${STATUS_TEXT[c.status]}</div>
     ${sub ? `<div class="hl-sub">${sub}</div>` : ''}
     <dl class="hl-meta">${meta}</dl>
-  </section>`;
-}
-
-/** One-line headline for province / district pages (the area name is the page's h1). */
-export function compactHeadlineHTML(ctx, eyebrow) {
-  const { ind, data, groupKey, target, rules, groupLabel } = ctx;
-  const h = ind.headline;
-  const v = vals(data.total, groupKey) ?? {};
-  const value = v[h.metric];
-  const c = classify(value, v[h.den], target?.value, rules);
-  const rank = rankOf(ctx);
-  const sub = subLine(ind, v);
-  const icon = STATUS_ICON[c.status];
-  const cards = (ind.cards ?? [])
-    .map((cd) => `<span>${esc(cd.label)} <b class="num">${fmtPct(v[cd.metric])}</b></span>`)
-    .join('');
-
-  return `<section class="hl-compact s-${c.status}${c.small ? ' is-small' : ''}" aria-label="ตัวชี้วัดหลัก">
-    <p class="eyebrow">${esc(eyebrow)}${groupLabel ? ` · ${esc(groupLabel)}` : ''}</p>
-    <div class="hlc-row">
-      <h1>${esc(data.scope.name)}</h1>
-      <span class="hlc-value" title="${esc(STATUS_TEXT[c.status])}">${icon ? `<i aria-hidden="true">${icon}</i>` : ''}${fmtPct(value)}<span class="sr-only"> ${esc(STATUS_TEXT[c.status])}</span></span>
-      ${c.small ? '<span class="badge-small">n&lt;20</span>' : ''}
-      <span class="hlc-item num">${fmtFrac(v[h.num], v[h.den])}</span>
-      <span class="hlc-item">เป้า ${targetText(target)}</span>
-      ${rank ? `<span class="hlc-item">${rankHTML(rank, c.small)}</span>` : ''}
-      ${sub ? `<span class="hlc-item">${sub}</span>` : ''}
-    </div>
-    ${cards ? `<p class="hlc-cards">${cards}</p>` : ''}
   </section>`;
 }
 
