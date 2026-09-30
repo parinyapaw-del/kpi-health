@@ -112,11 +112,13 @@ Coverage: `population, prevalence(21.7), expected, served_teda4i, served_icd9, d
 
 | ตัวชี้วัด | country (13 เขต) | region 4 (8 จว.) | province 15 (7 อำเภอ) | district 1501 (14 ตำบล) | monthly |
 |---|---|---|---|---|---|
-| DSPM | Excel | Excel | **API** `province=15` group `areacode[:4]` | **API** group `areacode[:6]` | **API** group `monthly` (จังหวัด/อำเภอ/ตำบล) |
+| DSPM | **API** ทุก 77 จังหวัด → `provinces.json` group เขต | **API** (`provinces.json`) | **API** `province=15` group `areacode[:4]` | **API** group `areacode[:6]` | **API** group `monthly` (จังหวัด/อำเภอ/ตำบล) |
 | Coverage 2567–68 | **API** group เขต | **API** filter เขต 4 | ไม่มีข้อมูล | ไม่มีข้อมูล | – |
 | Coverage 2569 | **API** group เขต | **API** filter เขต 4 | **API** filter `provcode=15` | ไม่มีข้อมูล | – |
 
-แถว "รวม" ของ scope: ใช้ผลรวมจากแถวลูก **ยกเว้น** ระดับที่มาจาก Excel ใช้แถว `รวม` ของไฟล์ · จังหวัดอ่างทองใน region view (Excel) กับ province view (API) ต้องเท่ากัน → เป็น verify case
+แถว "รวม" ของ scope: ใช้ผลรวมจากแถวลูก · จังหวัดอ่างทองใน region view กับ province view ต้องเท่ากัน → เป็น verify case
+
+> **แก้ 2026-09-30 (Save สั่ง)**: DSPM ประเทศ/เขต เปลี่ยนจาก Excel เป็น API · API ต่างจาก Excel HDC 0.1–3% ในบางจังหวัด/เขต แม้ปีปิดแล้ว → `verify` รายงานเป็น warning (ไม่ใช่ hard error) เฉพาะ DSPM country/region · กทม. (เขต 13) API ได้ 0 แถว = Excel เป็น 0 เช่นกัน
 
 ### 3.5 Validation (ใน `kpi.py verify` และท้าย `update`)
 

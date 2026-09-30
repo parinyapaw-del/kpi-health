@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGINS = {"dspm": dspm, "coverage": coverage}
 # source matrix (spec §3.4): which source publishes which level
 SOURCE_LEVELS = {
-    "dspm": {"country": "excel", "region": "excel", "province": "api", "district": "api"},
+    "dspm": {"country": "api", "region": "api", "province": "api", "district": "api"},
     "coverage": {"country": "api", "region": "api", "province": "api", "district": "api"},
 }
 LEVEL_ORDER = ["country", "region", "province", "district"]
@@ -105,9 +105,9 @@ def _mk_dataset(plugin, ctx, year, level, scope, rows, total_vals, asof, source,
     return ds
 
 
-def api_datasets(plugin, ctx, year, cache, warnings):
+def api_datasets(plugin, ctx, year, cache, warnings, views=None):
     out = {}
-    views = plugin.api_views(cache, ctx)
+    views = plugin.api_views(cache, ctx) if views is None else views
     for v in views:
         have = {r["code"] for r in v["rows"]}
         rows = list(v["rows"])
@@ -198,6 +198,12 @@ def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int
                                     f"export HDC xlsx into {site['excel']['dir']}/{ind}/{y}/")
         for y in years:
             if ind == "dspm":
+                summ = dspm.load_summary(y)
+                if summ is None:
+                    warnings.append(f"dspm {y}: no province summary {dspm.summary_path(y).relative_to(ROOT)} "
+                                    f"(run fetch) - country/region levels missing")
+                else:
+                    api.update(api_datasets(dspm, ctx, y, summ, warnings, dspm.national_views(summ, ctx)))
                 for prov in ctx["drill_provinces"]:
                     cache = dspm.load_cache(y, prov)
                     if cache is None:

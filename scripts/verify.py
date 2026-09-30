@@ -40,8 +40,14 @@ def _count_cmp(plugin, keys):
     return len(keys)
 
 
-def _cmp(plugin, a, b, keys, rep, where):
-    """Compare values a (api/child) vs b (excel/parent); count comparisons; record errors."""
+# API-built DSPM country/region differ 0.1-3% from the HDC Excel for some provinces even in closed years
+# (HDC report vs Open Data API data versions, docs/API_NOTES.md §3) -> reported as one warning per dataset.
+SOFT_EXCEL = {("dspm", "country"), ("dspm", "region")}
+
+
+def _cmp(plugin, a, b, keys, rep, where, soft=None):
+    """Compare values a (api/child) vs b (excel/parent); count comparisons; record errors
+    (or append them to the `soft` list instead)."""
     n = 0
     if plugin.ID == "dspm":
         for g, ks in keys.items():
@@ -54,7 +60,10 @@ def _cmp(plugin, a, b, keys, rep, where):
                 n += 1
     rep.comparisons += n
     for m in plugin.compare(a, b, keys):
-        rep.err(f"{where}: {m}")
+        if soft is not None:
+            soft.append(f"{where}: {m}")
+        else:
+            rep.err(f"{where}: {m}")
     return n
 
 
@@ -128,6 +137,7 @@ def _api_vs_excel(ctx, built, rep):
             rep.err(f"{where}: row sets differ api-only={sorted(set(arows) - set(xrows))} "
                     f"excel-only={sorted(set(xrows) - set(arows))}")
         n0 = rep.comparisons
+        soft = [] if (key[0], key[2]) in SOFT_EXCEL else None
         for c in sorted(set(arows) & set(xrows)):
             a, x = arows[c], xrows[c]
             if a["hasData"] != x["hasData"]:
@@ -135,10 +145,14 @@ def _api_vs_excel(ctx, built, rep):
                 continue
             if not x["hasData"]:
                 continue
-            _cmp(plugin, a["values"], x["values"], keys, rep, f"{where} {a['name']}")
+            _cmp(plugin, a["values"], x["values"], keys, rep, f"{where} {a['name']}", soft)
         if xds.get("has_total_row"):
-            _cmp(plugin, ads["total"]["values"], xds["total"]["values"], keys, rep, f"{where} รวม")
-        rep.checks.append((f"api==excel  {where}", rep.comparisons - n0))
+            _cmp(plugin, ads["total"]["values"], xds["total"]["values"], keys, rep, f"{where} รวม", soft)
+        if soft:
+            rows = sorted({m.split(": ", 1)[0].removeprefix(where + " ") for m in soft})
+            rep.warn(f"{where}: API != HDC Excel in {len(soft)} values / {len(rows)} rows ({', '.join(rows)}) "
+                     f"- known HDC-vs-API difference, e.g. {soft[0]}")
+        rep.checks.append((f"api==excel  {where}{' (soft)' if soft is not None else ''}", rep.comparisons - n0))
 
 
 def _cross_level(ctx, built, rep):
@@ -205,7 +219,6 @@ def run(site: dict, ctx: dict, built: dict, log=print, check_written=True) -> Re
             _internal_checks(B.PLUGINS[key[0]], key, ds, rep)
     _api_vs_excel(ctx, built, rep)
     _cross_level(ctx, built, rep)
-    # Excel-covered datasets lacking an API twin are Excel-only (DSPM country/region): internal checks only.
     if check_written:
         _check_written(site, ctx, built, rep)
     return rep

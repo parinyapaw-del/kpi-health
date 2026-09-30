@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Fetch the DSPM aggregate cache for every province (one-off backfill; resumable).
 
-  python3 scripts/fetch_all_dspm.py [--year 2569 ...] [--workers 3] [--refresh]
+  python3 scripts/fetch_all_dspm.py [--year 2569 ...] [--workers 1] [--refresh]
 
-Writes data/cache/dspm/<year>/<provcode>.json via dspm.fetch_cache (same format as the pipeline).
+Writes data/cache/dspm/<year>/<provcode>.json via dspm.fetch_cache (same format as the pipeline), then the
+committed summary data/cache/dspm/<year>/provinces.json (country/region levels). `kpi.py fetch` does the same
+sequentially; this script adds --workers (keep 1: the API throttles parallel requests with HTTP 429).
 A province whose cache already exists is skipped unless --refresh. Failures are listed at the end
 (re-run to retry just those). Region 4 provinces are fetched first.
 """
@@ -25,7 +27,7 @@ from scripts.indicators import dspm  # noqa: E402
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--year", action="append", type=int)
-    ap.add_argument("--workers", type=int, default=3)
+    ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--refresh", action="store_true")
     a = ap.parse_args(argv)
     site = json.loads((ROOT / "sites" / "angthong.json").read_text(encoding="utf-8"))
@@ -57,7 +59,13 @@ def main(argv=None):
     print(f"done in {time.time() - t0:.0f}s; {len(failed)} failed", flush=True)
     for y, p, e in failed:
         print(f"  FAIL {y} {p}: {e}")
-    return 1 if failed else 0
+    hard = [f for f in failed if "0 rows" not in f[2]]      # 0 rows = province not reported (Bangkok)
+    for y in years:
+        if any(f[0] == y for f in hard):
+            print(f"  summary {y} NOT written (fetch failures) - re-run to retry")
+        else:
+            dspm.write_summary(y, order)
+    return 1 if hard else 0
 
 
 if __name__ == "__main__":

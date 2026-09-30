@@ -48,9 +48,8 @@ def do_fetch(site, ctx, indicators, years, refresh):
         for y in years:
             print(f"[fetch] {ind} {y}")
             try:
-                if ind == "dspm":
-                    for prov in ctx["drill_provinces"]:
-                        dspm.fetch_cache(y, prov, refresh)
+                if ind == "dspm":   # all 77 provinces (country/region levels); sequential, ~45 min/year uncached
+                    dspm.fetch_all(y, sorted(ctx["prov_region"], key=int), refresh)
                 else:
                     coverage.fetch_cache(y, refresh)
             except Exception as e:   # noqa: BLE001

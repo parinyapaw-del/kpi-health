@@ -483,8 +483,8 @@
    "scope": "TH",
    "kind": "level",
    "file": "dspm_2567_country_TH.json",
-   "asOf": "2569-09-29",
-   "source": "excel"
+   "asOf": "2567-11-27T10:18",
+   "source": "api"
   },
   {
    "indicator": "dspm",
@@ -493,8 +493,8 @@
    "scope": "4",
    "kind": "level",
    "file": "dspm_2567_region_4.json",
-   "asOf": "2569-09-29",
-   "source": "excel"
+   "asOf": "2567-11-27T10:18",
+   "source": "api"
   },
   {
    "indicator": "dspm",
@@ -523,8 +523,8 @@
    "scope": "TH",
    "kind": "level",
    "file": "dspm_2568_country_TH.json",
-   "asOf": "2569-09-29",
-   "source": "excel"
+   "asOf": "2568-11-17T20:08",
+   "source": "api"
   },
   {
    "indicator": "dspm",
@@ -533,8 +533,8 @@
    "scope": "4",
    "kind": "level",
    "file": "dspm_2568_region_4.json",
-   "asOf": "2569-09-29",
-   "source": "excel"
+   "asOf": "2568-11-17T20:08",
+   "source": "api"
   },
   {
    "indicator": "dspm",
@@ -563,8 +563,8 @@
    "scope": "TH",
    "kind": "level",
    "file": "dspm_2569_country_TH.json",
-   "asOf": "2569-09-29",
-   "source": "excel"
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
   },
   {
    "indicator": "dspm",
@@ -573,8 +573,8 @@
    "scope": "4",
    "kind": "level",
    "file": "dspm_2569_region_4.json",
-   "asOf": "2569-09-29",
-   "source": "excel"
+   "asOf": "2569-09-29T18:46",
+   "source": "api"
   },
   {
    "indicator": "dspm",

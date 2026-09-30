@@ -6,7 +6,7 @@ Dashboard ตัวชี้วัดสาธารณสุขสำหรั�
 - ผู้ดูแล: โรงพยาบาลอ่างทอง
 - Spec ฉบับล็อก: [`web_spec.md`](web_spec.md) (v1.1, 2026-09-29)
 - ตัวชี้วัด Phase 1: **DSPM** (ร้อยละเด็ก 0–5 ปี พัฒนาการสมวัย) และ **Coverage** (ร้อยละเด็กพัฒนาการล่าช้าเข้าถึงบริการ) ปีงบ 2567–2569
-- แหล่งข้อมูล: MOPH Open Data API เป็นหลัก · Excel HDC export 19 ไฟล์ใน `data/excel_reference/` ใช้เป็น oracle สำหรับ `verify` (ต้องตรง 100%)
+- แหล่งข้อมูล: **MOPH Open Data API ทุกระดับ** · Excel HDC export ใน `data/excel_reference/` ใช้เป็น oracle สำหรับ `verify` (ระดับอ่างทอง/อำเภอเมืองต้องตรง 100%; DSPM ประเทศ/เขต ต่างจาก HDC ได้ 0.1–3% บางจังหวัด → warning, ดู `docs/API_NOTES.md` §3)
 - Static site ล้วน (vanilla HTML/CSS/JS + Chart.js จาก CDN) ไม่มี build step · deploy ด้วย Cloudflare Pages จาก `site/`
 
 ## 1. อัปเดตข้อมูล (ทำเองได้ด้วยคำสั่งเดียว)
@@ -29,12 +29,12 @@ python3 scripts/kpi.py update --site angthong
 |---|---|
 | `update --year 2570` | ดึงเฉพาะปีงบ 2570 (ระบุซ้ำได้หลายปี) |
 | `update --indicator dspm` | ดึงเฉพาะตัวชี้วัดเดียว (`dspm` / `coverage`) |
-| `update --refresh` | ไม่ใช้ raw cache ใน `data/raw_api/` ยิง API ใหม่ทั้งหมด (DSPM ≈ 40 วิ/ปี) |
+| `update --refresh` | ไม่ใช้ raw cache ใน `data/raw_api/` ยิง API ใหม่ทั้งหมด (DSPM ดึงทุก 77 จังหวัด ทีละจังหวัด ≈ 45 นาที/ปี → ใช้คู่กับ `--year <ปีปัจจุบัน>`) |
 | `fetch` / `build` / `verify` | ทำทีละขั้น · `verify` ทำงาน offline จาก `data/cache/` |
 | `lookup` | สร้าง `data/lookup/areas.json` ใหม่ (ชื่อพื้นที่จากรหัส DOPA + ตารางจังหวัด→เขตสุขภาพ) |
 
 คำสั่งจบด้วย exit code ≠ 0 ถ้ามี **hard error** (สูตรไม่ตรง, จำนวนแถวผิด, ตัวเลขไม่ตรง Excel) → ห้าม push จนกว่าจะแก้
-Warning ที่คาดไว้แล้ว (ความคลาดของ HDC เอง): `followed ≠ normal_after + delay_after_total` ระดับเขต และ `normal_total ≠ female + male` ปี 2569
+Warning ที่คาดไว้แล้ว: `followed ≠ normal_after + delay_after_total` ระดับเขต · `normal_total ≠ female + male` ปี 2568–2569 (ความคลาดของ HDC เอง) · `API != HDC Excel` ของ DSPM ประเทศ/เขต · เขตสุขภาพที่ 13 (กทม.) ไม่มีข้อมูล DSPM
 
 หลังรันผ่านแล้ว:
 
@@ -45,8 +45,8 @@ git add -A && git commit -m "data: update 2570" && git push
 Cloudflare Pages จะ deploy ให้อัตโนมัติเมื่อ push ขึ้น `main`
 
 ### ปีใหม่ต้องเตรียมอะไรเพิ่ม
-- **DSPM ระดับประเทศ / เขต 4** ยังมาจาก Excel (API ทั้งประเทศช้าและหลุด 404) → export จาก HDC 2 ไฟล์ (`ประเทศ`, `เขต 4`) วางใน `data/excel_reference/angthong/dspm/<ปี>/` ก่อนรัน `update`
-- Excel ระดับอ่างทอง / อำเภอเมือง ของปีใหม่ **ไม่จำเป็น** (ได้จาก API) แต่ถ้ามีจะถูกใช้ตรวจสอบเพิ่ม
+- **DSPM ระดับประเทศ / เขต 4** มาจาก API: `fetch` ดึงครบ 77 จังหวัด (cache รายจังหวัดเก็บในเครื่อง, commit เฉพาะ `data/cache/dspm/<ปี>/provinces.json`) · ปีใหม่ใช้เวลาราว 45 นาที
+- Excel ของปีใหม่ **ไม่จำเป็น** แต่ถ้ามีจะถูกใช้ตรวจสอบเพิ่ม
 - เพิ่มปีใน `sites/angthong.json` (`years`, `currentYear`) และเป้าหมายใน `targets`
 
 ## 2. โครงสร้าง repo

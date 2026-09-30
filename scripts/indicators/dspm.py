@@ -122,7 +122,9 @@ def derive(c: dict) -> dict:
 
 
 def sum_values(items: list[dict]) -> dict:
-    """Sum child `values` (count keys) and recompute derived keys."""
+    """Sum child `values` (count keys) and recompute derived keys. Zero-filled children (no data, e.g. Bangkok) are
+    skipped so their 0 gender counts don't turn a not-populated (None) key into 0."""
+    items = [v for v in items if has_data(v)] or items
     out = {}
     for g in GROUPS:
         c = {k: ssum(v[g][k] for v in items) for k in COUNT_KEYS}
@@ -193,6 +195,74 @@ def fetch_cache(year: int, province: str, refresh: bool, log=print) -> dict:
 def load_cache(year: int, province: str = "15"):
     p = cache_path(year, province)
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+
+# ------------------------------------------------------------------ national summary (country / region levels)
+# The per-province caches of all 77 provinces stay local (~53 MB); only this summary (1 row of raw-field sums per
+# province) is committed, and the country/region levels are built from it.
+def summary_path(year: int) -> Path:
+    return ROOT / "data" / "cache" / ID / str(year) / "provinces.json"
+
+
+def fetch_all(year: int, provinces: list[str], refresh: bool, log=print) -> dict:
+    """Fetch every province cache (sequential: parallel requests get HTTP 429), then write the summary.
+    A province the API answers with 0 rows (Bangkok: not reported to HDC) is recorded as empty, not an error."""
+    empty = []
+    for i, p in enumerate(provinces, 1):
+        if not refresh and cache_path(year, p).exists():
+            continue
+        log(f"  [{i}/{len(provinces)}] province {p}")
+        try:
+            fetch_cache(year, p, refresh, log=log)
+        except moph_api.ApiError as e:
+            if "0 rows" not in str(e):
+                raise
+            log(f"    province {p}: API returned 0 rows -> empty")
+            empty.append(p)
+    return write_summary(year, provinces, log=log)
+
+
+def write_summary(year: int, provinces: list[str], log=print) -> dict:
+    prov, missing, asofs, fetched, gender = {}, [], [], [], False
+    fields = raw_fields()
+    for p in provinces:
+        c = load_cache(year, p)
+        if c is None:
+            missing.append(p)
+            continue
+        s = _sums(c, lambda a6, u6, m: "all").get("all", {})
+        prov[p] = [s.get(f, 0) for f in fields]
+        asofs.append(c["asOf"])
+        fetched.append(c["fetchedAt"])
+        gender = gender or c.get("genderPopulated", False)
+    payload = {"schema": 1, "indicator": ID, "table": TABLE, "year": year,
+               "asOf": max(asofs), "fetchedAt": max(fetched), "genderPopulated": gender,
+               "empty": sorted(missing, key=int), "fields": fields, "provinces": prov}
+    p = summary_path(year)
+    p.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    log(f"  summary written {p.relative_to(ROOT)}  ({len(prov)} provinces, empty {payload['empty']})")
+    return payload
+
+
+def load_summary(year: int):
+    p = summary_path(year)
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+
+def national_views(summary, ctx) -> list[dict]:
+    """country (rows = 13 regions) + home region (rows = provinces) from the province summary.
+    Empty provinces are simply absent -> build_site fills them as zero rows (hasData false)."""
+    pv = {p: _values(summary, dict(zip(summary["fields"], vals))) for p, vals in summary["provinces"].items()}
+    by_reg: dict = {}
+    for p, v in pv.items():
+        by_reg.setdefault(str(ctx["prov_region"][p]), []).append(v)
+    views = [{"level": "country", "scope": "TH",
+              "rows": [{"code": r, "values": sum_values(v)} for r, v in sorted(by_reg.items(), key=lambda x: int(x[0]))]}]
+    for reg in ctx["drill_regions"]:
+        views.append({"level": "region", "scope": reg,
+                      "rows": [{"code": p, "values": v} for p, v in sorted(pv.items(), key=lambda x: int(x[0]))
+                               if str(ctx["prov_region"][p]) == reg]})
+    return views
 
 
 # ------------------------------------------------------------------ API-side views

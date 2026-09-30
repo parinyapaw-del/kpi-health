@@ -13,3 +13,4 @@ __pycache__/
 # all-province DSPM cache (scripts/fetch_all_dspm.py) stays local; only the site province is committed
 data/cache/dspm/*/*.json
 !data/cache/dspm/*/15.json
+!data/cache/dspm/*/provinces.json
