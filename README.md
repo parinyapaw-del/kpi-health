@@ -93,7 +93,7 @@ kpi-health/
 ## 3. Cloudflare Pages (ทำครั้งเดียว)
 
 1. Workers & Pages → Create → Pages → Connect to Git → repo `parinyapaw-del/kpi-health` → Project name `kpi-health` · Production branch `main` · Build command **ว่าง** · Build output directory **`site`** → Save and Deploy
-2. **ยอดผู้ใช้ (Phase 2)**: Workers & Pages → **D1** → Create database `kpi-health-hits` → Pages project `kpi-health` → Settings → **Bindings** → Add → D1 database · Variable name **`DB`** · database `kpi-health-hits` → Save แล้ว redeploy 1 ครั้ง (Function สร้างตาราง `hits` เองครั้งแรก) · ไม่มี binding เว็บยังใช้ได้ footer แสดง "–"
+2. **ยอดผู้ใช้ (Phase 2)**: Workers & Pages → **D1** → Create database `kpi-health-hits` → Pages project `kpi-health` → Settings → **Bindings** → Add → D1 database · Variable name **`DB`** · database `kpi-health-hits` → Save แล้ว redeploy 1 ครั้ง (Function สร้างตาราง `hits` เองครั้งแรก) · ไม่มี binding เว็บยังใช้ได้ footer แสดง "–" · **ทำแล้ว 2026-09-30** (D1 `kpi-health-hits` bind เป็น `DB`)
 3. (Phase 2b) KV `kpi-health-config` bind `CONFIG` + env `GOOGLE_CLIENT_ID` — ดู spec §8.4
 
 ทุกครั้งที่ `git push` ขึ้น `main` จะ deploy ใหม่อัตโนมัติ (≈ 1 นาที)
