@@ -12,10 +12,6 @@ on:
         description: "ดึง DSPM ทั้ง 77 จังหวัด (ระดับประเทศ/เขต) ด้วย — ปกติทำเองทุกวันจันทร์"
         type: boolean
         default: false
-      fail_test:
-        description: "ทดสอบเส้นทางล้มเหลว (kpi.py --fail-test) — ไม่ดึงข้อมูล"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -66,7 +62,6 @@ jobs:
           set -o pipefail
           ARGS="update --site angthong --refresh"
           if [ "${{ needs.plan.outputs.national }}" = "true" ]; then ARGS="$ARGS --national"; fi
-          if [ "${{ inputs.fail_test }}" = "true" ]; then ARGS="$ARGS --fail-test"; fi
           echo "python3 scripts/kpi.py $ARGS"
           python3 scripts/kpi.py $ARGS 2>&1 | tee update.log
 
