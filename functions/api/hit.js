@@ -4,36 +4,13 @@
 // Both respond {total_devices, today_devices}. Binding: env.DB (D1).
 // Stores per (day ICT, route, cf.region, cf.city): views, devices. Never reads or stores IP / user-agent.
 
+import { json, todayICT, ensureSchema } from '../_lib/http.js';
+
 const ROUTE_RE = /^[a-z]+\/[a-z]+\/[A-Za-z0-9]{1,10}$/;
 const CACHE_MS = 60_000;
 const MAX_BODY = 1024;
 
-let schemaReady = false;
 let cache = null; // {at, day, total, today}
-
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-  });
-}
-
-/** Today's date in Asia/Bangkok as YYYY-MM-DD. */
-function todayICT() {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(
-    new Date(),
-  );
-}
-
-async function ensureSchema(db) {
-  if (schemaReady) return;
-  await db
-    .prepare(
-      'CREATE TABLE IF NOT EXISTS hits(day TEXT, route TEXT, region TEXT, city TEXT, views INTEGER, devices INTEGER, PRIMARY KEY(day, route, region, city))',
-    )
-    .run();
-  schemaReady = true;
-}
 
 async function summary(db, day) {
   const now = Date.now();

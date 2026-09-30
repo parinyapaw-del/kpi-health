@@ -361,6 +361,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .ftr p { margin: 0; }
 .ftr-org { display: inline-flex; align-items: center; gap: 10px; color: var(--ink-2); font-weight: 600; }
 .ftr-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-variant-numeric: tabular-nums; }
+.ftr-admin { color: var(--muted); font-size: 0.85rem; }
+.ftr-note { flex-basis: 100%; color: var(--ink-2); white-space: pre-line; }
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 1100px) {

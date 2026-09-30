@@ -25,6 +25,11 @@ export async function loadIndex() {
 
 export const getIndex = () => index;
 
+/** Replace the in-memory index (index.json merged with the KV override, §8.2). */
+export function setIndex(i) {
+  index = i;
+}
+
 export function findDataset(indicator, year, level, scope, kind = 'level') {
   if (!index) return null;
   return (

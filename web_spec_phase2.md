@@ -258,6 +258,14 @@ Coverage: `name_th` = "ร้อยละของเด็กปฐมวัย
 ### 8.4 สิ่งที่ Save ทำใน 2b (Claude กดให้ใน browser pane หลัง login)
 Cloudflare: สร้าง KV `kpi-health-config` → bind `CONFIG` ใน Pages · เพิ่ม env `GOOGLE_CLIENT_ID` · ใส่ key `admins` = `["<email1>","<email2>"]` · Google Cloud Console: สร้าง OAuth Client ID
 
+### 8.5 บันทึกการ execute 2b (2026-09-30)
+- ดาวน์โหลด spec อยู่ที่ route `GET /api/admin/spec` (ชื่อไฟล์ที่ได้ = `kpi-health_spec_<วันที่>.md`) — Pages Functions ตั้งชื่อ route จากชื่อไฟล์ จึงไม่ใช้ `.md` ใน path · spec/README อ่านจาก raw.githubusercontent.com (branch main) จึงเป็นฉบับล่าสุดเสมอ
+- รายชื่อผู้ดูแลตั้งต้น: นอกจาก KV key `admins` รองรับ env `ADMIN_EMAILS` (comma) เป็น fallback เมื่อ KV ยังไม่มี key — ตั้งใน dashboard ง่ายกว่าใส่ key ใน KV · เมื่อบันทึกรายชื่อจากหน้า admin ครั้งแรก KV `admins` จะถูกใช้แทน
+- ตรวจ ID token ด้วย `https://oauth2.googleapis.com/tokeninfo` (cache ใน memory ต่อ token จนหมดอายุ) · `GET /api/config` ตอบ `{override, googleClientId}` (หน้า admin อ่าน Client ID จากที่นี่ ไม่ฝังใน HTML)
+- เป้าหมาย: ช่องว่างในฟอร์ม = ใช้ค่า repo · ติ๊ก "ยังไม่กำหนด" = เก็บ `{value:null}` (เว็บแสดง "เป้าหมาย: ยังไม่กำหนด")
+- preview สด: iframe หน้าแรกส่ง `kpi-config-ready` ให้หน้า admin ก่อน แล้วรับ `kpi-config-draft` (same-origin เท่านั้น) · ขณะอยู่ใน iframe ไม่ยิง `/api/hit`
+- หน้าเว็บสาธารณะโหลด index.json กับ `/api/config` ขนานกัน timeout 3 วิ → ล้มใช้ค่า repo · footer เพิ่มลิงก์ "ผู้ดูแลระบบ" และบรรทัด `footerNote` (ถ้าตั้ง)
+
 ## 9. โครง repo หลัง Phase 2 (เฉพาะที่เปลี่ยน)
 ```
 kpi-health/

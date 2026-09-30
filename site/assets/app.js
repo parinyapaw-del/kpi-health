@@ -1,9 +1,10 @@
 // Entry point: routing → data → components.
-import { loadIndex, getIndex, findDataset, loadFile, load, trailFor, targetFor, latestAsOf, LEVEL_NAME } from './modules/data.js';
+import { loadIndex, getIndex, setIndex, findDataset, loadFile, load, trailFor, targetFor, latestAsOf, LEVEL_NAME } from './modules/data.js';
 import { parseHash, defaultRoute, replace, go } from './modules/router.js';
 import { state, getTheme, setTheme, isMobile } from './modules/state.js';
 import { destroyCharts } from './modules/charts.js';
 import { esc } from './modules/format.js';
+import { applyOverride, loadOverride, listenDraft } from './modules/configOverride.js';
 import { trackRoute, onCounts, getCounts } from './modules/hit.js';
 import { headerHTML } from './modules/components/header.js';
 import { footerHTML, countsText } from './modules/components/footer.js';
@@ -55,7 +56,7 @@ async function render() {
   $header.innerHTML = headerHTML(index, route, data ? ds : null, trail);
   $footer.innerHTML = footerHTML(index, data ? ds.asOf : latestAsOf(route.year), getCounts());
   document.title = `${here?.name ?? ''} · ${ind.short ?? ind.id} ${route.year} · ${index.name}`;
-  trackRoute(`${route.indicator}/${route.level}/${route.scope}`);
+  if (window.self === window.top) trackRoute(`${route.indicator}/${route.level}/${route.scope}`); // not the admin preview
 
   // Keep page height while swapping content so the scroll position does not jump.
   $main.style.minHeight = `${$main.offsetHeight}px`;
@@ -205,7 +206,13 @@ function showError(err) {
     return;
   }
   try {
-    await loadIndex();
+    // index.json + the admin's KV override (§8.2) in parallel; a failed /api/config → repo values.
+    const [pristine, { override }] = await Promise.all([loadIndex(), loadOverride()]);
+    setIndex(applyOverride(pristine, override));
+    listenDraft((draft) => {
+      setIndex(applyOverride(pristine, draft));
+      rerender();
+    });
     bindEvents();
     await render();
   } catch (err) {

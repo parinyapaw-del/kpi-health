@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ผู้ดูแลระบบ · kpi-health</title>
+  <script>
+    // Apply the saved theme before first paint (same key as the public site).
+    try { if (localStorage.getItem('kpi-health-theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="icon" href="../assets/logo-r4.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="admin.js"></script>
+</head>
+<body>
+  <header class="site-header adm-header">
+    <div class="wrap hdr-row">
+      <a class="brand" href="/">
+        <img class="brand-logo" src="../assets/logo-r4.png" alt="" width="800" height="806">
+        <span class="brand-text">
+          <strong id="site-name">kpi-health</strong>
+          <span class="brand-org">ผู้ดูแลระบบ</span>
+        </span>
+      </a>
+      <div class="hdr-controls adm-controls">
+        <span class="adm-user" id="user-email" hidden></span>
+        <button type="button" class="theme-btn" id="signout-btn" hidden>ออกจากระบบ</button>
+        <button type="button" class="theme-btn" id="theme-toggle" aria-pressed="false">
+          <span aria-hidden="true" id="theme-icon">☾</span><span class="theme-txt" id="theme-txt">โหมดมืด</span>
+        </button>
+      </div>
+    </div>
+    <div class="wrap hdr-sub adm-pipeline" id="pipeline" hidden></div>
+  </header>
+
+  <main class="wrap main" id="main" tabindex="-1">
+    <p class="loading" id="boot">กำลังโหลด…</p>
+
+    <section class="panel adm-narrow" id="view-setup" hidden>
+      <h1 class="adm-h1">ยังไม่พร้อมใช้งาน</h1>
+      <p>ยังไม่ได้ตั้งค่า GOOGLE_CLIENT_ID ใน Cloudflare Pages — ดู README §Phase 2b</p>
+    </section>
+
+    <section class="panel adm-narrow" id="view-signin" hidden>
+      <h1 class="adm-h1">เข้าสู่ระบบผู้ดูแล</h1>
+      <p class="panel-sub">ใช้บัญชี Google ที่อยู่ในรายชื่อผู้ดูแลเท่านั้น</p>
+      <p class="adm-msg" id="signin-msg" role="alert"></p>
+      <div id="gsi-btn" class="adm-gsi"></div>
+      <p><button type="button" class="btn btn-ghost" id="denied-signout" hidden>ออกจากระบบ / ใช้บัญชีอื่น</button></p>
+    </section>
+
+    <div class="adm-dash" id="view-dash" hidden>
+      <section class="panel" id="panel-config" aria-labelledby="h-config">
+        <div class="panel-hd"><h2 id="h-config">① ตั้งค่าข้อความ / เป้าหมาย</h2>
+          <p class="panel-sub">ช่องว่าง = ใช้ค่าจาก repo (แสดงเป็นตัวจาง) · กดบันทึกแล้วหน้าเว็บสาธารณะเปลี่ยนภายใน 60 วินาที</p></div>
+        <div class="adm-split">
+          <form id="config-form" class="adm-form" novalidate>
+            <div id="config-fields"></div>
+            <div class="adm-actions">
+              <button type="submit" class="btn" id="save-config">บันทึก</button>
+              <button type="button" class="btn btn-ghost" id="reload-config">โหลดค่าที่บันทึกไว้</button>
+            </div>
+            <p class="adm-msg" id="config-msg" role="alert"></p>
+          </form>
+          <div class="adm-preview">
+            <p class="adm-preview-label">ตัวอย่างสด</p>
+            <iframe id="preview" title="ตัวอย่างสดของหน้าเว็บ" src="about:blank"></iframe>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-stats" aria-labelledby="h-stats">
+        <div class="panel-hd"><h2 id="h-stats">② สถิติผู้ใช้งาน</h2></div>
+        <form id="stats-form" class="adm-range">
+          <label>ตั้งแต่ <input type="date" id="stats-from" required></label>
+          <label>ถึง <input type="date" id="stats-to" required></label>
+          <button type="submit" class="btn">แสดง</button>
+        </form>
+        <p class="adm-msg" id="stats-msg" role="alert"></p>
+        <div class="cards2 adm-cards" id="stats-cards"></div>
+        <div class="adm-chart"><canvas id="stats-chart" aria-label="เปิดหน้าและผู้ใช้ใหม่รายวัน" role="img"></canvas></div>
+        <div class="grid-2">
+          <div><h3 class="adm-h3">หน้าที่เปิดมากที่สุด</h3><div class="adm-scroll" id="stats-pages"></div></div>
+          <div><h3 class="adm-h3">พื้นที่ของผู้ชม</h3><div class="adm-scroll" id="stats-places"></div></div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-admins" aria-labelledby="h-admins">
+        <div class="panel-hd"><h2 id="h-admins">③ ผู้ดูแลระบบ</h2>
+          <p class="panel-sub">อีเมล Google ที่เข้าหน้านี้ได้ (1–20 คน)</p></div>
+        <ul class="adm-list" id="admin-list"></ul>
+        <form id="admin-add" class="adm-range">
+          <label class="adm-grow">เพิ่มอีเมล <input type="email" id="admin-new" autocomplete="off" placeholder="name@example.com"></label>
+          <button type="submit" class="btn btn-ghost">เพิ่ม</button>
+        </form>
+        <div class="adm-actions"><button type="button" class="btn" id="save-admins">บันทึกรายชื่อ</button></div>
+        <p class="adm-msg" id="admins-msg" role="alert"></p>
+      </section>
+
+      <section class="panel" id="panel-spec" aria-labelledby="h-spec">
+        <div class="panel-hd"><h2 id="h-spec">④ ดาวน์โหลด spec.md</h2>
+          <p class="panel-sub">รวม web_spec_phase2.md ล่าสุด + README §1, §3 + config ปัจจุบัน เป็นไฟล์เดียว</p></div>
+        <div class="adm-actions"><button type="button" class="btn" id="spec-btn">ดาวน์โหลด spec.md</button></div>
+        <p class="adm-msg" id="spec-msg" role="alert"></p>
+      </section>
+
+      <section class="panel" id="panel-reset" aria-labelledby="h-reset">
+        <div class="panel-hd"><h2 id="h-reset">⑤ คืนค่าเริ่มต้น</h2>
+          <p class="panel-sub">ลบค่าที่ตั้งไว้ในข้อ ① ทั้งหมด แล้วกลับไปใช้ค่าจาก repo</p></div>
+        <div class="adm-actions"><button type="button" class="btn btn-danger" id="reset-btn">คืนค่าเริ่มต้น</button></div>
+        <p class="adm-msg" id="reset-msg" role="alert"></p>
+      </section>
+    </div>
+  </main>
+  <div class="adm-toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
