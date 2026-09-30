@@ -24,11 +24,6 @@ data/cache/dspm/*/*.json
 !data/cache/dspm/*/19.json
 !data/cache/dspm/*/26.json
 !data/cache/dspm/*/provinces.json
-# population tables (scripts/population.py) are prepared offline, not published
-data/cache/pop/
-data/cache/pyramid/
-data/cache/typearea/
-data/prepared/
 # Phase 1 years stay local (the web publishes only the years in sites/angthong.json)
 data/cache/dspm/2567/1*.json
 data/cache/dspm/2567/2*.json

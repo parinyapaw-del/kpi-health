@@ -73,14 +73,12 @@ kpi-health/
 │   ├── lookup/areas.json + units.json + SOURCE.md   # รหัส→ชื่อพื้นที่ · ที่ตั้งหน่วยบริการ (MOPH GIS + `overrides` รายหน่วยจาก Excel HDC)
 │   ├── cache/dspm/<ปี>/{12,13,14,15,16,17,19,26,provinces}.json · coverage/<ปี>/all.json   # commit
 │   ├── logo-r4.jpg · logo.webp         # โลโก้ต้นฉบับ (เขต 4 · รพ.อ่างทอง)
-│   ├── prepared/angthong/              # JSON ประชากร 3 แท็บ ยังไม่ขึ้นเว็บ (§5, ไม่ commit)
 │   └── raw_api/                        # response ดิบ (.gitignore)
 ├── scripts/
 │   ├── kpi.py                          # CLI (§1)
 │   ├── loaders/moph_api.py · xlsx_hdc.py
 │   ├── indicators/dspm.py · coverage.py   # plugin ต่อตัวชี้วัด (metadata + สูตร + กฎที่ตั้งหน่วย)
 │   ├── build_site.py · verify.py · build_lookup.py · process_logo.py
-│   ├── population.py · population_report.py · indicators/{pop,typearea,pyramid,denom05}.py   # ประชากร (§5)
 │   └── requirements.txt
 └── site/                               # Cloudflare output directory
     ├── index.html · _redirects (/angthong/* → /)
@@ -107,7 +105,7 @@ kpi-health/
 - เขตสุขภาพที่ 13 (กทม.) DSPM ทั้งแถวเป็น 0 → "ไม่มีข้อมูล" ไม่นับในกราฟ/อันดับ · เขต 4 อยู่อันดับ x/12
 - รายละเอียด API และ field mapping: [`docs/API_NOTES.md`](docs/API_NOTES.md) · ที่มาของรหัสพื้นที่/ทะเบียนหน่วย: [`data/lookup/SOURCE.md`](data/lookup/SOURCE.md)
 
-## 5. ข้อมูลประชากร HDC — 3 แท็บที่เตรียมไว้แต่ยังไม่ขึ้นเว็บ (2026-09-30, Phase 1 อ่างทอง)
+## 5. ข้อมูลประชากร HDC / ตัวหารเด็ก 0–5 ปี → ย้ายไป repo `primary-care-health` (2026-09-30)
 
-`pop` (ประชากรกลางปีจำแนกเพศ/กลุ่มอายุ) · `typearea` (ประเภทการอยู่อาศัย) · `denom05` (ตัวหารเด็ก 0–5 ปี) —
-`python3 scripts/population.py all` → `data/cache/{pop,typearea,pyramid}/` + `data/prepared/angthong/` (ไม่ commit) · ผลตรวจสอบ: [`docs/POPULATION_DENOMINATORS_ANGTHONG.md`](docs/POPULATION_DENOMINATORS_ANGTHONG.md) · ตาราง: [`docs/population_tables_angthong.md`](docs/population_tables_angthong.md)
+โค้ด pop/typearea/denom05, cache, Excel ที่ export มือ และเอกสารผลตรวจสอบ อยู่ที่ `../primary-care-health/` (เว็บเสริม Primary Care อ่างทอง)
+ซึ่งอ่านเป้า DSPM/ตัวหาร Coverage จาก `site/data/angthong/*.json` ของ repo นี้ — อย่าเปลี่ยนชื่อไฟล์ dataset โดยไม่แจ้ง

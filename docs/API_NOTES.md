@@ -65,15 +65,4 @@ Body: `{"tableName":"s_childdev_specialpp","year":"2569","province":"15","type":
 - **2026-09-30: เว็บเปลี่ยนมาใช้ API ทุกระดับ** (Save ตัดสินใจ) · ระดับประเทศ/เขตสร้างจาก `data/cache/dspm/<ปี>/provinces.json` (ผลรวมรายจังหวัด, commit) · verify นับความต่างกับ Excel เป็น warning
 - ใช้ต่อได้: ขยายเว็บให้เจาะรายอำเภอจังหวัดอื่น (ต้องระบุว่าเป็นข้อมูล API และอาจต่างจากหน้า HDC เล็กน้อย)
 
-## 3) ตารางประชากร (ทดสอบ 2026-09-30) ✅ เร็วมาก — ยังไม่ขึ้นเว็บ (เตรียมไว้ใน `data/prepared/`, ดู README §6)
-ทั้ง 3 ตารางมีรูปแบบแถว hospcode × areacode(8) × b_year · **server จำกัด `limit` ≤ 10,000** (ส่งมากกว่านี้จะถูกลดเหลือ 10,000) → loader วน `offset`
-- ระดับตำบลใช้กฎเดียวกับ DSPM: จัดกลุ่มตามตำบลของหน่วยบริการ (hospcode) — `areacode[:6]` ตรง ๆ ไม่ตรง Excel อำเภอเมือง (`s_pop_sex_age` 7/14 ตำบล)
-- ตรงกับ Excel HDC 100% ระดับอ่างทอง/อำเภอเมือง/ตำบลบ้านแห (ปี 2569) · ระดับเขต/ประเทศต่างเล็กน้อยเพราะ HDC ประมวลผลรายจังหวัดคนละเวลา (เหมือน DSPM)
-
-| ตาราง | body | แถว/ปี (ทั้งประเทศ) | field |
-|---|---|---:|---|
-| `s_pop_sex_age` ประชากรจำแนกเพศ กลุ่มอายุรายปี | `{"tableName":"s_pop_sex_age","year":"2569","type":"json","limit":10000}` (ไม่ต้องส่ง province) | ≈ 84,000 · ≈ 12 วิ · **ไม่มี กทม.** | `male_g1..g22`, `female_g1..g22` = <1, 1-4, 5-9, …, 95-99, 100+ (typearea 1+3 หลัง cleansing) |
-| `s_persontype` TYPEAREA | `{"tableName":"s_persontype","year":"2569","type":"json","limit":10000}` | ≈ 12,000 · ≈ 1 วิ · กทม. มีแต่ `type1c`=0 | `type1..type5` ก่อน cleansing · `type1c..type5c` หลัง cleansing · ประชากรกลางปี = `type1c+type3c` |
-| `s_person_pyramid` ปิรามิด | `{"tableName":"s_person_pyramid","year":"2569","province":"15","type":"json","limit":10000}` | อ่างทอง ≈ 10,400 · ≈ 2 วิ (ทั้งประเทศ 1.58 ล้านแถว → ดึงรายจังหวัดเท่านั้น) | `groupcode 1..21`, `groupname` (0-4 ปี … 100 ปีขึ้นไป), `male`, `female`, `total` — ประมวลผลคนละวันกับ `s_pop_sex_age` (ต่างกันหลักสิบคน) |
-
-ผลเทียบตัวหารเด็ก 0–5 ปี (เป้า DSPM ≈ 91% ของ HDC 0–4 · Coverage (1) ≈ 1.7× HDC 0–4): [`POPULATION_DENOMINATORS_ANGTHONG.md`](POPULATION_DENOMINATORS_ANGTHONG.md)
+## 3) ตารางประชากร (`s_pop_sex_age`, `s_persontype`, `s_person_pyramid`) → ย้ายไป `../primary-care-health/docs/API_NOTES.md` (2026-09-30)
