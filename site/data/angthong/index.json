@@ -4735,7 +4735,7 @@
    "scope": "TH",
    "kind": "level",
    "file": "dspm_2569_country_TH.json",
-   "asOf": "2569-09-30T10:14",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -4745,7 +4745,7 @@
    "scope": "4",
    "kind": "level",
    "file": "dspm_2569_region_4.json",
-   "asOf": "2569-09-30T10:14",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -4755,7 +4755,7 @@
    "scope": "12",
    "kind": "level",
    "file": "dspm_2569_province_12.json",
-   "asOf": "2569-09-29T16:33",
+   "asOf": "2569-09-30T16:49",
    "source": "api"
   },
   {
@@ -4775,7 +4775,7 @@
    "scope": "14",
    "kind": "level",
    "file": "dspm_2569_province_14.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -4835,7 +4835,7 @@
    "scope": "1201",
    "kind": "level",
    "file": "dspm_2569_district_1201.json",
-   "asOf": "2569-09-29T16:33",
+   "asOf": "2569-09-30T16:49",
    "source": "api"
   },
   {
@@ -4845,7 +4845,7 @@
    "scope": "1202",
    "kind": "level",
    "file": "dspm_2569_district_1202.json",
-   "asOf": "2569-09-29T16:33",
+   "asOf": "2569-09-30T16:49",
    "source": "api"
   },
   {
@@ -4855,7 +4855,7 @@
    "scope": "1203",
    "kind": "level",
    "file": "dspm_2569_district_1203.json",
-   "asOf": "2569-09-29T16:33",
+   "asOf": "2569-09-30T16:49",
    "source": "api"
   },
   {
@@ -4865,7 +4865,7 @@
    "scope": "1204",
    "kind": "level",
    "file": "dspm_2569_district_1204.json",
-   "asOf": "2569-09-29T16:33",
+   "asOf": "2569-09-30T16:49",
    "source": "api"
   },
   {
@@ -4875,7 +4875,7 @@
    "scope": "1205",
    "kind": "level",
    "file": "dspm_2569_district_1205.json",
-   "asOf": "2569-09-29T16:33",
+   "asOf": "2569-09-30T16:49",
    "source": "api"
   },
   {
@@ -4885,7 +4885,7 @@
    "scope": "1206",
    "kind": "level",
    "file": "dspm_2569_district_1206.json",
-   "asOf": "2569-09-29T16:33",
+   "asOf": "2569-09-30T16:49",
    "source": "api"
   },
   {
@@ -4965,7 +4965,7 @@
    "scope": "1401",
    "kind": "level",
    "file": "dspm_2569_district_1401.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -4975,7 +4975,7 @@
    "scope": "1402",
    "kind": "level",
    "file": "dspm_2569_district_1402.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -4985,7 +4985,7 @@
    "scope": "1403",
    "kind": "level",
    "file": "dspm_2569_district_1403.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -4995,7 +4995,7 @@
    "scope": "1404",
    "kind": "level",
    "file": "dspm_2569_district_1404.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5005,7 +5005,7 @@
    "scope": "1405",
    "kind": "level",
    "file": "dspm_2569_district_1405.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5015,7 +5015,7 @@
    "scope": "1406",
    "kind": "level",
    "file": "dspm_2569_district_1406.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5025,7 +5025,7 @@
    "scope": "1407",
    "kind": "level",
    "file": "dspm_2569_district_1407.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5035,7 +5035,7 @@
    "scope": "1408",
    "kind": "level",
    "file": "dspm_2569_district_1408.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5045,7 +5045,7 @@
    "scope": "1409",
    "kind": "level",
    "file": "dspm_2569_district_1409.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5055,7 +5055,7 @@
    "scope": "1410",
    "kind": "level",
    "file": "dspm_2569_district_1410.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5065,7 +5065,7 @@
    "scope": "1411",
    "kind": "level",
    "file": "dspm_2569_district_1411.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5075,7 +5075,7 @@
    "scope": "1412",
    "kind": "level",
    "file": "dspm_2569_district_1412.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5085,7 +5085,7 @@
    "scope": "1413",
    "kind": "level",
    "file": "dspm_2569_district_1413.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5095,7 +5095,7 @@
    "scope": "1414",
    "kind": "level",
    "file": "dspm_2569_district_1414.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5105,7 +5105,7 @@
    "scope": "1415",
    "kind": "level",
    "file": "dspm_2569_district_1415.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
@@ -5115,7 +5115,7 @@
    "scope": "1416",
    "kind": "level",
    "file": "dspm_2569_district_1416.json",
-   "asOf": "2569-09-27T18:32",
+   "asOf": "2569-10-01T00:43",
    "source": "api"
   },
   {
