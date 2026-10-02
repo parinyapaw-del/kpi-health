@@ -55,6 +55,26 @@ Body: `{"tableName":"s_childdev_specialpp","year":"2569","province":"15","type":
 - รหัสผิดปกติที่ต้องรองรับ: hospcode `14O3F` (ตัวอักษร O) เก็บเป็น string · areacode อำเภอ `1310` (ปทุมธานี ไม่มีใน DOPA) → แถว pseudo
   "ไม่ระบุพื้นที่ (รหัส 1310)" ท้ายตารางจังหวัด นับในยอดรวมจังหวัด ไม่จัดอันดับ
 
+## MOPH GIS service — endpoint ทั้ง 6 แบบ (ทดสอบ 2026-10-02) ⚠️ ไม่ช่วยหา 100 หน่วยนอกทะเบียน
+ฐาน `https://opendata-service.moph.go.th/gis/v1/` · GET · ไม่ต้อง auth · ตอบ GeoJSON FeatureCollection
+
+| endpoint | ให้อะไร | ตัวอย่าง (ทดสอบแล้ว) | ใช้ใน pipeline |
+|---|---|---|---|
+| `getgis/hoscode/{hoscode}` | หน่วยบริการ 1 รหัส → `provcode/distcode/subdistcode/hosname/hostype/dep` | `10768` → 140201 รพ.ท่าเรือ · `22754` → features ว่าง | ✅ `build_lookup.units()` (ทีละรหัส, incremental) |
+| `getgis/provcode/{provcode}` | ทุกหน่วยในจังหวัด (field เหมือนข้างบน + `bed`, `address`, `postcode`, `level_service`, `moo`) | `15` → 84 หน่วย · 8 จังหวัดเขต 4 รวม 963 หน่วย | ยังไม่ใช้ — spec §4.3 เคยบันทึกว่า 404 (2026-09-30) ตอนนี้ใช้ได้ → ทางเลือก bulk 8 คำขอแทน 982 คำขอ |
+| `getgis/provcode/{p}/distcode/{d}` | ทุกหน่วยในอำเภอ (distcode 2 หลัก) | `15/distcode/01` → 15 หน่วย = เมืองอ่างทอง | ยังไม่ใช้ |
+| `geojson/1` | polygon เขตสุขภาพ 1–13 (`id` "01".."13", `name`) | 13 features, 263 KB | ยังไม่ใช้ (แผนที่ในอนาคต) |
+| `geojson/2/{areacode}/` | polygon จังหวัดในเขต (`id` = รหัสจังหวัด 2 หลัก) | `04` → 8 จังหวัด | ยังไม่ใช้ — ชื่อพื้นที่ใช้ `areas.json` (DOPA) อยู่แล้ว |
+| `geojson/3/{provincecode}/` | polygon อำเภอในจังหวัด (`id` = รหัสอำเภอ 4 หลัก) | `15` → 7 อำเภอ | ยังไม่ใช้ |
+
+ผลเทียบกับ `data/lookup/units.json` (2026-10-02, feed 8 จังหวัด 963 หน่วย):
+- 882 หน่วยที่ทะเบียนรู้จักอยู่แล้ว: อยู่ใน feed รายจังหวัดครบ 882 และ **ตำบลตรงกัน 100%** (ไม่มี field ไหนขัดกับ `getgis/hoscode`)
+- **หน่วยนอกทะเบียน 100 รหัส + `22754` (ใหม่ 2026-10-02): ไม่พบใน feed รายจังหวัดแม้แต่รหัสเดียว (0/101)** → endpoint รายจังหวัด/รายอำเภอ
+  ใช้ตารางเดียวกับ `getgis/hoscode` จึง**หาที่ตั้งเพิ่มไม่ได้** · หน่วย 81 ตัวที่มีใน feed แต่ไม่มีใน DSPM = สสจ./สสอ./หน่วยที่ไม่รายงาน DSPM
+- รหัสที่ยังไม่พบจำแนกตามหลักแรก: `4xxxx` 44 (อปท./คลินิก) · `2xxxx` 27 · `1xxxx` 19 · `7xxxx` 6 · `3xxxx` 2 · `9xxxx` 2
+  → ที่ตั้งจริงต้องมาจาก Excel HDC ระดับตำบล (`overrides`) หรือทะเบียน hcode ของ สนย. (ไม่มี open API ที่ทดสอบได้) ตามเดิม
+- `geojson/*` ให้ polygon + ชื่อ/รหัสพื้นที่ที่ตรงกับ `areas.json` อยู่แล้ว (ไม่มีรหัส `1310` ในอำเภอของปทุมธานี เช่นเดียวกับ DOPA)
+
 ## 3) DSPM ทุกจังหวัด (ทดสอบ 2026-09-29) — ⚠️ ไม่ตรงกับ Excel HDC ทุกจังหวัด
 - ดึงด้วย `python3 scripts/kpi.py fetch --national --year <ปี> --no-auto-year` (resume ได้: จังหวัดที่มี cache schema 2 แล้วจะถูกข้ามเว้นแต่ใส่ `--refresh`) · **ห้ามยิงขนาน** (ยิงพร้อมกันหลาย process → HTTP 429; `fetch_provinces` ดึงทีละจังหวัดอยู่แล้ว) · 76 จังหวัด × 3 ปี ≈ 3.3 ชม.
 - cache ทุกจังหวัดเก็บในเครื่องเท่านั้น (`.gitignore` ยกเว้น `15.json`) · raw ≈ 2.7 GB ใน `data/raw_api/`
