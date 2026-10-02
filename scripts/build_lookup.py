@@ -128,14 +128,19 @@ def load_units() -> dict:
     return {"schema": 1, "source": GIS_URL, "fetchedAt": None, "units": {}, "missing": {}}
 
 
+class GisUnavailable(RuntimeError):
+    """The MOPH GIS registry could not be reached / answered for a unit (after all retries)."""
+
+
 def _gis(hoscode: str):
-    """GeoJSON of one unit from the MOPH GIS registry -> dict | None (None = not in the registry).
-    Retries 3x (5/15/45 s) on network errors / 5xx; a 404 or an empty feature list means 'not found'."""
+    """GeoJSON of one unit from the MOPH GIS registry -> dict | None (None = confirmed not in the registry).
+    Retries 3x (5/15/45 s) on network errors / 5xx (timeout = 15 s connect, 60 s read); a 404 or an empty feature
+    list means 'not found'. Raises GisUnavailable when every retry failed (registry down != unit not found)."""
     import time
     last = None
     for attempt in range(len(GIS_BACKOFF) + 1):
         try:
-            r = requests.get(GIS_URL.format(hoscode=hoscode), timeout=60, verify=certifi.where())
+            r = requests.get(GIS_URL.format(hoscode=hoscode), timeout=(15, 60), verify=certifi.where())
             if r.status_code == 404:
                 return None
             if r.status_code == 200:
@@ -156,7 +161,7 @@ def _gis(hoscode: str):
             last = f"{type(e).__name__}: {e}"
         if attempt < len(GIS_BACKOFF):
             time.sleep(GIS_BACKOFF[attempt])
-    raise SystemExit(f"GIS registry failed for {hoscode}: {last}")
+    raise GisUnavailable(f"GIS registry failed for {hoscode}: {last}")
 
 
 def _write_units(reg: dict, path: Path | None = None) -> None:
@@ -174,34 +179,60 @@ def units(hospcodes: dict, refresh: bool = False, log=print) -> dict:
     """Incrementally update data/lookup/units.json.
     hospcodes: {hospcode: {"target": int, "areas": {areacode6: target}}} — every unit seen in the raw data (used to
     record the fallback info of units the registry does not know). Codes already present are not fetched again
-    unless refresh=True. Returns the registry dict."""
+    unless refresh=True; codes whose last lookup failed (`missing[h]["gisError"]`) are retried every run.
+    A registry outage never aborts the run: the failed code gets the fallback this run (marked with `gisError` +
+    `gisFailedAt` in `missing`, cleared automatically once a later lookup succeeds or confirms 'not found'); a unit
+    already in `units` keeps its entry. After 3 consecutive failures the remaining codes are skipped for this run
+    (circuit breaker). Returns the registry dict."""
     from datetime import datetime, timezone
     reg = load_units()
     known = set(reg["units"]) | set(reg["missing"])
-    todo = sorted(h for h in hospcodes if refresh or h not in known)
+    retry = {h for h, m in reg["missing"].items() if isinstance(m, dict) and "gisError" in m}
+    todo = sorted(h for h in hospcodes if refresh or h not in known or h in retry)
+    failed: dict[str, str] = {}
+    consecutive, max_consecutive = 0, 3
     if todo:
         log(f"units: fetching {len(todo)} hospcode(s) from the MOPH GIS registry ...")
     for i, h in enumerate(todo, 1):
-        info = _gis(h)
-        if info:
-            reg["units"][h] = info
-            reg["missing"].pop(h, None)
+        if consecutive >= max_consecutive:
+            failed[h] = f"skipped after {max_consecutive} consecutive registry failures"
+            continue
+        try:
+            info = _gis(h)
+        except GisUnavailable as e:
+            consecutive += 1
+            failed[h] = str(e)
+            log(f"  WARN GIS registry unavailable for {h}: {e} -> fallback this run, retried next run")
+            if consecutive >= max_consecutive:
+                skipped = len(todo) - i
+                log(f"  WARN {max_consecutive} consecutive registry failures -> skipping the remaining {skipped} "
+                    f"hospcode(s) this run (fallback, retried next run)")
         else:
-            reg["units"].pop(h, None)
+            consecutive = 0
+            if info:
+                reg["units"][h] = info
+                reg["missing"].pop(h, None)
+            else:
+                reg["units"].pop(h, None)
         if i % 50 == 0 or i == len(todo):
             log(f"  [{i}/{len(todo)}]")
     # fallback record for every unit not in the registry (refreshed from the current data every run)
+    failed_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for h, info in hospcodes.items():
         if h in reg["units"]:
             continue
         areas = dict(sorted(info["areas"].items()))
         top = sorted(areas.items(), key=lambda kv: (-kv[1], kv[0]))[0][0] if areas else None
         reg["missing"][h] = {"maxTargetArea": top, "target": info["target"], "areas": areas}
+        if h in failed:
+            reg["missing"][h]["gisError"] = failed[h]
+            reg["missing"][h]["gisFailedAt"] = failed_at
     reg["units"] = dict(sorted(reg["units"].items()))
     reg["missing"] = dict(sorted(reg["missing"].items()))
     if todo or not UNITS.exists():
         reg["fetchedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     reg["source"] = GIS_URL
     _write_units(reg)
-    log(f"units: {len(reg['units'])} in registry, {len(reg['missing'])} not found (fallback) -> {UNITS.relative_to(ROOT)}")
+    tail = f" · {len(failed)} registry lookup(s) failed (fallback, retry next run)" if failed else ""
+    log(f"units: {len(reg['units'])} in registry, {len(reg['missing'])} not found (fallback) -> {UNITS.relative_to(ROOT)}{tail}")
     return reg

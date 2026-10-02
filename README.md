@@ -42,7 +42,7 @@ python3 scripts/kpi.py update --site angthong
 
 จบด้วย exit code ≠ 0 ถ้ามี **hard error** (สูตรไม่ตรง, จำนวนแถวผิด, ตัวเลขไม่ตรง Excel) → ห้าม push จนกว่าจะแก้ ·
 สถานะรอบล่าสุดอยู่ใน `data/cache/pipeline_status.json` (ไม่ commit)
-Warning ที่คาดไว้แล้ว: `normal_total ≠ female + male` และ `followed ≠ normal_after + delay_after_total` (ความคลาดของ HDC เอง) · `API != HDC Excel` ของ DSPM ประเทศ/เขต · เขต 13 (กทม.) ไม่มีข้อมูล DSPM · อำเภอรหัส `1310` (ปทุมธานี) ไม่มีในทะเบียน → แถว "ไม่ระบุพื้นที่"
+Warning ที่คาดไว้แล้ว: `normal_total ≠ female + male` และ `followed ≠ normal_after + delay_after_total` (ความคลาดของ HDC เอง) · `API != HDC Excel` ของ DSPM ประเทศ/เขต · เขต 13 (กทม.) ไม่มีข้อมูล DSPM · อำเภอรหัส `1310` (ปทุมธานี) ไม่มีในทะเบียน → แถว "ไม่ระบุพื้นที่" · ทะเบียน GIS ล่ม/timeout ระหว่างดึงหน่วยใหม่ → หน่วยนั้นใช้ fallback ชั่วคราว (นับเป็น INFERRED) และยิงซ้ำรอบถัดไปเอง ไม่ทำให้รอบล้ม
 
 หลังรันผ่านแล้ว:
 
