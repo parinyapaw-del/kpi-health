@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "source": "https://opendata-service.moph.go.th/gis/v1/getgis/hoscode/{hoscode}",
- "fetchedAt": "2026-10-02T06:40:04+00:00",
+ "fetchedAt": "2026-10-03T00:12:21+00:00",
  "units": {
   "00993": {
    "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลตลาดขวัญ",
@@ -5437,9 +5437,9 @@
   },
   "15244": {
    "maxTargetArea": "120104",
-   "target": 58,
+   "target": 59,
    "areas": {
-    "120104": 58
+    "120104": 59
    }
   },
   "21428": {
@@ -5477,8 +5477,8 @@
    "areas": {
     "120102": 4
    },
-   "gisError": "GIS registry failed for 22754: ConnectTimeout: HTTPSConnectionPool(host='opendata-service.moph.go.th', port=443): Max retries exceeded with url: /gis/v1/getgis/hoscode/22754 (Caused by ConnectTimeoutError(<HTTPSConnection(host='opendata-service.moph.go.th', port=443) at 0x7fced5d1e350>, 'Connection to opendata-service.moph.go.th timed out. (connect timeout=15)'))",
-   "gisFailedAt": "2026-10-02T06:40:04+00:00"
+   "gisError": "GIS registry failed for 22754: ConnectTimeout: HTTPSConnectionPool(host='opendata-service.moph.go.th', port=443): Max retries exceeded with url: /gis/v1/getgis/hoscode/22754 (Caused by ConnectTimeoutError(<HTTPSConnection(host='opendata-service.moph.go.th', port=443) at 0x7fecadde2fd0>, 'Connection to opendata-service.moph.go.th timed out. (connect timeout=15)'))",
+   "gisFailedAt": "2026-10-03T00:12:21+00:00"
   },
   "22761": {
    "maxTargetArea": "160101",
@@ -5773,18 +5773,18 @@
   },
   "41433": {
    "maxTargetArea": "120102",
-   "target": 89,
+   "target": 92,
    "areas": {
     "120102": 62,
-    "120103": 5,
-    "120104": 22
+    "120103": 6,
+    "120104": 24
    }
   },
   "41434": {
    "maxTargetArea": "120109",
-   "target": 232,
+   "target": 231,
    "areas": {
-    "120109": 102,
+    "120109": 101,
     "120110": 67,
     "120607": 63
    }
