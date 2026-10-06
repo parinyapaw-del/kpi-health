@@ -29,3 +29,6 @@ data/cache/dspm/2567/1*.json
 data/cache/dspm/2567/2*.json
 data/cache/dspm/2568/1*.json
 data/cache/dspm/2568/2*.json
+
+# iCloud Drive conflict copies ("name 2.json") created when git replaces many files at once — never commit them
+* 2.*
