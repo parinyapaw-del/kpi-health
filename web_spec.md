@@ -8,6 +8,8 @@
 | สถานะ | **approved → Phase 1 execute ใน session ใหม่** ที่เปิดใน `~/Desktop/Claude/web project/kpi-health/` ด้วยคำสั่ง "execute web_spec.md" |
 | Model | Orchestrator = Fable (หรือ Opus) อ่าน spec นี้ทั้งไฟล์ก่อน · Sonnet = pipeline ข้อมูล + โลโก้ · Opus = หน้าเว็บ · Orchestrator ตรวจทุกขั้น |
 
+> **Phase 1 snapshot (2026-09-29) — เก็บไว้เป็น reference** · ฉบับที่ใช้งานจริงคือ [`web_spec_phase2.md`](web_spec_phase2.md) + `README.md` · path ปัจจุบัน: เครื่องมือครั้งเดียวอยู่ใน `scripts/tools/` (`process_logo.py` ฯลฯ)
+
 > spec นี้เขียนให้ session ใหม่ทำงานได้โดยไม่ต้องรู้บทสนทนา Phase 0 · ทุกข้อเท็จจริงตรวจแล้ว 2026-09-29 · ห้ามเดาตัวเลข (CLAUDE.md rule 4) · ถ้าอะไรใน spec ขัดกับของจริงในเครื่อง ให้หยุดรายงาน ไม่ต้องแก้เอง
 
 ## 1. วัตถุประสงค์และผู้ใช้
@@ -201,7 +203,7 @@ DSPM: aggregate จาก raw เป็น `areacode6 × monthly` (ทุก fie
 - Chart.js 4 + chartjs-plugin-annotation จาก cdnjs · ปิด animation บนมือถือ
 - ก่อนเขียนกราฟ Opus ต้องโหลด skill `dataviz` และ `artifact-design`
 - ไฟล์: `site/assets/styles.css`, `site/assets/app.js` + `modules/{data,router,charts,format,components/*}.js` (ES modules)
-- โลโก้: `scripts/process_logo.py` → threshold ≥ 245 → alpha 0 (ขอบไล่ระดับ) → crop ขอบว่าง → `site/assets/logo-angthong.png` กว้าง 800px
+- โลโก้: `scripts/process_logo.py` (ปัจจุบันย้ายเป็น `scripts/tools/process_logo.py`) → threshold ≥ 245 → alpha 0 (ขอบไล่ระดับ) → crop ขอบว่าง → `site/assets/logo-angthong.png` กว้าง 800px
 
 ## 8. โครงสร้าง repo
 
@@ -223,8 +225,8 @@ kpi-health/
 │   ├── indicators/{dspm,coverage}.py   # metadata + aggregate + formulas (plugin)
 │   ├── build_site.py         # cache/Excel → site/data JSON + index.json
 │   ├── verify.py             # เทียบ API-built vs Excel 100%
-│   ├── process_logo.py
-│   └── requirements.txt      # requests, certifi, openpyxl, pillow
+│   ├── process_logo.py       # (ปัจจุบัน scripts/tools/process_logo.py)
+│   └── requirements.txt      # requests, certifi, openpyxl, pillow (ปัจจุบัน pillow ย้ายไป requirements-dev.txt)
 ├── site/                     # Cloudflare output dir
 │   ├── index.html  _redirects  angthong/index.html  assets/  data/angthong/*.json
 ├── .gitignore
@@ -244,7 +246,7 @@ kpi-health/
 |---|---|---|---|
 | 0 | Save | เปิด session ใน `~/Desktop/Claude/web project/kpi-health/` สั่ง "execute web_spec.md" | – |
 | 1 | Orchestrator | สร้างโครง §8 · **ย้าย** จาก `~/Desktop/Claude/web project/พัฒนาการเด็ก พี่ต้อง/`: Excel 22 ไฟล์ → `excel_reference` (จัดโฟลเดอร์ใหม่ตาม indicator/ปี), `API_NOTES.md` → `docs/`, `logo.webp` → `data/` แล้วลบโฟลเดอร์เก่า · เขียน `sites/angthong.json`, `.gitignore`, `_redirects` | โครงตรง §8 · ไม่มีไฟล์ตกหล่น |
-| 2 | Sonnet | `loaders/moph_api.py`, `loaders/xlsx_hdc.py`, `indicators/*.py`, `build_site.py`, `verify.py`, `kpi.py`, `process_logo.py`, `lookup/areas.json` (+ตรวจชื่อ) · ตรวจความหมาย `monthly` (§3.1) · รัน `kpi.py update` จริง | verify 0 error · แถวครบ · JSON ตรง §5 · โลโก้โปร่ง |
+| 2 | Sonnet | `loaders/moph_api.py`, `loaders/xlsx_hdc.py`, `indicators/*.py`, `build_site.py`, `verify.py`, `kpi.py`, `process_logo.py` (ปัจจุบัน `scripts/tools/`), `lookup/areas.json` (+ตรวจชื่อ) · ตรวจความหมาย `monthly` (§3.1) · รัน `kpi.py update` จริง | verify 0 error · แถวครบ · JSON ตรง §5 · โลโก้โปร่ง |
 | 3 | Orchestrator | ตรวจด้วยมือ 6 จุดเทียบ Excel: อ่างทอง 2568 total 83.58 = 4,748/5,681 · เมืองอ่างทอง 2569 m9 · ตลาดหลวง 2567 total 92.78 = 90/97 · เขต 4 2567 Coverage (10) 9.14 · อ่างทอง 2569 Coverage เมือง 10.96 = 48/438 · เขต 13 2569 = null | ตรงทุกจุด |
 | 4 | Opus | หน้าเว็บ §6–7 (โหลด `dataviz`, `artifact-design`) | ทุก component §6.4 · เจาะ 4 ชั้น · hash routing · dark/light · monthly chart |
 | 5 | Orchestrator | ตรวจใน browser 1440 / 375: ไม่มี console error, ไม่มี horizontal scroll, ตัวเลขการ์ดตรง JSON, กดแท่งเจาะได้, hash เปิดตรงหน้า | ผ่านทุกข้อ |

@@ -4,11 +4,11 @@
 pipeline จึงเพิ่ม `overrides` รายหน่วยใน `data/lookup/units.json` (20 หน่วย: 3 หน่วยที่ GIS ผิด + 17 หน่วยที่ fallback "เป้ามากสุด" ผิด)
 → **21 อำเภอของปี 2569 verify ตรง 100%** (19 ใหม่ + ท่าเรือ + หนองแค; เมืองอ่างทองใช้ไฟล์ export 2569-09-30 แทนไฟล์ 09-29)
 → **3 อำเภอยังไม่ตรง 1 แถวต่ออำเภอ** เพราะ HDC **ไม่นับหน่วย** 41609 (เมืองนนทบุรี), 41804 (ปากเกร็ด), 41833 (บางบัวทอง) ที่ไหนเลยใน 22 ไฟล์ —
-ไฟล์ Excel 3 อำเภอนี้เก็บไว้ที่ `data/excel_reference/_unresolved/dspm_2569_2569-09-30/` (ไม่ใส่ในโฟลเดอร์ oracle `<ปี>/<YYYY-MM-DD>/`, verify ไม่อ่าน, spec §4.3 ข้อ 4: ไม่เลือกกฎเอง) · รันซ้ำ: `python3 scripts/unit_location_solver.py`
+ไฟล์ Excel 3 อำเภอนี้เก็บไว้ที่ `data/excel_reference/_unresolved/dspm_2569_2569-09-30/` (ไม่ใส่ในโฟลเดอร์ oracle `<ปี>/<YYYY-MM-DD>/`, verify ไม่อ่าน, spec §4.3 ข้อ 4: ไม่เลือกกฎเอง) · รันซ้ำ: `python3 scripts/tools/unit_location_solver.py`
 
 ---
-รันซ้ำได้ด้วย `python3 solver.py` (ใช้เวลาประมาณ 18 วินาที, อ่าน repo อย่างเดียว, ไม่ใช้ network, ใช้ cache ที่ commit ไว้ + `units.json`)
-ผลลัพธ์ทั้งหมดอยู่ใน `solver_out.txt` · `solver_result.json` · `overrides_proposal.json`
+รันซ้ำได้ด้วย `python3 scripts/tools/unit_location_solver.py` (ต้องมี numpy: `pip install -r scripts/requirements-dev.txt` · ใช้เวลาประมาณ 18 วินาที, อ่าน repo อย่างเดียว, ไม่ใช้ network, ใช้ cache ที่ commit ไว้ + `units.json`)
+ผลลัพธ์พิมพ์ออก stdout และเขียน `solver_result.json` · `overrides_proposal.json` ที่ `data/raw_api/unit_solver/` (gitignored)
 
 ## วิธีการ (ต่างจากข้อ 3 ของ brief — แข็งแรงกว่า)
 
@@ -142,6 +142,6 @@ pipeline จึงเพิ่ม `overrides` รายหน่วยใน `da
 ## หมายเหตุสำหรับ pipeline (งาน B/C)
 - override ข้ามอำเภอมี 2 หน่วย: **23933** (1201→1204) และ **33160** (pseudo 1310→1306) ซึ่งจะเปลี่ยนยอดรวมรายอำเภอในมุมมองจังหวัดด้วย
   ตรงกับที่ HDC ทำ: Excel 1204 +9 = +85 − 76, 1306 +30
-- `solver.py` ตั้ง baseline เป็น GIS + fallback โดยตัด `overrides` ออกจาก registry ก่อนคำนวณ จึงรันซ้ำได้แม้ `units.json` จะมี overrides แล้ว
+- solver ตั้ง baseline เป็น GIS + fallback โดยตัด `overrides` ออกจาก registry ก่อนคำนวณ จึงรันซ้ำได้แม้ `units.json` จะมี overrides แล้ว
   ขณะที่รัน working tree มีงานของ agent B อยู่ (dspm.py/xlsx_hdc.py แก้แล้วแต่ยังไม่ commit) แต่ผลลัพธ์เหมือนกับรันก่อนหน้าทุกบรรทัด
 - solver นี้ไม่แก้ไฟล์ใดใน repo

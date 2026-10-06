@@ -30,7 +30,7 @@
 
 | # | เรื่อง | ตัดสินใจ |
 |---|---|---|
-| Q1 | โลโก้เขต 4 | ใช้ `logo เขต 4.jpg` (ขาว-ดำ 2048px ขอบขาว ~40%) → ตัดขอบให้เรียบร้อย + พื้นโปร่ง ด้วย `process_logo.py` → `site/assets/logo-r4.png` · dark theme กลับสีเส้นเป็นขาว (CSS `filter: invert(1)` เฉพาะ dark) · ถ้าได้ไฟล์สีภายหลังวางทับแล้วรันซ้ำ |
+| Q1 | โลโก้เขต 4 | ใช้ `logo เขต 4.jpg` (ขาว-ดำ 2048px ขอบขาว ~40%) → ตัดขอบให้เรียบร้อย + พื้นโปร่ง ด้วย `process_logo.py` (ตอนนี้ `scripts/tools/process_logo.py`) → `site/assets/logo-r4.png` · dark theme กลับสีเส้นเป็นขาว (CSS `filter: invert(1)` เฉพาะ dark) · ถ้าได้ไฟล์สีภายหลังวางทับแล้วรันซ้ำ |
 | Q2 | "จัดทำโดย รพ.อ่างทอง" | **ทั้ง 2 ที่**: บรรทัดเล็กใต้ชื่อเว็บใน header (โลโก้อ่างทอง ~24px) และ footer (โลโก้ + ข้อความ + ยอดผู้ใช้ + ข้อมูล ณ) |
 | Q3 | URL | เปิดที่ root `/` · hash `#/<indicator>/<year>/<level>/<code>` เหมือนเดิม · `_redirects`: `/angthong/*  /  301` · site id ภายในยังเป็น `angthong` ได้ (ไม่ rename ไฟล์/โฟลเดอร์ `sites/angthong.json`, `site/data/angthong/`) |
 | Q4 | ชื่อตัวชี้วัด | แท็บ = ชื่อย่อ **"สมวัย"** / **"เข้าถึงบริการ"** · หัวเรื่องใต้แท็บ = ชื่อเต็ม (§5.2) · มือถือชื่อเต็มขึ้น 2 บรรทัดได้ |
@@ -67,10 +67,12 @@
 
 ## 3. ข้อเท็จจริงที่ตรวจแล้ว 2026-09-30 (ใช้ตัดสินใจ ไม่ต้องตรวจซ้ำ แต่ถ้าไม่ตรงให้หยุดรายงาน)
 
+> **Snapshot 2026-09-30 (ไม่อัปเดตตามข้อมูลสด)** — ตัวเลข/ข้อสรุปในหัวข้อนี้คือภาพ ณ วันที่ล็อก spec · ตัวเลขปัจจุบัน (หน่วย/อำเภอ verified ฯลฯ) อยู่ที่ [README §4](README.md) แหล่งเดียว · การเปลี่ยนแปลงหลัง 2026-09-30 ดู §12
+
 - **DSPM cache รายจังหวัดมีครบ 77 จังหวัด × 2567–2569** ใน `data/cache/dspm/<ปี>/<prov>.json` (ละเอียด `areacode6 × unit6 × monthly`) แต่ `.gitignore` commit เฉพาะ `15.json` + `provinces.json` · เขต 4 ปี 2569 รวม 8 ไฟล์ ≈ 1.8 MB · raw response อยู่ `data/raw_api/s_childdev_specialpp/<ปี>/<prov>.json` (มี `hospcode`; ไม่ commit)
 - **Coverage 2569 มีรายอำเภอครบทุกอำเภอของทั้ง 8 จังหวัด**: นนทบุรี 6 · ปทุมธานี 7 · พระนครศรีอยุธยา 16 · อ่างทอง 7 · ลพบุรี 11 · สิงห์บุรี 6 · สระบุรี 13 · นครนายก 4 = **70 อำเภอ** · แถว API = `hospcode × areacode(8)` จึงคำนวณตำบลได้ · ตำบลใน lookup: 52/60/209/73/124/43/111/41 = **713**
 - **กฎตำบลเดิมผิดเมื่อหน่วยเป็นโรงพยาบาล**: ท่าเรือ (1402) — รพ.ท่าเรือ `10768` เป้า 122 กระจาย จำปา 73 / ท่าเรือ 26 / ท่าหลวง 23 → กฎ "เป้ามากสุด" ลงจำปา ทำให้ Excel HDC (ท่าเรือ 122, จำปา 41) ไม่ตรง · หนองแค (1903) ตรงเพราะทุกหน่วยเป้ามากสุดที่ตำบลตัวเอง · ยอดอำเภอไม่กระทบ (630 = 630)
-- **ทะเบียนที่ตั้งหน่วย**: `GET https://opendata-service.moph.go.th/gis/v1/getgis/hoscode/{hoscode}` (ไม่ต้อง auth, GeoJSON) → `properties.provcode/distcode/subdistcode/hosname/hostype/dep` · `10768` → `14`+`02`+`01` = 140201 ท่าเรือ ✓ · `01167` รพ.สต.จำปา → 140202 ✓ · เขต 4 ปี 2569 มี **982 hospcode** ดึงครบแล้ว → พบ 882 ไม่พบ 100 (รายละเอียด §4.4) · **`data/lookup/units.json` สร้างแล้วในรอบ plan** · กฎ "ที่ตั้งตามทะเบียน + fallback" ตรง Excel รายตำบล 100% ทั้ง 3 อำเภอที่มีไฟล์ (เมืองอ่างทอง/หนองแค/ท่าเรือ) ไม่มีหน่วยตั้งข้ามอำเภอใน 3 อำเภอนี้ · endpoint รายจังหวัดไม่มี (404) ต้องยิงทีละ hoscode ≈ 0.45 วิ/ครั้ง · **2026-10-02: `getgis/provcode/{p}` ใช้ได้แล้ว** (8 จังหวัด 963 หน่วย ตำบลตรงทะเบียนเดิม 100% แต่ไม่มี 100 หน่วยนอกทะเบียนเลย — ดู `docs/API_NOTES.md`)
+- **ทะเบียนที่ตั้งหน่วย**: `GET https://opendata-service.moph.go.th/gis/v1/getgis/hoscode/{hoscode}` (ไม่ต้อง auth, GeoJSON) → `properties.provcode/distcode/subdistcode/hosname/hostype/dep` · `10768` → `14`+`02`+`01` = 140201 ท่าเรือ ✓ · `01167` รพ.สต.จำปา → 140202 ✓ · เขต 4 ปี 2569 (ณ 2026-09-30) มี **982 hospcode** ดึงครบแล้ว → พบ 882 ไม่พบ 100 (รายละเอียด §4.4 · ตัวเลขสด README §4) · **`data/lookup/units.json` สร้างแล้วในรอบ plan** · กฎ "ที่ตั้งตามทะเบียน + fallback" ตรง Excel รายตำบล 100% ทั้ง 3 อำเภอที่มีไฟล์ (เมืองอ่างทอง/หนองแค/ท่าเรือ) ไม่มีหน่วยตั้งข้ามอำเภอใน 3 อำเภอนี้ · endpoint รายจังหวัดไม่มี (404) ต้องยิงทีละ hoscode ≈ 0.45 วิ/ครั้ง · **2026-10-02: `getgis/provcode/{p}` ใช้ได้แล้ว** (8 จังหวัด 963 หน่วย ตำบลตรงทะเบียนเดิม 100% แต่ไม่มี 100 หน่วยนอกทะเบียนเลย — ดู `docs/API_NOTES.md`)
 - **Excel oracle ใหม่ 4 ไฟล์** (DSPM 2569, layout เดียวกับของเดิม 140 คอลัมน์, header A1 = `อำเภอ`/`ตำบล`): `สระบุรีจังหวัด.xlsx` (13 อำเภอ) · `อำเภอหนองแค สระบุรี.xlsx` (18 ตำบล) · `อยุธยาจังหวัด.xlsx` (16 อำเภอ) · `อำเภอท่าเรือ อยุธยา.xlsx` (10 ตำบล) — ตอนนี้วางที่ root repo · สุ่มเทียบ cache ระดับอำเภอตรงทุกแถวที่ดู
 - `logo เขต 4.jpg` 2048×2048 RGB ขาว-ดำ · แปดเหลี่ยม + ชื่อ 8 จังหวัด · ขอบขาวราว 40% ทุกด้าน
 - เว็บ live: `https://kpi-health.pages.dev/` → 302 `/angthong/` (200) · repo `parinyapaw-del/kpi-health` public · Cloudflare Pages เชื่อม Git แล้ว (push main = deploy)
@@ -92,7 +94,7 @@
   "years": [2569], "currentYear": 2569, "autoYear": true,
   "targets": {"dspm": {"2569": {"value": 88}}, "coverage": {"2569": {"value": 30}}},
   "colorRules": {"warnBand": 5, "smallN": 20},
-  "excel": {"dir": "data/excel_reference", "sourceLabel": "HDC export"}
+  "excel": {"dir": "data/excel_reference"}
 }
 ```
 - ลบ `home.path` 4 ชั้นเดิม · ลบ targets 2567/2568 · `autoYear: true` = §7.3
@@ -114,16 +116,17 @@
 - ทุกไฟล์ dataset มี `asOf` จาก `date_com` สูงสุดของแถวที่ใช้ และ `source: "api"`
 
 ### 4.3 กฎตำบล = ที่ตั้งหน่วยบริการ (แทนกฎ Phase 1)
-1. `scripts/build_lookup.py units` → ยิง GIS service ทีละ hoscode สำหรับทุก `hospcode` ที่พบใน raw DSPM + Coverage ของ 8 จังหวัด (ปีใน `years`) → เขียน `data/lookup/units.json` (commit):
+1. `python3 scripts/kpi.py units` (= `build_lookup.units()`; `build_lookup.py` ไม่มี `__main__`) → ยิง GIS service ทีละ hoscode สำหรับทุก `hospcode` ที่พบใน cache **DSPM** ของ 8 จังหวัด (ปีใน `years`; Coverage ไม่มี hospcode ที่ใช้ได้ — `docs/API_NOTES.md` §2) → เขียน `data/lookup/units.json` (commit):
    `{"schema":1,"source":"<url template>","fetchedAt":..., "units":{"10768":{"name":"โรงพยาบาลท่าเรือ","tambon":"140201","hostype":"07","dep":"21002"}, ...}, "missing":{"41425":{"maxTargetArea":"120103","target":..,"areas":{...}}, ...}}`
-   - **incremental**: hospcode ที่มีอยู่แล้วไม่ยิงซ้ำ · retry 3 ครั้ง backoff 5/15/45 วิ · ครั้งแรก 982 รหัส ≈ 8 นาที · **ไฟล์นี้ถูกสร้างไว้แล้วในรอบ plan (2026-09-30)** ถ้ามีอยู่ให้ใช้เลย แค่เติมรหัสใหม่
+   - **incremental**: hospcode ที่มีอยู่แล้วไม่ยิงซ้ำ · retry 3 ครั้ง backoff 5/15/45 วิ · ครั้งแรก 2026-09-30: 982 รหัส ≈ 8 นาที · **ไฟล์นี้ถูกสร้างไว้แล้วในรอบ plan (2026-09-30)** ถ้ามีอยู่ให้ใช้เลย แค่เติมรหัสใหม่
    - **ทะเบียนล่ม/timeout ไม่ทำให้รอบล้ม**: หน่วยที่ยิงไม่สำเร็จใช้ fallback ในรอบนั้น · บันทึก `gisError` (+ `gisFailedAt`) ใน `units.json → missing` · ยิงซ้ำรอบถัดไปเองโดยไม่ต้อง `--refresh` (สำเร็จ/ยืนยันว่าไม่พบ → marker หายเอง) · ล้มติดกัน 3 รหัส → รหัสใหม่ที่เหลือถูกข้ามในรอบนั้น
 2. ตำบลของแถว = `units[hospcode].tambon` · ถ้าไม่มีในทะเบียน → fallback = ตำบลที่หน่วยนั้นมีเป้า (DSPM `target`; Coverage ใช้ `c_1`) มากสุดในปีนั้น (กฎ Phase 1) และนับหน่วยนั้นเป็น `inferredUnits` ของอำเภอ
 3. ตำบลตามทะเบียนต้องอยู่ในอำเภอเดียวกับ `areacode[:4]` ของแถวส่วนใหญ่ของหน่วย ถ้าไม่ (หน่วยตั้งข้ามอำเภอ) → ยึด**อำเภอที่ตั้งตามทะเบียน** และ log warning ให้ Fable ดู · **verify hard error ถ้ายอดรวมตำบลทั้งอำเภอ ≠ ยอดอำเภอที่ได้จาก `areacode[:4]`** ยกเว้นเคสข้ามอำเภอที่ log ไว้ (รายงานเป็น warning พร้อมตัวเลข)
 4. Excel 2569 ที่มี (เมืองอ่างทอง 14 ตำบล · หนองแค 18 · ท่าเรือ 10) ต้องตรง **100%** ด้วยกฎใหม่ — ถ้าเมืองอ่างทองไม่ตรงด้วยกฎใหม่ (Phase 1 ตรงด้วยกฎเก่า) ให้**หยุดรายงาน** ไม่เลือกกฎเอง
 
 ### 4.4 อำเภอที่มีหน่วยนอกทะเบียน (fallback) — ให้ Save export Excel HDC รายตำบล 2569 มาเทียบเพิ่ม
-ทะเบียนดึงแล้ว 2026-09-30: **982 hospcode → พบ 882 · ไม่พบ 100 (10%)** ใน 23 อำเภอ · รหัสที่ไม่พบ: `4xxxx` 44 (อปท./คลินิก) · `2xxxx` 27 และ `1xxxx` 19 (สถานพยาบาลเอกชน/นอก สป.สธ.) · `7xxxx`/`3xxxx`/`9xxxx` 10 · **กฎใหม่ + fallback ตรง Excel 100% แล้วที่ เมืองอ่างทอง (14 ตำบล, fallback 2 หน่วย) · หนองแค (18) · ท่าเรือ (10)**
+> **Snapshot 2026-09-30 (ไม่อัปเดตตามข้อมูลสด)** — ตัวเลข/ข้อสรุปในหัวข้อนี้คือภาพ ณ วันที่ล็อก spec · ตัวเลขปัจจุบัน (หน่วย/อำเภอ verified ฯลฯ) อยู่ที่ [README §4](README.md) แหล่งเดียว · การเปลี่ยนแปลงหลัง 2026-09-30 ดู §12
+ทะเบียนดึงแล้ว 2026-09-30 (ณ วันนั้น): **982 hospcode → พบ 882 · ไม่พบ 100 (10%)** ใน 23 อำเภอ · รหัสที่ไม่พบ: `4xxxx` 44 (อปท./คลินิก) · `2xxxx` 27 และ `1xxxx` 19 (สถานพยาบาลเอกชน/นอก สป.สธ.) · `7xxxx`/`3xxxx`/`9xxxx` 10 · **กฎใหม่ + fallback ตรง Excel 100% แล้วที่ เมืองอ่างทอง (14 ตำบล, fallback 2 หน่วย) · หนองแค (18) · ท่าเรือ (10)**
 
 | จังหวัด | อำเภอ | รหัส | หน่วยนอกทะเบียน | เป้า DSPM 2569 ของหน่วยเหล่านี้ | รหัสหน่วย |
 |---|---|---|---|---|---|
@@ -164,7 +167,7 @@
 ### 4.6 Metadata ตัวชี้วัด (`scripts/indicators/*.py`)
 DSPM: `name_th` = "ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย 5 ช่วงอายุ (DSPM)" · `short` = "สมวัย" · `levels` = 4 ระดับเดิม · `monthly: False` · การ์ดรองคงเดิม (คัดกรอง / สงสัยล่าช้า / ติดตามได้)
 
-Coverage: `name_th` = "ร้อยละของเด็กปฐมวัยที่มีพัฒนาการล่าช้าเข้าถึงบริการพัฒนาการและสุขภาพจิตที่ได้มาตรฐาน (Coverage)" · `short` = "เข้าถึงบริการ" · `levels` = `["country","region","province","district"]` · **`headline` = `{"metric":"pct_reached_cum","num":"reached_cum","den":"expected","sub":{"metric":"pct_reached_fy","num":"reached_fy","label":"ปีงบนี้"}}`** · `cards` = TEDA4I (4)/(3) · ICD9CM (5)/(3) [เพิ่ม `pct_icd9` ใน derive/validate] · ICD-10 (6)/(3) · `heatmap` = 4 คอลัมน์ตาม Q16 (เพิ่ม key `heatmap` ใน META ให้ web ไม่ต้องเดา) · `chart: {"style":"fill","fillNum":"reached_cum","fillDen":"expected","fillLabel":"เข้าถึงบริการสะสม","baseLabel":"คาดประมาณเด็กพัฒนาการล่าช้า"}` (§5.5)
+Coverage: `name_th` = "ร้อยละของเด็กปฐมวัยที่มีพัฒนาการล่าช้าเข้าถึงบริการพัฒนาการและสุขภาพจิตที่ได้มาตรฐาน (Coverage)" · `short` = "เข้าถึงบริการ" · `levels` = `["country","region","province","district"]` · **`headline` = `{"metric":"pct_reached_cum","num":"reached_cum","den":"expected","sub":{"metric":"pct_reached_fy","num":"reached_fy","label":"ปีงบนี้"}}`** · `cards` = TEDA4I (4)/(3) · ICD9CM (5)/(3) [เพิ่ม `pct_icd9` ใน derive/validate] · ICD-10 (6)/(3) · `heatmap` = 4 คอลัมน์ตาม Q16 (เพิ่ม key `heatmap` ใน META ให้ web ไม่ต้องเดา) · `chart: {"style":"fill","fillNum":"reached_cum","fillDen":"expected","fillLabel":"เข้าถึงบริการสะสม","baseLegend":"คาดประมาณเด็กพัฒนาการล่าช้า"}` (§5.5)
 
 ## 5. หน้าเว็บ (Opus — โหลด skill `dataviz` + `artifact-design` ก่อนเขียนกราฟ)
 
@@ -226,6 +229,8 @@ Coverage: `name_th` = "ร้อยละของเด็กปฐมวัย
 
 ## 7. GitHub Actions — อัปเดตอัตโนมัติ (Phase 2)
 
+> การออกแบบ ณ 2026-09-30 — **flow ปีงบใหม่ (§7.3), นโยบาย refresh/`--year` (§7.2) และ timeout (§7.1) ถูกแก้ 2026-10-06** ดู §12 และ [README §1](README.md) ซึ่งเป็นฉบับที่ใช้งานจริง
+
 ### 7.1 `.github/workflows/update.yml`
 - `on: schedule: cron "0 0 * * *"` (= 07:00 ICT ทุกวัน) + `workflow_dispatch` · `permissions: contents: write, issues: write` · `concurrency: update` (ไม่รันซ้อน) · timeout 40 นาที
 - ขั้น: checkout → Python 3.13 + `pip install -r scripts/requirements.txt` → `python3 scripts/kpi.py update --site angthong --refresh --year <ทุกปีใน years>` (DSPM ดึงเฉพาะ 8 จังหวัดเขต 4 + `provinces.json` ระดับประเทศ **ต้องคิดใหม่**: ระดับประเทศ 77 จังหวัด ≈ 45 นาที เกิน → ให้ `provinces.json` (country/region) **อัปเดตรายสัปดาห์** เฉพาะรอบวันจันทร์ (`if: github.event.schedule` + วันในสัปดาห์) ส่วน 8 จังหวัด + Coverage รายวัน · จังหวัดนอกเขต 4 ในรอบสัปดาห์ยิง 3 workers ไม่ได้ (429) → 1 worker, ตั้ง timeout 90 นาทีในรอบวันจันทร์)
@@ -272,16 +277,16 @@ Cloudflare: สร้าง KV `kpi-health-config` → bind `CONFIG` ใน Page
 kpi-health/
 ├── web_spec.md (Phase 1, reference) · web_spec_phase2.md (ไฟล์นี้) · README.md (เขียนใหม่ตาม Phase 2)
 ├── .github/workflows/update.yml
-├── functions/api/hit.js · functions/api/config.js (2b) · functions/api/admin/*.js (2b) · functions/_lib/{d1,auth}.js
+├── functions/api/hit.js · functions/api/config.js (2b) · functions/api/admin/*.js (2b) · functions/_lib/{auth,http,config}.js
 ├── sites/angthong.json (§4.1)
 ├── data/excel_reference/<ind>/<ปี>/*.xlsx        # ย้ายจาก angthong/ + 4 ไฟล์ใหม่
 ├── data/lookup/areas.json · units.json (ใหม่) · SOURCE.md (เพิ่ม GIS service)
 ├── data/cache/dspm/<ปี>/{12,13,14,15,16,17,19,26,provinces}.json · coverage/<ปี>/all.json
-├── scripts/  (kpi.py: --national, autoYear · build_lookup.py units · indicators/*.py META ใหม่ · verify.py scope detection)
+├── scripts/  (kpi.py: --national, autoYear, `kpi.py units` · indicators/*.py META ใหม่ · verify.py scope detection · tools/ = เครื่องมือครั้งเดียว §12)
 └── site/
     ├── index.html (แอป) · _redirects · admin/ (2b)
     ├── assets/ logo-r4.png · logo-angthong.png · styles.css · app.js · modules/…
-    └── data/angthong/ index.json + <ind>_2569_{country_TH,region_4,province_<8>,district_<70>}.json  (≈ 160 ไฟล์)
+    └── data/angthong/ index.json + <ind>_2569_{country_TH,region_4,province_<8>,district_<70>}.json  (จริง 91 ไฟล์รวม index.json — Coverage ไม่มี district · ณ 2026-10-06)
 ```
 
 ## 10. แผน execute
@@ -304,8 +309,18 @@ Opus: §8.1–8.3 · Save+Fable: §8.4 · Fable ตรวจ: login ด้วย
 
 ## 11. สมมติฐานที่ยังไม่ยืนยัน
 - [CONFIDENT] HDC จัดกลุ่มระดับตำบลตาม**ที่ตั้งหน่วยในทะเบียน** — เทียบครบแล้ว 3 อำเภอ 42 ตำบล ตรง 100% (เป้า) · verify ขั้น 2 ต้องตรงทุก key ทุกกลุ่มอายุ ไม่ใช่แค่เป้า · ถ้าไม่ตรง → หยุดรายงาน
-- [INFERRED] fallback "เป้ามากสุด" สำหรับ 100 หน่วยนอกทะเบียน (10%) ถูกต้อง — ยืนยันแล้วเฉพาะเมืองอ่างทอง (2 หน่วย) · 23 อำเภอใน §4.4 รอ Excel จาก Save · หน่วยเอกชน `1xxxx/2xxxx` ที่ส่งเด็กหลายตำบลเป็นจุดเสี่ยงสุด (เหมือนเคส รพ.ท่าเรือ)
+- [INFERRED] fallback "เป้ามากสุด" สำหรับหน่วยนอกทะเบียน (ณ 2026-09-30: 100 หน่วย/10% · ตอนนี้ 101 — README §4) ถูกต้อง — ยืนยันแล้วเฉพาะเมืองอ่างทอง (2 หน่วย) · 23 อำเภอใน §4.4 รอ Excel จาก Save · หน่วยเอกชน `1xxxx/2xxxx` ที่ส่งเด็กหลายตำบลเป็นจุดเสี่ยงสุด (เหมือนเคส รพ.ท่าเรือ)
 - [UNCERTAIN] Coverage ระดับตำบลไม่มีรายงาน HDC เทียบ → ป้ายบนเว็บ
 - [UNCERTAIN] `request.cf.region/city` ของ Cloudflare ระบุจังหวัดไทยได้ละเอียดแค่ไหน (อาจได้เป็นภาค/เมืองใหญ่) → เก็บตามที่ได้ ไม่แก้
-- [UNCERTAIN] GIS service มี rate limit ไหม (982 ครั้งใน 8 นาทีผ่านตอน plan) → retry/backoff ไว้แล้ว
+- [UNCERTAIN] GIS service มี rate limit ไหม (982 ครั้งใน 8 นาทีผ่านตอน plan 2026-09-30) → retry/backoff ไว้แล้ว
 - [UNCERTAIN] เป้าหมาย 2570 ยังไม่ประกาศ → "ยังไม่กำหนด" จนกว่า Save ใส่
+
+## 12. บันทึกการแก้ 2026-10-06 (หลัง review — เนื้อหา §1–§11 คงไว้ ยกเว้นจุดที่ระบุ: §4.1 `sourceLabel`, §4.3 ข้อ 1, §4.6 `baseLabel`→`baseLegend`, §9)
+- **ปีงบ 2570 (แทน §7.3 / Q33)**: `check_new_year` แค่ probe (Coverage ทั้งประเทศ + DSPM จังหวัด 15/drill แรก) ไม่แก้ `sites/angthong.json` · นับเมื่อ DSPM มีแถวเท่านั้น · รอบรายวันที่พบ → `pendingYears: [Y]` ใน `pipeline_status.json` → workflow dispatch ตัวเอง `national=true, year=Y` (เพิ่ม `actions: write`; ข้ามถ้ามีรอบ "ปีงบ Y" ค้าง)
+- **รอบ national ของ Y**: DSPM 77 จังหวัด → Coverage (0 แถว = warning) → units → เพิ่ม Y ใน `years` / `currentYear = max(currentYear, Y)` / `newYears: [Y]` / Issue "พบข้อมูลปีงบ Y — กรุณาใส่เป้าหมาย" **ต่อเมื่อมี `data/cache/dspm/Y/provinces.json`** · DSPM ดึงล้ม = exit 2 + Issue และ config ไม่เปลี่ยน · ว่างทั้ง 77 จังหวัด = warning ไม่เพิ่มปี
+- **Refresh policy (§7.2)**: รายวัน = 8 จังหวัด + Coverage เฉพาะ `currentYear` และ `currentYear-1` (key ไม่บังคับ `refreshYears`, ค่าเริ่มต้น 2) · ปีเก่ากว่านั้นใช้ cache ที่ commit · `--national` = 77 จังหวัดเฉพาะ `currentYear` · `--year Y` **จำกัดการ fetch** (build/verify ยังครอบ years ∪ Y) · timeout national 150 / รายวัน 40 นาที (§7.1 เดิม 90/40) · input `year` + run-name "ปีงบ Y" · Issue step เดียว `if: always()` (ครอบคลุม cancelled/timeout)
+- **Error handling**: `do_fetch` เก็บ error ต่อ (indicator, ปี) · Coverage 0 แถว = warning · แถว Coverage เสียถูกข้ามและนับ warning · status มี `fetchPlan`, `fetchWarnings`, `pendingYears`
+- **Refactor**: ตาราง `PCT` เดียวต่อ indicator + helper ใน `indicators/common.py` (`derive_pcts`, `check_pcts`, `compare_values`, `fallback_tambon`; แก้บั๊กเทียบ Coverage เมื่อตัวหารเป็น 0) · `moph_api.retry` · pseudo-row "ไม่ระบุพื้นที่" สร้างใน `build_site` เท่านั้น · `build_lookup.build()` เขียนทับเฉพาะ marker block ใน `SOURCE.md` · `scripts/tools/{process_logo,unit_location_solver,units_missing_xlsx}.py` + `requirements-dev.txt` (pillow, numpy)
+- **Site JSON**: ไฟล์ district ไม่มี `units` · `index.json` ไม่มี `sourceLabels.excel` และ META ไม่มี `source.bodyTemplate/needsProvince/levels/monthly` · Coverage `chart.baseLabel` → `baseLegend` · `sites/angthong.json` ไม่มี `excel.sourceLabel`
+- **เว็บ**: ป้าย n<20 ใช้ `colorRules.smallN` · heatmap แสดง "เป้าหมาย: ยังไม่กำหนด (ไม่แบ่งสี)" เมื่อไม่มีเป้า และ "ยังไม่มีไฟล์ HDC ให้ตรวจสำหรับปีนี้" เมื่อปีนั้นไม่มี oracle · route เริ่มต้นเลือก indicator/ปีล่าสุดที่มี dataset ระดับ home · admin เตือนเมื่อ KV `currentYear` ≠ repo (ไม่ลบเอง) · `functions/_lib/{auth,http,config}.js`
+- ตัวเลขใน §3 / §4.4 / §11 = snapshot 2026-09-30 · ตัวเลขสด (หน่วย 983 = 882 + 101, verified 21 อำเภอ, 702 ตำบล) อยู่ที่ [README §4](README.md)
