@@ -141,8 +141,8 @@ def api_datasets(plugin, ctx, year, cache, warnings, views):
         for r in v["rows"]:
             if r["code"] in expected:
                 rows.append(r)
-            elif v["level"] == "province":
-                rows.append(dict(r, pseudo=True, name=r.get("name") or f"ไม่ระบุพื้นที่ (รหัส {r['code']})"))
+            elif v["level"] == "province":            # the only place that builds the unknown-district pseudo row
+                rows.append(dict(r, pseudo=True, name=f"ไม่ระบุพื้นที่ (รหัส {r['code']})"))
                 warnings.append(f"{plugin.ID} {year} {v['level']}/{v['scope']}: district code {r['code']} not in "
                                 f"lookup -> pseudo row (counted in the province total, not ranked)")
             elif v["level"] == "district":
@@ -246,13 +246,13 @@ def excel_datasets(plugin, ctx, workbooks):
 
 
 # ------------------------------------------------------------------ build
-def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int], log=print) -> dict:
+def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int]) -> dict:
     api, excel, warnings = {}, {}, []
     excel_dir = ROOT / site["excel"]["dir"]
     registry = build_lookup.load_units()
     for ind in indicators:
         plugin = PLUGINS[ind]
-        wbs = [w for w in xlsx_hdc.discover(excel_dir, ind) if w["year"] in years]
+        wbs = xlsx_hdc.discover(excel_dir, ind, years)
         excel.update(excel_datasets(plugin, ctx, wbs))
         for y in years:
             if ind == "dspm":
@@ -273,7 +273,7 @@ def build_datasets(site: dict, ctx: dict, indicators: list[str], years: list[int
                 if cache is None:
                     warnings.append(f"coverage {y}: no cache (run fetch)")
                     continue
-                api.update(api_datasets(coverage, ctx, y, cache, warnings, coverage.api_views(cache, ctx)))
+                api.update(api_datasets(coverage, ctx, y, cache, warnings, coverage.api_views(cache, ctx, warnings)))
     published = dict(api)                                # Excel is verify-only
     # district datasets that have an Excel oracle -> verified (the pipeline fails hard if they ever differ)
     verified: dict = {}
@@ -311,7 +311,6 @@ def dataset_json(site_id: str, plugin, ds: dict) -> dict:
     if ds["level"] == "district":
         out["inferredUnits"] = ds.get("inferredUnits", 0)
         out["overriddenUnits"] = ds.get("overriddenUnits", [])
-        out["units"] = ds.get("units", 0)
         out["verified"] = bool(ds.get("verified", False))
         out["crossDistrict"] = [{"hospcode": c["hospcode"], "name": c["name"], "tambon": c["tambon"],
                                  "locatedIn": c["locatedIn"]} for c in ds.get("crossDistrict", [])]
@@ -354,7 +353,7 @@ def build_tree(ctx, published) -> dict:
     return tree
 
 
-def write_site(site: dict, ctx: dict, built: dict, log=print) -> dict:
+def write_site(site: dict, ctx: dict, built: dict) -> dict:
     site_id = site["site"]
     out_dir = ROOT / "site" / "data" / site_id
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -379,7 +378,7 @@ def write_site(site: dict, ctx: dict, built: dict, log=print) -> dict:
                       "name": area_name(ctx, site["home"]["level"], str(site["home"]["code"]))},
              "years": years, "currentYear": site["currentYear"],
              "colorRules": site["colorRules"],
-             "sourceLabels": {"api": "MOPH Open Data API", "excel": site["excel"]["sourceLabel"]},
+             "sourceLabels": {"api": "MOPH Open Data API"},      # only API datasets are published
              "indicators": {i: PLUGINS[i].META for i in inds},
              "targets": site["targets"], "tree": build_tree(ctx, built["published"]),
              "verified": built.get("verified", {}),

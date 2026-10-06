@@ -1,7 +1,17 @@
 # อัปเดตข้อมูลอัตโนมัติ (web_spec_phase2.md §7)
-# ทุกวัน 07:00 ICT (= 00:00 UTC): DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ · วันจันทร์: DSPM ทั้ง 77 จังหวัด (ระดับประเทศ/เขต)
-# ผ่าน -> commit "data: auto-update <วันที่>" + push (Cloudflare Pages deploy เอง) · ล้ม -> ไม่ commit + เปิด/คอมเมนต์ GitHub Issue
+# ทุกวัน 07:00 ICT (= 00:00 UTC): DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ ของ currentYear และปีก่อนหน้า
+#   (ปีเก่ากว่านั้นใช้ cache ที่ commit ไว้ ไม่ดึงซ้ำ) · วันจันทร์: + DSPM ทั้ง 77 จังหวัดของ currentYear (ระดับประเทศ/เขต)
+# ผ่าน -> commit "data: auto-update <วันที่>" + push (Cloudflare Pages deploy เอง) · ล้ม/หมดเวลา -> ไม่ commit + เปิด/คอมเมนต์ GitHub Issue
+#
+# ปีงบใหม่ (spec §7.3, sites/angthong.json "autoYear": true):
+#   1. ทุกรอบ kpi.py probe API หาปี max(years)+1 (ไม่แก้ config)
+#   2. รอบรายวันที่พบข้อมูล DSPM ของปีใหม่ -> ไม่ดึงปีนั้น, เขียน pendingYears ใน pipeline_status.json
+#      -> step "dispatch รอบระดับประเทศ" สั่ง workflow นี้ใหม่ด้วย national=true, year=<ปี> (ถ้ายังไม่มีรอบของปีนั้นค้างอยู่)
+#   3. รอบระดับประเทศของปีนั้น: ดึง DSPM ทั้ง 77 จังหวัด + Coverage (0 แถว = เตือน) -> เมื่อมีสรุประดับประเทศแล้ว
+#      จึงเพิ่มปีใน sites/angthong.json (currentYear = ปีใหม่) -> newYears -> Issue "พบข้อมูลปีงบ <ปี> — กรุณาใส่เป้าหมาย"
+#      ดึงไม่สำเร็จ -> ล้ม (Issue) และ config ไม่เปลี่ยน
 name: update-data
+run-name: "update-data${{ inputs.year && format(' ปีงบ {0}', inputs.year) || '' }}${{ inputs.national && ' (national)' || '' }}"
 
 on:
   schedule:
@@ -12,10 +22,15 @@ on:
         description: "ดึง DSPM ทั้ง 77 จังหวัด (ระดับประเทศ/เขต) ด้วย — ปกติทำเองทุกวันจันทร์"
         type: boolean
         default: false
+      year:
+        description: "ดึงเฉพาะปีงบนี้ (พ.ศ. เช่น 2570) — ปีที่ยังไม่อยู่ใน config + national = เพิ่มปีใหม่เมื่อดึงสำเร็จ · เว้นว่าง = ตาม config"
+        type: string
+        default: ""
 
 permissions:
   contents: write
   issues: write
+  actions: write   # gh workflow run (dispatch รอบระดับประเทศของปีใหม่)
 
 concurrency:
   group: update
@@ -36,15 +51,17 @@ jobs:
           if [ "${{ inputs.national }}" = "true" ]; then N=true; fi
           echo "national=$N" >> "$GITHUB_OUTPUT"
           echo "today=$(TZ=Asia/Bangkok date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
-          echo "national=$N dow=$DOW"
+          echo "national=$N dow=$DOW year=${{ inputs.year }}"
 
   update:
     needs: plan
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ needs.plan.outputs.national == 'true' && 90 || 40 }}
+    # รอบระดับประเทศ ~85 นาทีต่อปี (+ ปีใหม่) · รอบรายวัน ~10 นาที
+    timeout-minutes: ${{ needs.plan.outputs.national == 'true' && 150 || 40 }}
     env:
       GH_TOKEN: ${{ github.token }}
       TZ: Asia/Bangkok
+      YEAR_INPUT: ${{ inputs.year }}
     steps:
       - uses: actions/checkout@v4
 
@@ -62,8 +79,14 @@ jobs:
           set -o pipefail
           ARGS="update --site angthong --refresh"
           if [ "${{ needs.plan.outputs.national }}" = "true" ]; then ARGS="$ARGS --national"; fi
-          echo "python3 scripts/kpi.py $ARGS"
-          python3 scripts/kpi.py $ARGS 2>&1 | tee update.log
+          if [ -n "$YEAR_INPUT" ]; then
+            case "$YEAR_INPUT" in
+              25[0-9][0-9]) ARGS="$ARGS --year $YEAR_INPUT" ;;
+              *) echo "year ต้องเป็นปี พ.ศ. 4 หลัก (ได้ '$YEAR_INPUT')"; exit 1 ;;
+            esac
+          fi
+          echo "python3 -u scripts/kpi.py $ARGS"
+          python3 -u scripts/kpi.py $ARGS 2>&1 | tee update.log
 
       - name: commit + push (เมื่อมีข้อมูลใหม่)
         if: success()
@@ -74,32 +97,60 @@ jobs:
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "data: auto-update ${{ needs.plan.outputs.today }}${{ needs.plan.outputs.national == 'true' && ' (national)' || '' }}"
+            git commit -m "data: auto-update ${{ needs.plan.outputs.today }}${{ needs.plan.outputs.national == 'true' && ' (national)' || '' }}${{ inputs.year && format(' ปีงบ {0}', inputs.year) || '' }}"
             git push
           fi
 
-      - name: Issue เมื่อพบปีงบใหม่ (spec §7.3)
+      - name: dispatch รอบระดับประเทศของปีงบใหม่ (pendingYears)
         if: success()
         run: |
-          YEARS=$(python3 -c "import json,sys; s=json.load(open('data/cache/pipeline_status.json')); print(' '.join(str(y) for y in s.get('newYears') or []))" 2>/dev/null || true)
+          YEARS=$(python3 -c "import json; s=json.load(open('data/cache/pipeline_status.json')); print(' '.join(str(y) for y in s.get('pendingYears') or []))" 2>/dev/null || true)
           for Y in $YEARS; do
-            TITLE="พบข้อมูลปีงบ $Y — กรุณาใส่เป้าหมาย"
-            if [ -z "$(gh issue list --state all --search "\"$TITLE\" in:title" --json number --jq '.[0].number')" ]; then
-              gh label create pipeline --color d73a4a --description "pipeline อัปเดตข้อมูลอัตโนมัติ" --force
-              gh issue create --label pipeline --title "$TITLE" --body "$(printf 'GitHub Actions พบข้อมูลปีงบ %s ใน MOPH Open Data API แล้ว และเพิ่มปีนี้ใน `sites/angthong.json` (currentYear = %s) โดยยังไม่มีเป้าหมาย → เว็บแสดง "เป้าหมาย: ยังไม่กำหนด"\n\nใส่เป้าหมายได้ 2 ทาง\n1. แก้ `sites/angthong.json` → `targets.dspm.%s.value` และ `targets.coverage.%s.value` แล้ว push\n2. หน้า admin (Phase 2b)\n\nปิด Issue นี้เมื่อใส่เป้าหมายแล้ว' "$Y" "$Y" "$Y" "$Y")"
+            # รอบของปีนี้ที่ค้างอยู่ (queued / in_progress ฯลฯ ยกเว้นรอบนี้เอง) ดูจาก run-name "ปีงบ <ปี>"
+            BUSY=$(gh run list --workflow update.yml --limit 30 --json databaseId,status,displayTitle \
+              --jq "[.[] | select(.databaseId != $GITHUB_RUN_ID) | select(.status != \"completed\") | select(.displayTitle | contains(\"ปีงบ $Y\"))] | length")
+            if [ "${BUSY:-0}" != "0" ]; then
+              echo "ปีงบ $Y: มีรอบระดับประเทศค้างอยู่แล้ว ($BUSY รอบ) - ไม่ dispatch ซ้ำ"
+            else
+              echo "ปีงบ $Y: พบข้อมูล DSPM -> dispatch update-data national=true year=$Y"
+              gh workflow run update.yml --ref "${{ github.ref_name }}" -f national=true -f year="$Y"
             fi
           done
 
-      - name: Issue เมื่อล้มเหลว (spec §7.1 / Q39)
-        if: failure()
+      - name: GitHub Issue (ปีงบใหม่ §7.3 / ล้มเหลว-หมดเวลา §7.1 Q39)
+        if: always()
         run: |
-          TITLE="อัปเดตข้อมูลล้มเหลว ${{ needs.plan.outputs.today }}"
-          LOG=$(tail -n 50 update.log 2>/dev/null || echo "(ไม่มี log)")
-          BODY=$(printf 'Workflow run: %s/%s/actions/runs/%s\n\nข้อมูลบนเว็บยังเป็นชุดเดิม (ไม่ได้ commit)\n\n50 บรรทัดท้ายของ log:\n```\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$LOG")
-          gh label create pipeline --color d73a4a --description "pipeline อัปเดตข้อมูลอัตโนมัติ" --force
-          OPEN=$(gh issue list --state open --label pipeline --search "อัปเดตข้อมูลล้มเหลว in:title" --json number --jq '.[0].number')
-          if [ -n "$OPEN" ]; then
-            gh issue comment "$OPEN" --body "$(printf '%s\n\n%s' "$TITLE" "$BODY")"
+          # pipeline_issue <state open|all> <คำค้นในชื่อ> <ชื่อ Issue> <เนื้อหา> <ถ้าพบแล้ว: comment|skip>
+          # label "pipeline" + หา Issue เดิม -> ไม่พบ = สร้างใหม่ · พบ = คอมเมนต์ต่อ (comment) หรือไม่ทำอะไร (skip)
+          pipeline_issue() {
+            gh label create pipeline --color d73a4a --description "pipeline อัปเดตข้อมูลอัตโนมัติ" --force >/dev/null
+            FOUND=$(gh issue list --state "$1" --label pipeline --search "\"$2\" in:title" --json number --jq '.[0].number')
+            if [ -z "$FOUND" ]; then
+              gh issue create --label pipeline --title "$3" --body "$4"
+            elif [ "$5" = "comment" ]; then
+              gh issue comment "$FOUND" --body "$(printf '%s\n\n%s' "$3" "$4")"
+            else
+              echo "มี Issue #$FOUND อยู่แล้ว: $3"
+            fi
+          }
+
+          if [ "${{ job.status }}" = "success" ]; then
+            # ปีงบใหม่ที่ถูกเพิ่มใน config รอบนี้ -> ปีละ 1 Issue (ค้นทั้งที่เปิด/ปิดแล้ว)
+            YEARS=$(python3 -c "import json; s=json.load(open('data/cache/pipeline_status.json')); print(' '.join(str(y) for y in s.get('newYears') or []))" 2>/dev/null || true)
+            for Y in $YEARS; do
+              TITLE="พบข้อมูลปีงบ $Y — กรุณาใส่เป้าหมาย"
+              BODY=$(printf 'GitHub Actions พบข้อมูลปีงบ %s ใน MOPH Open Data API แล้ว (ดึง DSPM ทั้ง 77 จังหวัดสำเร็จ) และเพิ่มปีนี้ใน `sites/angthong.json` (currentYear = %s) โดยยังไม่มีเป้าหมาย → เว็บแสดง "เป้าหมาย: ยังไม่กำหนด"\n\nใส่เป้าหมายได้ 2 ทาง\n1. แก้ `sites/angthong.json` → `targets.dspm.%s.value` และ `targets.coverage.%s.value` แล้ว push\n2. หน้า admin (Phase 2b)\n\nปิด Issue นี้เมื่อใส่เป้าหมายแล้ว' "$Y" "$Y" "$Y" "$Y")
+              pipeline_issue all "$TITLE" "$TITLE" "$BODY" skip
+            done
           else
-            gh issue create --label pipeline --title "$TITLE" --body "$BODY"
+            # ล้มเหลว (failure) หรือถูกยกเลิก/หมดเวลา (cancelled) -> 1 Issue เปิดค้างไว้, รอบต่อไปคอมเมนต์ต่อ
+            TITLE="อัปเดตข้อมูลล้มเหลว ${{ needs.plan.outputs.today }}"
+            if [ "${{ job.status }}" = "cancelled" ]; then
+              WHY="ถูกยกเลิก/หมดเวลา (timeout ${{ needs.plan.outputs.national == 'true' && 150 || 40 }} นาที)"
+            else
+              WHY="ล้มเหลว"
+            fi
+            LOG=$(tail -n 50 update.log 2>/dev/null || echo "(ไม่มี log)")
+            BODY=$(printf 'Workflow run: %s/%s/actions/runs/%s (%s%s)\n\nข้อมูลบนเว็บยังเป็นชุดเดิม (ไม่ได้ commit)\n\n50 บรรทัดท้ายของ log:\n```\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$WHY" "${YEAR_INPUT:+, ปีงบ $YEAR_INPUT}" "$LOG")
+            pipeline_issue open "อัปเดตข้อมูลล้มเหลว" "$TITLE" "$BODY" comment
           fi

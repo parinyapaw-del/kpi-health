@@ -8,10 +8,10 @@ import json
 import re
 from collections import defaultdict
 
-from . import build_site as B
+from . import build_lookup, build_site as B
 
 EXPECTED_ROWS = {"country": 13, "region": 8}   # fixed row counts (Phase 2 §4.5); province/district follow the lookup
-REGION4 = ["นครนายก", "นนทบุรี", "ปทุมธานี", "พระนครศรีอยุธยา", "ลพบุรี", "สระบุรี", "สิงห์บุรี", "อ่างทอง"]
+REGION4 = build_lookup.REGIONS[4].split()       # the MOPH table areas.json was built from
 
 
 class Report:
@@ -245,7 +245,7 @@ def _check_written(site, ctx, built, rep):
     rep.notes.append(f"written JSON: index.json + {n_files} dataset files checked (numbers/null only, asOf format)")
 
 
-def run(site: dict, ctx: dict, built: dict, log=print, check_written=True) -> Report:
+def run(site: dict, ctx: dict, built: dict) -> Report:
     rep = Report()
     rep.ctx = ctx
     _lookup_checks(ctx, built, rep)
@@ -256,12 +256,11 @@ def run(site: dict, ctx: dict, built: dict, log=print, check_written=True) -> Re
             _internal_checks(B.PLUGINS[key[0]], key, ds, rep)
     _api_vs_excel(ctx, built, rep)
     _cross_level(ctx, built, rep)
-    if check_written:
-        _check_written(site, ctx, built, rep)
+    _check_written(site, ctx, built, rep)
     return rep
 
 
-def summarize(rep: Report, log=print, max_examples=1):
+def summarize(rep: Report, log=print):
     def group(msgs):
         c = defaultdict(list)
         for m in msgs:

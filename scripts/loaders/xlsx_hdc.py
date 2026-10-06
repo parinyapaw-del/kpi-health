@@ -23,16 +23,14 @@ from pathlib import Path
 
 import openpyxl
 
-LEVEL_BY_HEADER = {"เขตสุขภาพ": "country", "จังหวัด": "region", "อำเภอ": "province", "ตำบล": "district"}
-GROUPS = ["total", "m9", "m18", "m30", "m42", "m60"]
+from ..indicators import coverage, dspm
 
-# DSPM column order inside one age group (spec §3.2). Extra keys: total-only / 2569-only.
-_DSPM_ORDER = ["target", "screened", "pct_screened", "normal_first", "pct_normal_first",
-               "suspect_wait30", "suspect_refer", "suspect_total", "pct_suspect",
-               "followed", "pct_followed", "normal_after", "delay_after_total",
-               "delay_1B202", "delay_1B212", "delay_1B222", "delay_1B232", "delay_1B242",
-               "pending_followup", "lost_followup", "normal_female", "normal_male",
-               "normal_total", "pct_normal"]
+LEVEL_BY_HEADER = {"เขตสุขภาพ": "country", "จังหวัด": "region", "อำเภอ": "province", "ตำบล": "district"}
+GROUPS = dspm.GROUPS                 # age-group blocks, left to right
+
+# DSPM column order inside one age group = dspm.ALL_KEYS (spec §3.2 order). pct_normal_first is total-only and
+# normal_female/normal_male exist only in files with gender columns (2569) -> dspm_keys().
+_DSPM_ORDER = dspm.ALL_KEYS
 
 # header text (whitespace stripped) that must appear in rows 2-4 above each key (layout validation)
 _DSPM_HEADER = {
@@ -48,9 +46,8 @@ _DSPM_HEADER = {
     "normal_total": "รวมสมวัย", "pct_normal": "ร้อยละสมวัย",
 }
 
-COVERAGE_KEYS = {1: "population", 2: "prevalence", 3: "expected", 4: "served_teda4i", 5: "served_icd9",
-                 6: "diagnosed_icd10", 7: "reached_cum", 8: "pct_reached_cum", 9: "reached_fy",
-                 10: "pct_reached_fy", 11: "out_of_province"}
+# Excel column number (n) in the header -> key: the first 11 keys of coverage.TABLE_KEYS, in column order
+COVERAGE_KEYS = dict(enumerate(coverage.ALL_KEYS[:11], 1))
 
 
 class XlsxLayoutError(RuntimeError):
@@ -181,9 +178,10 @@ def read_workbook(path: Path, indicator: str) -> dict:
     return info
 
 
-def discover(excel_dir: Path, indicator: str) -> list[dict]:
-    """Read every workbook of an indicator under excel_dir/<indicator>/<year>/<YYYY-MM-DD>/*.xlsx.
-    A workbook directly in <year>/ raises XlsxLayoutError (it has no snapshot date)."""
+def discover(excel_dir: Path, indicator: str, years=None) -> list[dict]:
+    """Read every workbook of an indicator under excel_dir/<indicator>/<year>/<YYYY-MM-DD>/*.xlsx; with `years`,
+    only the workbooks of those years are opened. A workbook directly in <year>/ raises XlsxLayoutError (it has no
+    snapshot date), whatever its year."""
     out = []
     base = Path(excel_dir) / indicator
     if not base.exists():
@@ -192,7 +190,9 @@ def discover(excel_dir: Path, indicator: str) -> list[dict]:
     if loose:
         raise XlsxLayoutError(f"{len(loose)} HDC workbook(s) directly in <year>/, e.g. {loose[0]} - move them into "
                               f"{loose[0].parent}/<YYYY-MM-DD>/ (BE date of the HDC export)")
-    files = [f for f in base.glob("*/*/*.xlsx") if DATE_DIR.match(f.parent.name)]
+    wanted = None if years is None else {str(y) for y in years}
+    files = [f for f in base.glob("*/*/*.xlsx") if DATE_DIR.match(f.parent.name)
+             and (wanted is None or f.parent.parent.name in wanted)]
     for f in sorted(files):
         if f.name.startswith("~$"):
             continue

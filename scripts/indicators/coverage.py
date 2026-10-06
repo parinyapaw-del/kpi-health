@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 from ..loaders import moph_api
-from .common import close, fmt_asof, pct, ssum
+from .common import check_pcts, compare_values, derive_pcts, fmt_asof, ssum
 
 ID = "coverage"
 TABLE = "s_child0_5_pshyche_develop_coverage"
@@ -25,7 +25,15 @@ RAWMAP = {"population": "c_1", "prevalence": "c_2", "expected": "c_3", "served_t
           "out_of_province": "c_11"}
 COUNT_KEYS = ["population", "expected", "served_teda4i", "served_icd9", "diagnosed_icd10",
               "reached_cum", "reached_fy", "out_of_province"]
-PCT_KEYS = ["pct_reached_cum", "pct_reached_fy", "pct_teda4i", "pct_icd9", "pct_icd10"]
+# percent -> (numerator, denominator): the single source of every Coverage percent formula
+PCT = {
+    "pct_reached_cum": ("reached_cum", "expected"),     # (8) = (7)*100/(3)
+    "pct_reached_fy": ("reached_fy", "expected"),       # (10) = (9)*100/(3)
+    "pct_teda4i": ("served_teda4i", "expected"),        # (4)*100/(3)
+    "pct_icd9": ("served_icd9", "expected"),            # (5)*100/(3)
+    "pct_icd10": ("diagnosed_icd10", "expected"),       # (6)*100/(3)
+}
+PCT_KEYS = list(PCT)
 TABLE_KEYS = [
     ("population", "เด็กปฐมวัยอายุ 0–5 ปี (คน) (1)", "int"),
     ("prevalence", "ความชุก (ร้อยละ) (2)", "pct"),
@@ -42,38 +50,31 @@ TABLE_KEYS = [
     ("pct_icd9", "สัดส่วนเด็กที่ได้รับบริการด้วยรหัสหัตถการ ICD9CM ต่อคาดประมาณ (ร้อยละ) = (5)*100/(3)", "pct"),
     ("pct_icd10", "สัดส่วนเด็กที่ได้รับการวินิจฉัย ICD-10 ต่อคาดประมาณ (ร้อยละ) = (6)*100/(3)", "pct"),
 ]
-ALL_KEYS = [k for k, _, _ in TABLE_KEYS]
+ALL_KEYS = [k for k, _, _ in TABLE_KEYS]          # the first 11 = HDC Excel columns (1)..(11) (xlsx_hdc)
 
 META = {
     "id": ID,
     "name_th": "ร้อยละของเด็กปฐมวัยที่มีพัฒนาการล่าช้าเข้าถึงบริการพัฒนาการและสุขภาพจิตที่ได้มาตรฐาน (Coverage)",
     "short": "เข้าถึงบริการ",
-    "source": {"table": TABLE,
-               "bodyTemplate": {"tableName": TABLE, "year": "{year}", "type": "json", "limit": 20000},
-               "needsProvince": False},
-    "levels": ["country", "region", "province"],
+    "source": {"table": TABLE},
     "groups": None,
-    "headline": {"metric": "pct_reached_cum", "num": "reached_cum", "den": "expected",
-                 "sub": {"metric": "pct_reached_fy", "num": "reached_fy", "label": "ปีงบนี้"}},
-    "cards": [
-        {"metric": "pct_teda4i", "label": "บริการด้วยรหัส TEDA4I", "num": "served_teda4i", "den": "expected"},
-        {"metric": "pct_icd9", "label": "บริการด้วยรหัสหัตถการ ICD9CM", "num": "served_icd9", "den": "expected"},
-        {"metric": "pct_icd10", "label": "วินิจฉัย ICD-10", "num": "diagnosed_icd10", "den": "expected"},
-    ],
-    "heatmap": {"columns": [
-        {"key": "pct_reached_cum", "label": "เข้าถึงบริการสะสม (8)", "group": None, "metric": "pct_reached_cum",
-         "num": "reached_cum", "den": "expected", "useTarget": True},
-        {"key": "pct_teda4i", "label": "TEDA4I (4)/(3)", "group": None, "metric": "pct_teda4i",
-         "num": "served_teda4i", "den": "expected", "useTarget": False},
-        {"key": "pct_icd9", "label": "ICD9CM (5)/(3)", "group": None, "metric": "pct_icd9",
-         "num": "served_icd9", "den": "expected", "useTarget": False},
-        {"key": "pct_icd10", "label": "ICD-10 (6)/(3)", "group": None, "metric": "pct_icd10",
-         "num": "diagnosed_icd10", "den": "expected", "useTarget": False},
-    ]},
-    "chart": {"style": "fill", "fillNum": "reached_cum", "fillDen": "expected",
-              "fillLabel": "เข้าถึงบริการสะสม", "baseLabel": "คาดประมาณเด็กพัฒนาการล่าช้า"},
+    "headline": {"metric": "pct_reached_cum", "num": PCT["pct_reached_cum"][0], "den": PCT["pct_reached_cum"][1],
+                 "sub": {"metric": "pct_reached_fy", "num": PCT["pct_reached_fy"][0], "label": "ปีงบนี้"}},
+    "cards": [{"metric": m, "label": label, "num": PCT[m][0], "den": PCT[m][1]} for m, label in (
+        ("pct_teda4i", "บริการด้วยรหัส TEDA4I"),
+        ("pct_icd9", "บริการด้วยรหัสหัตถการ ICD9CM"),
+        ("pct_icd10", "วินิจฉัย ICD-10"),
+    )],
+    "heatmap": {"columns": [{"key": m, "label": label, "group": None, "metric": m, "num": PCT[m][0],
+                             "den": PCT[m][1], "useTarget": use_target} for m, label, use_target in (
+        ("pct_reached_cum", "เข้าถึงบริการสะสม (8)", True),
+        ("pct_teda4i", "TEDA4I (4)/(3)", False),
+        ("pct_icd9", "ICD9CM (5)/(3)", False),
+        ("pct_icd10", "ICD-10 (6)/(3)", False),
+    )]},
+    "chart": {"style": "fill", "fillNum": PCT["pct_reached_cum"][0], "fillDen": PCT["pct_reached_cum"][1],
+              "fillLabel": "เข้าถึงบริการสะสม", "baseLegend": "คาดประมาณเด็กพัฒนาการล่าช้า"},
     "table": [{"key": k, "label": l, "type": t} for k, l, t in TABLE_KEYS],
-    "monthly": False,
     "targets_key": "coverage",
 }
 
@@ -81,14 +82,7 @@ META = {
 # ------------------------------------------------------------------ values model
 def derive(c: dict) -> dict:
     d = dict(c)
-    calc = {"pct_reached_cum": pct(d.get("reached_cum"), d.get("expected")),
-            "pct_reached_fy": pct(d.get("reached_fy"), d.get("expected")),
-            "pct_teda4i": pct(d.get("served_teda4i"), d.get("expected")),
-            "pct_icd9": pct(d.get("served_icd9"), d.get("expected")),
-            "pct_icd10": pct(d.get("diagnosed_icd10"), d.get("expected"))}
-    for k, v in calc.items():
-        if d.get(k) is None:
-            d[k] = v
+    derive_pcts(PCT, d)
     return {k: d.get(k) for k in ALL_KEYS}
 
 
@@ -117,12 +111,17 @@ def cache_path(year: int) -> Path:
 
 
 def fetch_cache(year: int, refresh: bool, log=print) -> dict:
+    """Fetch the whole-country table of `year` into the cache. 0 rows -> moph_api.EmptyResult (nothing written;
+    kpi.py treats it as a warning: the year is not available yet)."""
     raw = moph_api.get_raw(TABLE, year, None, refresh=refresh, log=log)
     rows = raw["data"]
     slim = [{k: r[k] for k in ("provcode", "areacode", "hospcode", "b_year", "c_1", "c_2", "c_3", "c_4", "c_5",
                                 "c_6", "c_7", "c_9", "c_11", "date_com") if k in r} for r in rows]
+    dates = [r["date_com"] for r in rows if r.get("date_com")]
+    if not dates:
+        raise moph_api.ApiError(f"{TABLE} {year}: {len(rows)} rows but none has date_com - nothing cached")
     payload = {"schema": 1, "indicator": ID, "table": TABLE, "year": year, "province": None,
-               "fetchedAt": raw["fetchedAt"], "asOf": max(r["date_com"] for r in rows),
+               "fetchedAt": raw["fetchedAt"], "asOf": max(dates),
                "rawRowCount": len(rows), "rowCount": len(slim), "rows": slim}
     p = cache_path(year)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -144,10 +143,23 @@ def _row_values(r: dict, c11_ok: bool) -> dict:
     return derive(c)
 
 
-def api_views(cache, ctx) -> list[dict]:
-    """country (rows=13 regions), region N (rows=provinces), province P (rows=districts, when the table is by district)."""
-    rows = cache["rows"]
+def api_views(cache, ctx, warnings: list) -> list[dict]:
+    """country (rows=13 regions), region N (rows=provinces), province P (rows=districts, when the table is by district).
+    Rows without provcode/date_com or with an unknown province are skipped (one counted warning appended to
+    `warnings`); a drill province whose district rows are incomplete is not published (warning with the counts)."""
     prov_region = ctx["prov_region"]                     # '15' -> 4
+    year = cache.get("year")
+    rows, skipped = [], {}
+    for r in cache["rows"]:
+        why = ("no provcode" if not r.get("provcode") else "no date_com" if not r.get("date_com")
+               else "unknown province" if r["provcode"] not in prov_region else None)
+        if why:
+            skipped[why] = skipped.get(why, 0) + 1
+        else:
+            rows.append(r)
+    if skipped:
+        warnings.append(f"coverage {year}: skipped {sum(skipped.values())} of {len(cache['rows'])} API rows "
+                        f"({', '.join(f'{k} x{n}' for k, n in sorted(skipped.items()))})")
     c11_ok = any(r.get("c_11") for r in rows)
     by_prov: dict = {}
     for r in rows:
@@ -165,32 +177,28 @@ def api_views(cache, ctx) -> list[dict]:
         views.append({"level": "region", "scope": reg,
                       "rows": [{"code": p, "values": prov_vals[p]} for p in sorted(prov_vals, key=int)
                                if str(prov_region[p]) == reg]})
-    # province level (rows = districts): only when the table carries every district of the province (2569+)
+    # province level (rows = districts): only when the table carries every district of the province (2569+;
+    # 2567/2568 tables are one row per province -> no province level, no warning)
+    by_district_table = len(rows) > len({r["provcode"] for r in rows})
     for p in ctx["drill_provinces"]:
         rs = [r for r in rows if r["provcode"] == p]
         by_d: dict = {}
         for r in rs:
-            by_d.setdefault(r["areacode"][:4], []).append(_row_values(r, c11_ok))
+            if len(str(r.get("areacode") or "")) >= 4:
+                by_d.setdefault(r["areacode"][:4], []).append(_row_values(r, c11_ok))
         if len(by_d) == ctx["n_districts"][p]:
             views.append({"level": "province", "scope": p,
                           "rows": [{"code": d, "values": sum_values(v)} for d, v in sorted(by_d.items())]})
+        elif by_district_table:
+            warnings.append(f"coverage {year} province/{p}: API rows cover {len(by_d)} of {ctx['n_districts'][p]} "
+                            f"districts ({len(rs)} rows) -> province level not published")
     return views
 
 
 # ------------------------------------------------------------------ validation
 def check_values(values: dict, where: str) -> list[tuple[str, str]]:
-    issues = []
     v = values
-    for k, n, d in [("pct_reached_cum", "reached_cum", "expected"), ("pct_reached_fy", "reached_fy", "expected"),
-                    ("pct_teda4i", "served_teda4i", "expected"), ("pct_icd9", "served_icd9", "expected"),
-                    ("pct_icd10", "diagnosed_icd10", "expected")]:
-        if v.get(n) is None or v.get(d) is None:
-            continue
-        if v[d] == 0:
-            if v.get(k) not in (None, 0):
-                issues.append(("hard", f"{where} {k}={v[k]} but expected=0"))
-        elif v.get(k) is not None and not close(v[k], 100.0 * v[n] / v[d]):
-            issues.append(("hard", f"{where} {k}={v[k]} != {v[n]}/{v[d]}*100"))
+    issues = check_pcts(PCT, v, where)
     if None not in (v.get("population"), v.get("prevalence"), v.get("expected")):
         exp = v["population"] * v["prevalence"] / 100
         if abs(exp - v["expected"]) > max(1.0, 0.001 * v["population"]):
@@ -199,18 +207,5 @@ def check_values(values: dict, where: str) -> list[tuple[str, str]]:
 
 
 def compare(api: dict, xl: dict, xl_keys) -> list[str]:
-    bad = []
-    for k in xl_keys:
-        a, x = api.get(k), xl.get(k)
-        if x is None:
-            continue
-        if k in PCT_KEYS or k == "prevalence":
-            if k in ("pct_reached_cum", "pct_reached_fy") and api.get("expected") == 0:
-                if x not in (0, None):
-                    bad.append(f"{k}: api den=0 vs excel {x}")
-                continue
-            if not close(a, x):
-                bad.append(f"{k}: api {a} vs excel {x}")
-        elif a != x:
-            bad.append(f"{k}: api {a} vs excel {x}")
-    return bad
+    """API-built vs Excel. A zero API denominator is handled for EVERY percent of PCT (was only pct_reached_*)."""
+    return compare_values(PCT, api, xl, xl_keys, tolerant=("prevalence",))

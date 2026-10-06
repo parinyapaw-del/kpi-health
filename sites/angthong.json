@@ -51,7 +51,6 @@
     "smallN": 20
   },
   "excel": {
-    "dir": "data/excel_reference",
-    "sourceLabel": "HDC export"
+    "dir": "data/excel_reference"
   }
 }

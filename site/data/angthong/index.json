@@ -20,8 +20,7 @@
   "smallN": 20
  },
  "sourceLabels": {
-  "api": "MOPH Open Data API",
-  "excel": "HDC export"
+  "api": "MOPH Open Data API"
  },
  "indicators": {
   "dspm": {
@@ -29,22 +28,8 @@
    "name_th": "ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย 5 ช่วงอายุ (DSPM)",
    "short": "สมวัย",
    "source": {
-    "table": "s_childdev_specialpp",
-    "bodyTemplate": {
-     "tableName": "s_childdev_specialpp",
-     "year": "{year}",
-     "province": "{province}",
-     "type": "json",
-     "limit": 20000
-    },
-    "needsProvince": true
+    "table": "s_childdev_specialpp"
    },
-   "levels": [
-    "country",
-    "region",
-    "province",
-    "district"
-   ],
    "groups": [
     {
      "key": "total",
@@ -279,7 +264,6 @@
      "type": "pct"
     }
    ],
-   "monthly": false,
    "targets_key": "dspm"
   },
   "coverage": {
@@ -287,20 +271,8 @@
    "name_th": "ร้อยละของเด็กปฐมวัยที่มีพัฒนาการล่าช้าเข้าถึงบริการพัฒนาการและสุขภาพจิตที่ได้มาตรฐาน (Coverage)",
    "short": "เข้าถึงบริการ",
    "source": {
-    "table": "s_child0_5_pshyche_develop_coverage",
-    "bodyTemplate": {
-     "tableName": "s_child0_5_pshyche_develop_coverage",
-     "year": "{year}",
-     "type": "json",
-     "limit": 20000
-    },
-    "needsProvince": false
+    "table": "s_child0_5_pshyche_develop_coverage"
    },
-   "levels": [
-    "country",
-    "region",
-    "province"
-   ],
    "groups": null,
    "headline": {
     "metric": "pct_reached_cum",
@@ -377,7 +349,7 @@
     "fillNum": "reached_cum",
     "fillDen": "expected",
     "fillLabel": "เข้าถึงบริการสะสม",
-    "baseLabel": "คาดประมาณเด็กพัฒนาการล่าช้า"
+    "baseLegend": "คาดประมาณเด็กพัฒนาการล่าช้า"
    },
    "table": [
     {
@@ -451,7 +423,6 @@
      "type": "pct"
     }
    ],
-   "monthly": false,
    "targets_key": "coverage"
   }
  },

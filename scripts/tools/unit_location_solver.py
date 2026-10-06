@@ -1,9 +1,10 @@
+# local one-off (not part of the pipeline; the Actions bot never runs it) - needs scripts/requirements-dev.txt
 """Exact whole-unit location solver — HDC ตำบล Excel 2569 (export 2569-09-30) vs API per-unit vectors.
 
 Read-only on the repo, no network: committed cache data/cache/dspm/2569/<prov>.json + data/lookup/units.json.
-Run: python3 scripts/unit_location_solver.py [xlsx-dir ...]  (default: data/excel_reference/dspm/2569/2569-09-30 + data/excel_reference/_unresolved/dspm_2569_2569-09-30)
+Run: python3 scripts/tools/unit_location_solver.py [xlsx-dir ...]  (default: data/excel_reference/dspm/2569/2569-09-30 + data/excel_reference/_unresolved/dspm_2569_2569-09-30)
   -> prints everything; writes overrides_proposal.json + solver_result.json to data/raw_api/unit_solver/ (gitignored).
-Local tool only (needs numpy, not in requirements.txt; the Actions bot never runs it).
+Local tool only (needs numpy: pip install -r scripts/requirements-dev.txt).
 
 Hypothesis ก: HDC puts every reporting unit (hospcode) WHOLE into one tambon of its own location table, so each
 Excel row (tambon) = sum of the vectors of a SUBSET of the province's units.  Vector = 15 count keys (gender
@@ -18,9 +19,9 @@ Method (global, exhaustive — no "moves" assumption, swaps included automatical
  3. Rows must be pairwise disjoint.  Unit whose HDC row differs from our pipeline tambon -> override; unit that our
     pipeline puts in an Excel district but that sits in no Excel row -> ELSEWHERE (HDC counts it elsewhere/drops it).
 """
-import json, sys, glob, os, itertools, time
+import json, sys, glob, os, time
 import numpy as np
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # scripts/tools/ -> repo root
 S = os.path.join(REPO, "data", "raw_api", "unit_solver")
 os.makedirs(S, exist_ok=True)
 os.chdir(REPO); sys.path.insert(0, REPO)
@@ -45,7 +46,7 @@ BUDGET1, BUDGET2 = 200_000, 50_000_000
 UV, TAM, AREAS, PROV_OF = {}, {}, {}, {}
 XL = {}
 import shutil
-XL_IN = os.path.join(S, "xl", "2569")            # read_workbook takes the year from the folder name
+XL_IN = os.path.join(S, "xl", "2569", "2569-09-30")   # read_workbook needs <year>/<YYYY-MM-DD>/ (year + snapshot)
 shutil.rmtree(os.path.join(S, "xl"), ignore_errors=True); os.makedirs(XL_IN)
 for d in XLSX_DIRS:
     for f in glob.glob(f"{d}/*.xlsx"):
@@ -57,7 +58,7 @@ for f in sorted(glob.glob(f"{XL_IN}/*.xlsx")):
     codes = B._resolve_codes(ctx, "district", d, labels, f)
     XL[d] = {"file": f.rsplit("/", 1)[1], "rows": {c: vec(dspm.from_excel(r["values"])) for c, r in zip(codes, w["rows"])}}
 for p in sorted({d[:2] for d in XL}):
-    c = dspm.load_cache(2569, p); tam = dspm.resolve_tambons(c, reg); AREAS.update(dspm.unit_areas(c))
+    c = dspm.load_cache(2569, p); areas = dspm.unit_areas(c); tam = dspm.resolve_tambons(areas, reg); AREAS.update(areas)
     for h, s in dspm._sums(c, lambda a6, h, m: h).items():
         UV[h] = vec(dspm._values(c, s)); TAM[h] = tam[h]; PROV_OF[h] = p
 BASE = {h: TAM[h]["tambon"] for h in TAM}
@@ -188,7 +189,7 @@ def main():
         print(f"  {uinfo(h)} pipeline {BASE[h]} {tname(BASE[h])} target={int(UV[h][TI])} screened={int(UV[h][SI])} "
               f"areas={AREAS[h]['areas']} missing-entry={h in reg['missing']}")
     # region Excel hint
-    w = xlsx_hdc.read_workbook(f"{REPO}/data/excel_reference/dspm/2569/เขต 4.xlsx", "dspm")
+    w = xlsx_hdc.read_workbook(f"{REPO}/data/excel_reference/dspm/2569/2569-09-29/เขต 4.xlsx", "dspm")
     pm = {v["name"]: k for k, v in lk["provinces"].items()}
     print("\n=== region Excel 'เขต 4.xlsx' (snapshot 2569-09-29, one day older) province target vs API (hint only)")
     for r in w["rows"]:

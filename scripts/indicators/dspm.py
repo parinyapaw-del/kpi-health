@@ -21,7 +21,7 @@ import json
 from pathlib import Path
 
 from ..loaders import moph_api
-from .common import add, close, fmt_asof, pct, ssum
+from .common import add, check_pcts, compare_values, derive_pcts, fallback_tambon, fmt_asof, ssum
 
 ID = "dspm"
 TABLE = "s_childdev_specialpp"
@@ -42,7 +42,15 @@ RAW = {
     "normal_female": "1b260_f", "normal_male": "1b260_m",
 }
 COUNT_KEYS = list(RAW)                       # summable
-PCT_KEYS = ["pct_screened", "pct_normal_first", "pct_suspect", "pct_followed", "pct_normal"]
+# percent -> (numerator, denominator): the single source of every DSPM percent formula (spec §3.5)
+PCT = {
+    "pct_screened": ("screened", "target"),
+    "pct_normal_first": ("normal_first", "target"),
+    "pct_suspect": ("suspect_total", "screened"),
+    "pct_followed": ("followed", "suspect_wait30"),
+    "pct_normal": ("normal_total", "target"),
+}
+PCT_KEYS = list(PCT)
 
 # display order (spec §3.2 order) + Thai labels taken from the HDC Excel headers
 TABLE_KEYS = [
@@ -68,23 +76,19 @@ META = {
     "id": ID,
     "name_th": "ร้อยละของเด็กอายุ 0-5 ปี มีพัฒนาการสมวัย 5 ช่วงอายุ (DSPM)",
     "short": "สมวัย",
-    "source": {"table": TABLE,
-               "bodyTemplate": {"tableName": TABLE, "year": "{year}", "province": "{province}",
-                                "type": "json", "limit": 20000},
-               "needsProvince": True},
-    "levels": ["country", "region", "province", "district"],
+    "source": {"table": TABLE},
     "groups": [{"key": g, "label": GROUP_LABEL[g]} for g in GROUPS],
-    "headline": {"metric": "pct_normal", "num": "normal_total", "den": "target"},
-    "cards": [
-        {"metric": "pct_screened", "label": "คัดกรองพัฒนาการ", "num": "screened", "den": "target"},
-        {"metric": "pct_suspect", "label": "สงสัยพัฒนาการล่าช้า", "num": "suspect_total", "den": "screened"},
-        {"metric": "pct_followed", "label": "ติดตามได้ภายใน 30 วัน", "num": "followed", "den": "suspect_wait30"},
-    ],
+    "headline": {"metric": "pct_normal", "num": PCT["pct_normal"][0], "den": PCT["pct_normal"][1]},
+    "cards": [{"metric": m, "label": label, "num": PCT[m][0], "den": PCT[m][1]} for m, label in (
+        ("pct_screened", "คัดกรองพัฒนาการ"),
+        ("pct_suspect", "สงสัยพัฒนาการล่าช้า"),
+        ("pct_followed", "ติดตามได้ภายใน 30 วัน"),
+    )],
     "heatmap": {"columns": [{"key": g, "label": HEAT_LABEL[g], "group": g, "metric": "pct_normal",
-                             "num": "normal_total", "den": "target", "useTarget": True} for g in GROUPS]},
+                             "num": PCT["pct_normal"][0], "den": PCT["pct_normal"][1], "useTarget": True}
+                            for g in GROUPS]},
     "chart": {"style": "status"},
     "table": [{"key": k, "label": l, "type": t} for k, l, t in TABLE_KEYS],
-    "monthly": False,
     "targets_key": "dspm",
 }
 
@@ -116,16 +120,7 @@ def derive(c: dict) -> dict:
         d["suspect_total"] = add(d.get("suspect_wait30"), d.get("suspect_refer"))
     if d.get("normal_total") is None:
         d["normal_total"] = add(d.get("normal_first"), d.get("normal_after"))
-    calc = {
-        "pct_screened": pct(d.get("screened"), d.get("target")),
-        "pct_normal_first": pct(d.get("normal_first"), d.get("target")),
-        "pct_suspect": pct(d.get("suspect_total"), d.get("screened")),
-        "pct_followed": pct(d.get("followed"), d.get("suspect_wait30")),
-        "pct_normal": pct(d.get("normal_total"), d.get("target")),
-    }
-    for k, v in calc.items():
-        if d.get(k) is None:
-            d[k] = v
+    derive_pcts(PCT, d)
     return {k: d.get(k) for k in ALL_KEYS}
 
 
@@ -154,7 +149,7 @@ def from_excel(xl_values: dict) -> dict:
 
 
 # ------------------------------------------------------------------ fetch / cache
-def cache_path(year: int, province: str = "15") -> Path:
+def cache_path(year: int, province: str) -> Path:
     return ROOT / "data" / "cache" / ID / str(year) / f"{province}.json"
 
 
@@ -194,7 +189,7 @@ def fetch_cache(year: int, province: str, refresh: bool, log=print) -> dict:
     return cache_from_raw(raw, log=log)
 
 
-def load_cache(year: int, province: str = "15"):
+def load_cache(year: int, province: str):
     p = cache_path(year, province)
     if not p.exists():
         return None
@@ -218,9 +213,7 @@ def fetch_provinces(year: int, provinces: list[str], refresh: bool, log=print) -
         log(f"  [{i}/{len(provinces)}] province {p}")
         try:
             fetch_cache(year, p, refresh, log=log)
-        except moph_api.ApiError as e:
-            if "0 rows" not in str(e):
-                raise
+        except moph_api.EmptyResult:
             log(f"    province {p}: API returned 0 rows -> empty")
             empty.append(p)
     return empty
@@ -233,9 +226,11 @@ def summary_path(year: int) -> Path:
     return ROOT / "data" / "cache" / ID / str(year) / "provinces.json"
 
 
-def fetch_all(year: int, provinces: list[str], refresh: bool, log=print) -> dict:
+def fetch_all(year: int, provinces: list[str], refresh: bool, log=print):
     """Fetch every province cache (sequential: parallel requests get HTTP 429), then write the summary.
-    A province the API answers with 0 rows (Bangkok: not reported to HDC) is recorded as empty, not an error."""
+    A province the API answers with 0 rows (Bangkok: not reported to HDC) is recorded as empty, not an error.
+    Returns the summary, or None when EVERY province is empty (the year is not available yet; nothing written).
+    Network failures raise moph_api.ApiError."""
     fetch_provinces(year, provinces, refresh, log=log)
     return write_summary(year, provinces, log=log)
 
@@ -245,7 +240,8 @@ def _province_sums(c: dict, fields: list[str]) -> list[int]:
     return [s.get(f, 0) for f in fields]
 
 
-def write_summary(year: int, provinces: list[str], log=print) -> dict:
+def write_summary(year: int, provinces: list[str], log=print):
+    """National summary from the province caches of `provinces`; None (nothing written) when none has a cache."""
     prov, missing, asofs, fetched, gender = {}, [], [], [], False
     fields = raw_fields()
     for p in provinces:
@@ -257,6 +253,10 @@ def write_summary(year: int, provinces: list[str], log=print) -> dict:
         asofs.append(c["asOf"])
         fetched.append(c["fetchedAt"])
         gender = gender or c.get("genderPopulated", False)
+    if not prov:
+        log(f"  WARN dspm {year}: no province has data ({len(missing)} empty) -> summary not written "
+            f"(year not available yet)")
+        return None
     payload = {"schema": 1, "indicator": ID, "table": TABLE, "year": year,
                "asOf": max(asofs), "fetchedAt": max(fetched), "genderPopulated": gender,
                "empty": sorted(missing, key=int), "fields": fields, "provinces": prov}
@@ -352,14 +352,15 @@ def unit_areas(cache) -> dict:
     return out
 
 
-def resolve_tambons(cache, registry: dict) -> dict:
-    """hospcode -> {"tambon": areacode6, "inferred": bool, "name": str, "source": "override"|"registry"|"fallback"}.
-    Override (HDC-confirmed) > registry (§4.3 rule 1-2) > Phase 1 fallback: areacode[:6] with the unit's largest
-    target (ties -> lowest code). Only the fallback is `inferred`."""
+def resolve_tambons(areas: dict, registry: dict) -> dict:
+    """areas = unit_areas(cache) of ONE year ->
+    hospcode -> {"tambon": areacode6, "inferred": bool, "name": str, "source": "override"|"registry"|"fallback"}.
+    Override (HDC-confirmed) > registry (§4.3 rule 1-2) > Phase 1 fallback (common.fallback_tambon: areacode6 with
+    the unit's largest target of this year, ties -> lowest code). Only the fallback is `inferred`."""
     units = (registry or {}).get("units", {})
     overrides = (registry or {}).get("overrides", {})
     out = {}
-    for h, u in unit_areas(cache).items():
+    for h, u in areas.items():
         reg = units.get(h)
         if h in overrides:
             out[h] = {"tambon": overrides[h]["tambon"], "inferred": False, "source": "override",
@@ -367,8 +368,7 @@ def resolve_tambons(cache, registry: dict) -> dict:
         elif reg:
             out[h] = {"tambon": reg["tambon"], "inferred": False, "name": reg.get("name", ""), "source": "registry"}
         else:
-            top = sorted(u["areas"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
-            out[h] = {"tambon": top, "inferred": True, "name": "", "source": "fallback"}
+            out[h] = {"tambon": fallback_tambon(u["areas"]), "inferred": True, "name": "", "source": "fallback"}
     return out
 
 
@@ -376,22 +376,17 @@ def api_views(cache, ctx, registry=None) -> list[dict]:
     """province P (rows = districts by the district of the reporting unit; unknown district codes -> pseudo rows)
     and, for every drill district of P, district D (rows = subdistricts by the tambon of the reporting unit, §4.3)."""
     prov = cache["province"]
-    lk = ctx["lookup"]
     views = []
-    tam = resolve_tambons(cache, registry)
+    areas = unit_areas(cache)
+    tam = resolve_tambons(areas, registry)
     dsum = _sums(cache, lambda a6, h, m: tam[h]["tambon"][:4])
-    rows = []
-    for c, s in sorted(dsum.items()):
-        r = {"code": c, "values": _values(cache, s)}
-        if c not in lk["districts"]:
-            r["pseudo"] = True
-            r["name"] = f"ไม่ระบุพื้นที่ (รหัส {c})"
-        rows.append(r)
-    views.append({"level": "province", "scope": prov, "rows": rows})
+    # district codes missing from the lookup become pseudo rows in build_site.api_datasets
+    views.append({"level": "province", "scope": prov,
+                  "rows": [{"code": c, "values": _values(cache, s)} for c, s in sorted(dsum.items())]})
 
     # rows of each unit by areacode district (for the cross-district report)
     by_unit_dist: dict = {}
-    for h, u in unit_areas(cache).items():
+    for h, u in areas.items():
         for a6, t in u["areas"].items():
             by_unit_dist.setdefault(h, {})
             by_unit_dist[h][a6[:4]] = by_unit_dist[h].get(a6[:4], 0) + t
@@ -414,7 +409,7 @@ def api_views(cache, ctx, registry=None) -> list[dict]:
         views.append({"level": "district", "scope": d, "fill": False,
                       "rows": [{"code": c, "values": _values(cache, s)} for c, s in sorted(ssums.items())],
                       "extra": {"inferredUnits": len(inferred), "overriddenUnits": overridden,
-                                "units": len(units_in), "crossDistrict": cross}})
+                                "crossDistrict": cross}})
     return views
 
 
@@ -426,19 +421,7 @@ def check_values(values: dict, where: str) -> list[tuple[str, str]]:
         w = f"{where} [{g}]"
         def num(k):
             return v.get(k)
-        formulas = [("pct_screened", num("screened"), num("target")),
-                    ("pct_normal_first", num("normal_first"), num("target")),
-                    ("pct_suspect", num("suspect_total"), num("screened")),
-                    ("pct_followed", num("followed"), num("suspect_wait30")),
-                    ("pct_normal", num("normal_total"), num("target"))]
-        for k, n, d in formulas:
-            if n is None or d is None:
-                continue
-            if d == 0:
-                if v.get(k) not in (None, 0):
-                    issues.append(("hard", f"{w} {k}={v.get(k)} but denominator is 0"))
-            elif v.get(k) is not None and not close(v[k], 100.0 * n / d):
-                issues.append(("hard", f"{w} {k}={v[k]} != {n}/{d}*100={100.0 * n / d:.2f}"))
+        issues += check_pcts(PCT, v, w)
         if None not in (num("suspect_wait30"), num("suspect_refer"), num("suspect_total")) and \
                 num("suspect_total") != num("suspect_wait30") + num("suspect_refer"):
             issues.append(("hard", f"{w} suspect_total {num('suspect_total')} != wait30+refer"))
@@ -464,24 +447,5 @@ def compare(api: dict, xl: dict, xl_keys: dict) -> list[str]:
     """Compare API-built vs Excel values. xl_keys: {group: [keys present in the Excel file]}."""
     bad = []
     for g, keys in xl_keys.items():
-        for k in keys:
-            a, x = api[g][k], xl[g][k]
-            if x is None:
-                continue
-            if k in PCT_KEYS:
-                den_zero = _pct_den_zero(api[g], k)
-                if den_zero:
-                    if x not in (0, None):
-                        bad.append(f"{g}.{k}: api den=0 (None) vs excel {x}")
-                    continue
-                if not close(a, x):
-                    bad.append(f"{g}.{k}: api {a} vs excel {x}")
-            elif a != x:
-                bad.append(f"{g}.{k}: api {a} vs excel {x}")
+        bad += compare_values(PCT, api[g], xl[g], keys, prefix=f"{g}.")
     return bad
-
-
-def _pct_den_zero(gvals, k):
-    den = {"pct_screened": "target", "pct_normal_first": "target", "pct_suspect": "screened",
-           "pct_followed": "suspect_wait30", "pct_normal": "target"}[k]
-    return gvals.get(den) == 0

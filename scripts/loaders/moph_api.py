@@ -1,7 +1,8 @@
 """MOPH Open Data API loader (POST https://opendata.moph.go.th/api/report_data).
 
 - requests only (python.org Python has no root certs -> urllib fails); certifi bundle is used.
-- one request at a time, timeout 120 s, retry 3x with backoff 5/15/45 s
+- one request at a time, timeout 120 s, retry 3x with backoff 5/15/45 s (retry(), also used by the GIS registry)
+- 0 rows -> EmptyResult (subclass of ApiError): callers treat it as 'not available yet', not as an outage
 - default server limit is 1000 -> we send limit=20000 and loop over `offset` until `total` is reached
 - raw responses are cached in data/raw_api/<table>/<year>/<provcode|all>.json (gitignored) and
   reused on later runs unless refresh=True
@@ -29,22 +30,48 @@ class ApiError(RuntimeError):
     pass
 
 
-def _post(body: dict) -> dict:
+class EmptyResult(ApiError):
+    """The API answered with 0 rows (year / province not available yet) - nothing cached."""
+
+
+class Retry(Exception):
+    """Raised inside a retry() callable for a retryable failure (e.g. HTTP 5xx); the message is logged."""
+
+
+class RetryExhausted(RuntimeError):
+    pass
+
+
+def retry(fn, delays=BACKOFF, what="request", log=print):
+    """Call fn() until it returns; network errors (requests.RequestException), bad JSON (ValueError) and Retry are
+    retried after delays[0], delays[1], ... seconds (len(delays)+1 attempts in total). Any other exception
+    propagates at once. Raises RetryExhausted with the last failure after the final attempt.
+    Shared by the Open Data API (_post) and the GIS registry (build_lookup._gis)."""
     last = None
-    for attempt in range(len(BACKOFF) + 1):
+    for attempt in range(len(delays) + 1):
         try:
-            r = requests.post(URL, json=body, timeout=TIMEOUT, verify=certifi.where(),
-                              headers={"Content-Type": "application/json"})
-            if r.status_code in (200, 201):  # API answers 201 on success
-                return r.json()
-            last = f"HTTP {r.status_code}: {r.text[:200]}"
+            return fn()
+        except Retry as e:
+            last = str(e)
         except (requests.RequestException, ValueError) as e:  # timeouts, conn errors, bad json
             last = f"{type(e).__name__}: {e}"
-        if attempt < len(BACKOFF):
-            wait = BACKOFF[attempt]
-            print(f"    ! request failed ({last}); retry {attempt + 1}/{len(BACKOFF)} in {wait}s", flush=True)
-            time.sleep(wait)
-    raise ApiError(f"API failed after {len(BACKOFF) + 1} attempts: {last} body={body}")
+        if attempt < len(delays):
+            log(f"    ! {what} failed ({last}); retry {attempt + 1}/{len(delays)} in {delays[attempt]}s")
+            time.sleep(delays[attempt])
+    raise RetryExhausted(f"{what} failed after {len(delays) + 1} attempts: {last}")
+
+
+def _post(body: dict) -> dict:
+    def once():
+        r = requests.post(URL, json=body, timeout=TIMEOUT, verify=certifi.where(),
+                          headers={"Content-Type": "application/json"})
+        if r.status_code in (200, 201):  # API answers 201 on success
+            return r.json()
+        raise Retry(f"HTTP {r.status_code}: {r.text[:200]}")
+    try:
+        return retry(once, BACKOFF, "request")
+    except RetryExhausted as e:
+        raise ApiError(f"API {e} body={body}") from None
 
 
 def fetch_rows(body: dict) -> tuple[list[dict], int]:
@@ -98,7 +125,7 @@ def get_raw(table: str, year: int, province: str | None = None, refresh: bool = 
     if len(rows) != total:
         raise ApiError(f"row count {len(rows)} != total {total} for {body}")
     if not rows:
-        raise ApiError(f"API returned 0 rows for {body} (year not available yet?) - nothing cached")
+        raise EmptyResult(f"API returned 0 rows for {body} (year not available yet?) - nothing cached")
     out = {"table": table, "year": year, "province": province, "total": total,
            "fetchedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"), "data": rows}
     p.parent.mkdir(parents=True, exist_ok=True)

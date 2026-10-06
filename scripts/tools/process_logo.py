@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# local one-off (not part of the pipeline; the Actions bot never runs it) - needs scripts/requirements-dev.txt
 """Turn data/logo.webp (logo on white) into a transparent RGBA PNG.
 
 Steps (Pillow only):
@@ -11,8 +12,8 @@ Steps (Pillow only):
  3. Colour of semi-transparent pixels is un-mixed from white (removes white halo).
  4. Crop fully transparent margins (+2% padding), resize to width 800 (LANCZOS).
 
-Usage (repo root): python3 scripts/process_logo.py [--in data/logo.webp] [--out site/assets/logo-angthong.png]
-Region-4 logo:     python3 scripts/process_logo.py --in data/logo-r4.jpg --out site/assets/logo-r4.png --mode key --width 800
+Usage (repo root): python3 scripts/tools/process_logo.py [--in data/logo.webp] [--out site/assets/logo-angthong.png]
+Region-4 logo:     python3 scripts/tools/process_logo.py --in data/logo-r4.jpg --out site/assets/logo-r4.png --mode key --width 800
 """
 import argparse
 from collections import deque
@@ -24,7 +25,7 @@ LOW, HIGH = 200, 245
 CUT = 40          # alpha below this is JPEG noise / faint glow -> 0
 # white cross in the emblem (source pixels x0,y0,x1,y1): enclosed light areas inside stay opaque
 KEEP_BOX = (78, 188, 102, 214)
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]       # repo root (scripts/tools/ -> ../..)
 
 
 def background_mask(rgb, hole_area):
