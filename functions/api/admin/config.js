@@ -1,5 +1,6 @@
 // Admin config override (§8.2): GET current KV `site` · PUT validated override · DELETE = back to repo defaults.
-import { json } from '../../_lib/http.js';
+import { json, methodNotAllowed, readJsonBody } from '../../_lib/http.js';
+import { readSiteOverride } from '../../_lib/config.js';
 
 const MAX_BODY = 20 * 1024;
 const ID_RE = /^[a-z0-9_]{1,20}$/;
@@ -83,17 +84,8 @@ export function sanitize(body) {
   return out;
 }
 
-async function readOverride(env) {
-  try {
-    const v = await env.CONFIG.get('site', 'json');
-    return isObj(v) ? v : {};
-  } catch {
-    return {};
-  }
-}
-
 export async function onRequest({ request, env }) {
-  if (request.method === 'GET') return json(await readOverride(env));
+  if (request.method === 'GET') return json(await readSiteOverride(env));
 
   if (request.method === 'DELETE') {
     await env.CONFIG.delete('site');
@@ -101,14 +93,8 @@ export async function onRequest({ request, env }) {
   }
 
   if (request.method === 'PUT') {
-    let body;
-    try {
-      const text = await request.text();
-      if (new TextEncoder().encode(text).length > MAX_BODY) return json({ error: 'ข้อมูลใหญ่เกิน 20 KB' }, 413);
-      body = JSON.parse(text);
-    } catch {
-      return json({ error: 'อ่าน JSON ไม่ได้' }, 400);
-    }
+    const { body, error } = await readJsonBody(request, MAX_BODY, { tooLarge: 'ข้อมูลใหญ่เกิน 20 KB', invalid: 'อ่าน JSON ไม่ได้' });
+    if (error) return error;
     let clean;
     try {
       clean = sanitize(body);
@@ -120,5 +106,5 @@ export async function onRequest({ request, env }) {
     return json(clean);
   }
 
-  return json({ error: 'method not allowed' }, 405, { allow: 'GET, PUT, DELETE' });
+  return methodNotAllowed('GET, PUT, DELETE');
 }

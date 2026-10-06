@@ -1,10 +1,22 @@
 // Hash routing: #/<indicator>/<year>/<level>/<code>  (levels: region | province | district)
-import { ROUTE_LEVELS, findTreeNode } from './data.js';
+import { ROUTE_LEVELS, findTreeNode, findDataset, homeOf } from './data.js';
 
+/**
+ * Landing route: the first indicator (dspm first) that has a dataset at the home level for currentYear,
+ * else the latest year that has one — so the landing page is never the no-data box while any data exists.
+ * Only when no home dataset exists at all does it return dspm/currentYear (the no-data page).
+ */
 export function defaultRoute(index) {
-  const indicator = index.indicators.dspm ? 'dspm' : Object.keys(index.indicators)[0];
-  const home = index.home ?? { level: 'region', code: '4' };
-  return { indicator, year: Number(index.currentYear), level: home.level, scope: String(home.code) };
+  const ids = Object.keys(index.indicators);
+  if (index.indicators.dspm) ids.sort((a, b) => (b === 'dspm') - (a === 'dspm')); // stable: dspm first
+  const home = homeOf(index);
+  const cur = Number(index.currentYear);
+  const years = [cur, ...index.years.map(Number).filter((y) => y !== cur).sort((a, b) => b - a)];
+  const route = (indicator, year) => ({ indicator, year, level: home.level, scope: String(home.code) });
+  for (const year of years) {
+    for (const id of ids) if (findDataset(id, year, home.level, home.code)) return route(id, year);
+  }
+  return route(ids[0], cur);
 }
 
 /**

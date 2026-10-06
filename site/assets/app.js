@@ -1,5 +1,5 @@
 // Entry point: routing → data → components.
-import { loadIndex, getIndex, setIndex, findDataset, loadFile, load, trailFor, targetFor, latestAsOf, LEVEL_NAME } from './modules/data.js';
+import { loadIndex, getIndex, setIndex, findDataset, loadFile, load, trailFor, targetFor, latestAsOf, homeOf, LEVEL_NAME } from './modules/data.js';
 import { parseHash, defaultRoute, replace, go } from './modules/router.js';
 import { state, getTheme, setTheme, isMobile } from './modules/state.js';
 import { destroyCharts } from './modules/charts.js';
@@ -29,6 +29,12 @@ function currentRoute(index) {
   const d = defaultRoute(index); // invalid route or a country route → region 4
   replace(d);
   return d;
+}
+
+/** Page heading shared by the no-data box and every level: eyebrow (level · fiscal year) + area name. */
+function scopeHeadHTML(route, name) {
+  const eyebrow = `ระดับ${LEVEL_NAME[route.level]} · ปีงบ ${route.year}`;
+  return `<div class="scope-head"><p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(name)}</h1></div>`;
 }
 
 async function render() {
@@ -62,11 +68,10 @@ async function render() {
   $main.style.minHeight = `${$main.offsetHeight}px`;
   destroyCharts();
 
-  const eyebrow = `ระดับ${LEVEL_NAME[route.level]} · ปีงบ ${route.year}`;
   if (!data) {
     ctx = null;
     $main.innerHTML = `${breadcrumbHTML(trail, route)}
-      <div class="scope-head"><p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(here?.name ?? route.scope)}</h1></div>
+      ${scopeHeadHTML(route, here?.name ?? route.scope)}
       ${noDataHTML(index, route, trail)}`;
     $main.style.minHeight = '';
     return;
@@ -91,7 +96,7 @@ async function render() {
   const child = childBarsPanel(ctx);
   const onDrill = (d) => go({ ...route, level: d.childLevel, scope: d.code });
 
-  if (route.level === (index.home?.level ?? 'region')) {
+  if (route.level === homeOf(index).level) {
     // Home page = region 4: headline + cards → 13 regions → 8 provinces → heatmap → table.
     const regionItems = parentData ? barItems(ctx, parentData, { highlight: route.scope }) : [];
     const regionPanel = parentData
@@ -105,7 +110,7 @@ async function render() {
       : '';
     $main.innerHTML = `
       ${breadcrumbHTML(trail, route)}
-      <div class="scope-head"><p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(data.scope.name)}</h1></div>
+      ${scopeHeadHTML(route, data.scope.name)}
       ${groupTabsHTML(ind, groupKey)}
       <div class="grid-top">${headlineHTML(ctx)}${cardsHTML(ctx)}</div>
       <div class="grid-2">${regionPanel}${child.html}</div>
@@ -120,7 +125,7 @@ async function render() {
   // Province / district: same head as the home page (headline card + cards) → heatmap → child bars → table.
   $main.innerHTML = `
     ${breadcrumbHTML(trail, route)}
-    <div class="scope-head"><p class="eyebrow">${esc(eyebrow)}</p><h1>${esc(data.scope.name)}</h1></div>
+    ${scopeHeadHTML(route, data.scope.name)}
     ${groupTabsHTML(ind, groupKey)}
     <div class="grid-top">${headlineHTML(ctx)}${cardsHTML(ctx)}</div>
     ${heatmapHTML(ctx)}

@@ -55,7 +55,7 @@ function base() {
 }
 
 /** Row pitch in px (desktop: name on the axis; mobile: name + label on a line above the bar). */
-export const ROW_PX = { desktop: 34, mobile: 54 };
+const ROW_PX = { desktop: 34, mobile: 54 };
 /** Chart box height for n rows: never squeezed — rows × pitch + axis/caption padding. */
 export function chartHeight(n) {
   const m = isMobile();
@@ -101,7 +101,7 @@ function roundRect(ctx, x, y, w, h, r) {
  * style: 'status' (bar colour = ok/warn/bad, neutral without target)
  *        'fill'   (full-width light-red base = expected 100%, green overlay = value)
  */
-export function barChart(canvas, { id, items, target, targetNote, style = 'status', onPick }) {
+export function barChart(canvas, { id, items, target, targetNote, style = 'status', smallN, onPick }) {
   const t = base();
   const mobile = isMobile();
   const fill = style === 'fill';
@@ -147,7 +147,7 @@ export function barChart(canvas, { id, items, target, targetNote, style = 'statu
     if (d.nodata) return 'ไม่มีข้อมูล';
     const icon = !fill && STATUS_ICON[d.status] ? `${STATUS_ICON[d.status]} ` : '';
     const nd = sep === '·' ? ` · ${fmtND(d.num, d.den)}` : ` (${fmtND(d.num, d.den)})`;
-    return `${icon}${fmtPct(d.value)}${nd}${d.small ? '  n<20' : ''}`;
+    return `${icon}${fmtPct(d.value)}${nd}${d.small ? `  n<${smallN}` : ''}`;
   };
 
   // Value labels at the bar end (desktop) or on a line above the bar (mobile), plus the highlight frame.

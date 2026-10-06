@@ -1,8 +1,9 @@
 // GET /api/admin/spec → Markdown download: latest web_spec_phase2.md + README §1, §3 + current KV override (§8.2).
 // Never includes the admin allowlist.
-import { json } from '../../_lib/http.js';
+import { json, methodNotAllowed } from '../../_lib/http.js';
+import { REPO, readSiteOverride } from '../../_lib/config.js';
 
-const RAW = 'https://raw.githubusercontent.com/parinyapaw-del/kpi-health/main/';
+const RAW = `https://raw.githubusercontent.com/${REPO}/main/`;
 const SITE_URL = 'https://kpi-health.pages.dev/';
 
 async function fetchText(file) {
@@ -36,7 +37,7 @@ function nowICT() {
 }
 
 export async function onRequest({ request, env }) {
-  if (request.method !== 'GET') return json({ error: 'method not allowed' }, 405, { allow: 'GET' });
+  if (request.method !== 'GET') return methodNotAllowed('GET');
 
   let spec;
   let readme;
@@ -46,13 +47,8 @@ export async function onRequest({ request, env }) {
     return json({ error: `ดึงไฟล์จาก GitHub ไม่สำเร็จ (${e.message})` }, 502);
   }
 
-  let override = null;
-  try {
-    const v = await env.CONFIG.get('site', 'json');
-    if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length) override = v;
-  } catch {
-    /* invalid JSON → treat as none */
-  }
+  const site = await readSiteOverride(env); // invalid JSON → {} → treated as none
+  const override = Object.keys(site).length ? site : null;
 
   const { day, time } = nowICT();
   const s1 = section(readme, 1);

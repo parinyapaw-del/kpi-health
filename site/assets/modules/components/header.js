@@ -1,7 +1,8 @@
 // Site header (§5.2): region-4 logo + site name, "จัดทำโดย" line with the org logo, indicator tabs,
 // year switch (only with ≥ 2 years), theme toggle, full indicator name + "ข้อมูล ณ".
 // On phones the header is sticky and condenses on scroll to the tabs + a one-line breadcrumb.
-import { esc, fmtAsOf } from '../format.js';
+import { esc, fmtAsOf, orgLogoHTML } from '../format.js';
+import { homeOf } from '../data.js';
 import { toHash } from '../router.js';
 import { getTheme } from '../state.js';
 import { breadcrumbHTML } from './breadcrumb.js';
@@ -31,7 +32,7 @@ export function headerHTML(index, route, ds, trail) {
   const src = ds ? index.sourceLabels?.[ds.source] ?? ds.source : null;
   const asOf = ds ? `ข้อมูล ณ ${fmtAsOf(ds.asOf)} · ${esc(src)}` : `ไม่มีข้อมูลระดับนี้ในปีงบ ${route.year}`;
   const dark = getTheme() === 'dark';
-  const home = index.home ?? { level: 'region', code: '4' };
+  const home = homeOf(index);
   const homeHref = toHash({ indicator: route.indicator, year: route.year, level: home.level, scope: home.code });
 
   return `
@@ -40,9 +41,7 @@ export function headerHTML(index, route, ds, trail) {
       ${index.logo ? `<img class="brand-logo" src="${esc(index.logo)}" alt="ตราเขตสุขภาพที่ 4" width="800" height="806">` : ''}
       <span class="brand-text">
         <strong>${esc(index.name)}</strong>
-        <span class="brand-org">${
-          index.orgLogo ? `<span class="org-plate"><img src="${esc(index.orgLogo)}" alt="" width="800" height="220"></span>` : ''
-        }${esc(index.org ?? '')}</span>
+        <span class="brand-org">${orgLogoHTML(index)}${esc(index.org ?? '')}</span>
       </span>
     </a>
     <div class="hdr-controls">

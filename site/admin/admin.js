@@ -3,6 +3,7 @@
 import { esc } from '../assets/modules/format.js';
 import { getTheme, setTheme } from '../assets/modules/state.js';
 import { todayICT } from '../assets/modules/hit.js';
+import { setIndex, findTreeNode } from '../assets/modules/data.js';
 
 const SESSION_KEY = 'kpiAdminSession';
 const EXPIRED_MSG = 'หมดเวลา กรุณาเข้าสู่ระบบใหม่';
@@ -282,7 +283,8 @@ function buildForm() {
       <textarea data-k="footerNote" maxlength="500" rows="2" placeholder="${ph(d.footerNote, 'ไม่มี')}"></textarea></label>
     <label class="fld">ปีปัจจุบัน<select data-k="currentYear"><option value="">ค่าจาก repo (${esc(d.currentYear)})</option>${years
       .map((y) => `<option value="${y}">${y}</option>`)
-      .join('')}</select></label>`;
+      .join('')}</select></label>
+    <p class="adm-msg adm-warn" id="year-warn" role="status"></p>`;
   for (const [id, ind] of Object.entries(d.indicators ?? {})) {
     const tkey = ind.targets_key ?? id;
     const short = ind.short ?? id;
@@ -359,6 +361,14 @@ function buildDraft() {
 /** Override object → form (missing keys → empty input = repo value). */
 function fillForm(ov = {}) {
   const form = $('config-form');
+  // A pinned currentYear (≠ repo) stops the site from moving to a new year by itself → keep it visible.
+  const pinned = ov.currentYear != null && defaults && Number(ov.currentYear) !== Number(defaults.currentYear);
+  const warn = $('year-warn');
+  if (warn) {
+    warn.textContent = pinned
+      ? `ค่าปีปัจจุบันถูกแก้ทับไว้ (repo = ${defaults.currentYear}) — เว็บจะไม่เปลี่ยนปีเองจนกว่าจะกดคืนค่าเริ่มต้น`
+      : '';
+  }
   for (const el of form.querySelectorAll('[data-k]')) {
     const v = ov[el.dataset.k];
     el.value = v == null ? '' : String(v);
@@ -428,21 +438,11 @@ async function saveConfig(e) {
 const addDays = (day, n) => new Date(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);
 const fmtN = (v) => nf.format(Number(v ?? 0));
 
-function findNode(node, level, code) {
-  if (!node) return null;
-  if (node.level === level && String(node.code) === String(code)) return node;
-  for (const c of node.children ?? []) {
-    const hit = findNode(c, level, code);
-    if (hit) return hit;
-  }
-  return null;
-}
-
 /** "dspm/province/15" → "สมวัย · อ่างทอง" (null when not in index.json). */
 function routeName(route) {
   const [id, level, code] = String(route).split('/');
   const ind = defaults?.indicators?.[id];
-  const node = findNode(defaults?.tree, level, code);
+  const node = findTreeNode(level, code)?.node; // data.js tree lookup (index set in init)
   return ind && node ? `${ind.short ?? id} · ${node.name}` : null;
 }
 
@@ -709,6 +709,7 @@ function bindEvents() {
 
   const [cfg, idx] = await Promise.all([fetchJSON('/api/config'), fetchJSON('../data/angthong/index.json')]);
   defaults = idx;
+  if (idx) setIndex(idx); // lets data.js findTreeNode resolve route names for the stats table
   if (idx?.name) {
     $('site-name').textContent = idx.name;
     document.title = `ผู้ดูแลระบบ · ${idx.name}`;

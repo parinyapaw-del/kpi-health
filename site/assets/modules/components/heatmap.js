@@ -1,19 +1,9 @@
 // Heatmap of child rows × columns from META.heatmap.columns (always every group, independent of the
 // age-group tab). Target columns use ok/warn/bad; `useTarget:false` columns use a single-hue ramp 0–100.
-import { vals, shortLabel, canDrill, CHILD_LEVEL, LEVEL_NAME } from '../data.js';
+import { vals, canDrill, CHILD_LEVEL, LEVEL_NAME } from '../data.js';
 import { classify, esc, fmtPct, fmtND, isNum, STATUS_ICON } from '../format.js';
 import { toHash } from '../router.js';
 import { state } from '../state.js';
-
-export function heatColumns(ind) {
-  if (ind.heatmap?.columns?.length) return ind.heatmap.columns;
-  // Fallback when metadata has no heatmap block: one column per group, or headline only.
-  const h = ind.headline;
-  if (ind.groups) {
-    return ind.groups.map((g) => ({ key: g.key, group: g.key, label: g.label, metric: h.metric, num: h.num, den: h.den, useTarget: true }));
-  }
-  return [{ key: h.metric, group: null, label: shortLabel(ind, h.metric), metric: h.metric, num: h.num, den: h.den, useTarget: true }];
-}
 
 function cell(row, col, ctx) {
   const v = vals(row, col.group ?? 'total') ?? {};
@@ -58,9 +48,10 @@ function orderRows(rows, cols, sort) {
 
 /**
  * Data-quality label for subdistrict rows (district pages, Q34/Q37):
- * verified → "ตรวจกับ HDC แล้ว" · else inferredUnits > 0 → "[INFERRED] หน่วย n แห่งใช้การอนุมานที่ตั้ง".
+ * verified → "ตรวจกับ HDC แล้ว" · year without any HDC file → "ยังไม่มีไฟล์ HDC ให้ตรวจสำหรับปีนี้"
+ * (+ inferred-units count) · else inferredUnits > 0 → "[INFERRED] หน่วย n แห่งใช้การอนุมานที่ตั้ง".
  */
-export function subdistrictLabel(ctx) {
+function subdistrictLabel(ctx) {
   const { index, route, data } = ctx;
   if (route.level !== 'district') return null;
   const n = Number(data.inferredUnits ?? 0) || 0;
@@ -69,9 +60,14 @@ export function subdistrictLabel(ctx) {
     // No HDC subdistrict report exists for this indicator at all.
     return { kind: 'inferred', text: '[INFERRED] ไม่มีรายงาน HDC ระดับตำบลให้ตรวจสอบ', n };
   }
-  const verified = data.verified === true || (verifiedList[String(route.year)] ?? []).map(String).includes(String(route.scope));
+  const yearList = verifiedList[String(route.year)];
+  const verified = data.verified === true || (yearList ?? []).map(String).includes(String(route.scope));
   if (verified) {
     return { kind: 'verified', text: `ตรวจกับ HDC แล้ว${n > 0 ? ` · หน่วย ${n} แห่งใช้การอนุมานที่ตั้ง` : ''}`, n };
+  }
+  if (!yearList) {
+    // This fiscal year has no HDC Excel yet (e.g. a new year) → nothing to verify against.
+    return { kind: 'inferred', text: `ยังไม่มีไฟล์ HDC ให้ตรวจสำหรับปีนี้${n > 0 ? ` · [INFERRED] หน่วย ${n} แห่งใช้การอนุมานที่ตั้ง` : ''}`, n };
   }
   if (n > 0) return { kind: 'inferred', text: `[INFERRED] หน่วย ${n} แห่งใช้การอนุมานที่ตั้ง`, n };
   return { kind: null, text: '', n };
@@ -85,7 +81,7 @@ function sortToggle() {
 
 export function heatmapHTML(ctx) {
   const { ind, data, route } = ctx;
-  const cols = heatColumns(ind);
+  const cols = ind.heatmap.columns;
   const childLevel = CHILD_LEVEL[route.level];
   const label = subdistrictLabel(ctx);
   const head = `<tr><th scope="col" class="hm-name">${esc(LEVEL_NAME[childLevel])}</th>${cols
@@ -105,6 +101,7 @@ export function heatmapHTML(ctx) {
     .map((c) => cell({ ...data.total, name: totalName, hasData: data.total?.hasData !== false }, c, ctx))
     .join('')}</tr>`;
   const hasRamp = cols.some((c) => !c.useTarget);
+  const noTarget = !ctx.target && cols.some((c) => c.useTarget); // year without a target: cells are neutral (no ok/warn/bad)
   const badge = label?.kind
     ? `<span class="dq-badge dq-${label.kind}" title="ตำบลของแต่ละหน่วยบริการยึดที่ตั้งตามทะเบียน MOPH GIS">${esc(label.text)}</span>`
     : '';
@@ -118,6 +115,7 @@ export function heatmapHTML(ctx) {
     </header>
     <p class="panel-note scroll-hint" aria-hidden="true">เลื่อนตารางซ้าย-ขวาเพื่อดูคอลัมน์อื่น ›</p>
     <div class="scroll-x heat-scroll" tabindex="0" aria-label="ตารางแผนที่ความร้อน เลื่อนซ้าย-ขวาได้"><table class="heat">${`<thead>${head}</thead><tbody>${body}${total}</tbody>`}</table></div>
+    ${noTarget ? '<p class="panel-note">เป้าหมาย: ยังไม่กำหนด (ไม่แบ่งสี)</p>' : ''}
     ${
       hasRamp
         ? '<p class="panel-note ramp-key"><span class="ramp-sw" aria-hidden="true"></span>คอลัมน์ที่ไม่มีเป้า: สีอ่อน → เข้ม = 0 → 100%</p>'

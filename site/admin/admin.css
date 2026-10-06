@@ -16,6 +16,7 @@
 .adm-msg { margin: 0; color: var(--bad-ink); font-weight: 600; }
 .adm-msg:empty { display: none; }
 .adm-msg.is-ok { color: var(--ok-ink); }
+.adm-msg.adm-warn { color: var(--warn-ink); }
 
 /* form ① + live preview */
 .adm-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }

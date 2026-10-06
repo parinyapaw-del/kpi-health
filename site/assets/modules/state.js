@@ -1,4 +1,6 @@
 // In-memory UI state + theme persistence.
+// Single source of the theme storage key. site/index.html and site/admin/index.html carry an inline copy
+// (they must set the theme before first paint, before any module loads) — keep the three in sync.
 const THEME_KEY = 'kpi-health-theme';
 
 export const state = {

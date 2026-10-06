@@ -1,5 +1,5 @@
 /* Layout: projector-first dashboard, 1400px column; home = headline + cards → 13 regions | 8 provinces → heatmap → table;
-   province/district = one-line headline → heatmap → child bars → table.
+   province/district = headline + cards → heatmap → child bars → table.
    Colour: cool teal-biased neutrals, one teal accent for navigation; status colours are reserved for the target rule. */
 :root {
   color-scheme: light;
@@ -180,7 +180,6 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .scope-head { display: flex; flex-direction: column; gap: 2px; }
 .eyebrow { margin: 0; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); }
 .scope-head h1 { font-size: clamp(1.8rem, 3.2vw, 2.6rem); font-weight: 800; line-height: 1.15; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* group tabs */
 .gtabs { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -232,7 +231,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .hl-meta dd { margin: 0; font-weight: 600; font-size: 1.08rem; }
 .t-note { color: var(--warn-ink); cursor: help; font-weight: 800; padding-left: 1px; }
 
-/* compact one-line headline (province / district) */
+/* small-denominator badge */
 .badge-small {
   display: inline-block; font-size: 0.72rem; font-weight: 700; line-height: 1.5;
   padding: 0 6px; border-radius: 999px; background: var(--na-bg); color: var(--ink-2);
@@ -383,6 +382,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   .hdr-controls { width: 100%; flex-wrap: nowrap; gap: 8px; }
   .seg-ind { flex: 1 1 auto; flex-wrap: nowrap; }
   .seg-ind .seg-btn { flex: 1 1 0; padding: 6px 8px; }
+  .seg:not(.seg-ind) { flex: none; flex-wrap: nowrap; } /* year switch (≥ 2 years): one row, never wraps inside the pill */
+  .seg:not(.seg-ind) .seg-btn { padding: 6px 11px; }
   .theme-btn { padding: 5px 10px; flex: none; }
   .theme-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .hdr-sub { font-size: 0.84rem; }

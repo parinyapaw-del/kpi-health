@@ -1,5 +1,5 @@
 // Usage stats for the admin page (§6, §8.2): GET /api/admin/stats?from=YYYY-MM-DD&to=YYYY-MM-DD (days in ICT).
-import { json, todayICT, ensureSchema } from '../../_lib/http.js';
+import { json, todayICT, ensureSchema, methodNotAllowed, noDb } from '../../_lib/http.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 86_400_000;
@@ -14,9 +14,9 @@ function parseDay(s) {
 const fmtDay = (t) => new Date(t).toISOString().slice(0, 10);
 
 export async function onRequest({ request, env }) {
-  if (request.method !== 'GET') return json({ error: 'method not allowed' }, 405, { allow: 'GET' });
+  if (request.method !== 'GET') return methodNotAllowed('GET');
   const db = env.DB;
-  if (!db) return json({ error: 'no db' }, 503);
+  if (!db) return noDb();
 
   const url = new URL(request.url);
   const today = todayICT();

@@ -50,10 +50,10 @@ export async function verifyIdToken(token, env) {
 
 const normList = (arr) => arr.filter((e) => typeof e === 'string' && e.trim()).map((e) => e.trim().toLowerCase());
 
-/** Admin allowlist: KV `admins` (JSON array) → env ADMIN_EMAILS (comma-separated) → []. */
+/** Admin allowlist: KV `admins` (JSON array) → env ADMIN_EMAILS (comma-separated) → []. The KV binding itself is checked once, in api/admin/_middleware.js. */
 export async function getAdmins(env) {
   try {
-    const list = env.CONFIG ? await env.CONFIG.get('admins', 'json') : null;
+    const list = await env.CONFIG.get('admins', 'json');
     if (Array.isArray(list)) {
       const clean = normList(list);
       if (clean.length) return clean;

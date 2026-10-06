@@ -4,7 +4,7 @@
 // Both respond {total_devices, today_devices}. Binding: env.DB (D1).
 // Stores per (day ICT, route, cf.region, cf.city): views, devices. Never reads or stores IP / user-agent.
 
-import { json, todayICT, ensureSchema } from '../_lib/http.js';
+import { json, todayICT, ensureSchema, noDb, readJsonBody } from '../_lib/http.js';
 
 const ROUTE_RE = /^[a-z]+\/[a-z]+\/[A-Za-z0-9]{1,10}$/;
 const CACHE_MS = 60_000;
@@ -31,18 +31,10 @@ function clean(v) {
 
 export async function onRequestPost({ request, env }) {
   const db = env.DB;
-  if (!db) return json({ error: 'no db' }, 503);
+  if (!db) return noDb();
 
-  const len = Number(request.headers.get('content-length') ?? 0);
-  if (len > MAX_BODY) return json({ error: 'body too large' }, 413);
-  let body;
-  try {
-    const text = await request.text();
-    if (text.length > MAX_BODY) return json({ error: 'body too large' }, 413);
-    body = JSON.parse(text);
-  } catch {
-    return json({ error: 'invalid json' }, 400);
-  }
+  const { body, error } = await readJsonBody(request, MAX_BODY);
+  if (error) return error;
   const route = body?.route;
   const newDevice = body?.newDevice;
   if (typeof route !== 'string' || !ROUTE_RE.test(route) || typeof newDevice !== 'boolean') {
@@ -76,7 +68,7 @@ export async function onRequestPost({ request, env }) {
 
 export async function onRequestGet({ request, env }) {
   const db = env.DB;
-  if (!db) return json({ error: 'no db' }, 503);
+  if (!db) return noDb();
   const url = new URL(request.url);
   if (url.searchParams.get('summary') !== '1') return json({ error: 'use ?summary=1' }, 400);
   try {

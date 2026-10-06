@@ -4,7 +4,7 @@ import { classify, esc, fmtPct, fmtFrac, fmtInt, isNum, STATUS_ICON, STATUS_TEXT
 
 const NOTE_TIP = 'เป้าหมายอ้างอิง ยังไม่ยืนยัน';
 
-export function targetText(target) {
+function targetText(target) {
   if (!target) return 'ยังไม่กำหนด';
   const star = target.note ? `<sup class="t-note" title="${esc(target.note || NOTE_TIP)}" tabindex="0">*</sup>` : '';
   return `≥ ${target.value}%${star}`;
@@ -19,7 +19,7 @@ function shortArea(name) {
  * Rank of the scope among its parent's rows (excluding hasData:false, pseudo rows and den < smallN).
  * → {k, n, text}
  */
-export function rankOf(ctx) {
+function rankOf(ctx) {
   const { parentData, data, ind, groupKey, rules } = ctx;
   if (!parentData) return null;
   const h = ind.headline;
@@ -42,9 +42,9 @@ function rankTitle(ctx) {
   return plevel === 'country' ? 'อันดับในประเทศ' : `อันดับใน${shortArea(p?.scope?.name)}`;
 }
 
-function rankHTML(rank, small) {
+function rankHTML(rank, small, rules) {
   if (!rank) return '';
-  if (rank.k == null) return `ไม่จัดอันดับ${small ? ' (n&lt;20)' : ''}`;
+  if (rank.k == null) return `ไม่จัดอันดับ${small ? ` (n&lt;${rules.smallN})` : ''}`;
   return `อันดับ <b>${rank.k}</b>/${rank.n} ${esc(rank.where)}`;
 }
 
@@ -54,7 +54,7 @@ function subLine(ind, v) {
   return `${esc(sub.label)} ${fmtInt(v[sub.num])} คน (${fmtPct(v[sub.metric])})`;
 }
 
-/** Big headline card (region home page). */
+/** Big headline card (every level). */
 export function headlineHTML(ctx) {
   const { ind, data, groupKey, target, rules, route, groupLabel } = ctx;
   const h = ind.headline;
@@ -70,7 +70,7 @@ export function headlineHTML(ctx) {
       v[h.den],
     )}</dd></div>`,
     `<div><dt>เป้าหมายปี ${route.year}</dt><dd>${targetText(target)}</dd></div>`,
-    rank ? `<div><dt>${esc(rankTitle(ctx))}</dt><dd>${rankHTML(rank, c.small)}</dd></div>` : '',
+    rank ? `<div><dt>${esc(rankTitle(ctx))}</dt><dd>${rankHTML(rank, c.small, rules)}</dd></div>` : '',
   ].join('');
 
   return `<section class="headline s-${c.status}${c.small ? ' is-small' : ''}" aria-label="ตัวชี้วัดหลัก">
@@ -78,7 +78,7 @@ export function headlineHTML(ctx) {
     <div class="hl-main">
       ${STATUS_ICON[c.status] ? `<span class="hl-icon" aria-hidden="true">${STATUS_ICON[c.status]}</span>` : ''}
       <span class="hl-value">${fmtPct(value)}</span>
-      ${c.small ? '<span class="badge-small">n&lt;20</span>' : ''}
+      ${c.small ? `<span class="badge-small">n&lt;${rules.smallN}</span>` : ''}
     </div>
     <div class="hl-status">${STATUS_TEXT[c.status]}</div>
     ${sub ? `<div class="hl-sub">${sub}</div>` : ''}

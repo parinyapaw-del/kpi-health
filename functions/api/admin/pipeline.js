@@ -1,12 +1,13 @@
 // GET /api/admin/pipeline → latest GitHub Actions run of the repo (public API, cached 60 s per isolate).
-import { json } from '../../_lib/http.js';
+import { json, methodNotAllowed } from '../../_lib/http.js';
+import { REPO } from '../../_lib/config.js';
 
-const API = 'https://api.github.com/repos/parinyapaw-del/kpi-health/actions/runs?per_page=1';
+const API = `https://api.github.com/repos/${REPO}/actions/runs?per_page=1`;
 const CACHE_MS = 60_000;
 let cache = null; // {at, body}
 
 export async function onRequest({ request }) {
-  if (request.method !== 'GET') return json({ error: 'method not allowed' }, 405, { allow: 'GET' });
+  if (request.method !== 'GET') return methodNotAllowed('GET');
   const now = Date.now();
   if (cache && now - cache.at < CACHE_MS) return json(cache.body);
   try {

@@ -41,9 +41,9 @@ function legendHTML(ctx, items, { highlightLabel } = {}) {
   const { ind, target, rules } = ctx;
   const parts = [];
   if (ind.chart?.style === 'fill') {
-    const baseTxt = ind.chart.baseLegend ?? 'เด็กพัฒนาการล่าช้าที่คาดประมาณจากอัตราความชุก';
+    const baseTxt = ind.chart.baseLegend ?? '';
     const fillTxt = ind.chart.fillLegend ?? ind.chart.fillLabel ?? '';
-    parts.push(`<li><i class="sw sw-base"></i>แดง = ${esc(baseTxt)}</li>`);
+    if (baseTxt) parts.push(`<li><i class="sw sw-base"></i>แดง = ${esc(baseTxt)}</li>`);
     parts.push(`<li><i class="sw sw-fill"></i>เขียว = ${esc(fillTxt)}</li>`);
     if (!target) parts.push('<li>เป้าหมาย: ยังไม่กำหนด</li>');
   } else if (target) {
@@ -83,6 +83,7 @@ export function mountBars(ctx, { id, items, onDrill }) {
     style: ctx.ind.chart?.style === 'fill' ? 'fill' : 'status',
     target: ctx.target?.value,
     targetNote: ctx.target?.note,
+    smallN: ctx.rules.smallN,
     onPick: (d) => d.drill && onDrill?.(d),
   });
 }

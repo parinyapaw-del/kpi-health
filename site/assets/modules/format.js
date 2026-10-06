@@ -59,6 +59,11 @@ export function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+/** Organisation logo plate (header + footer); '' when index.json has no `orgLogo`. */
+export function orgLogoHTML(index) {
+  return index.orgLogo ? `<span class="org-plate"><img src="${esc(index.orgLogo)}" alt="" width="800" height="220"></span>` : '';
+}
+
 /**
  * Colour rule (§4).
  * status: ok | warn | bad | neutral (no target) | na (no value)

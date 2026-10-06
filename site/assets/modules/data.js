@@ -5,6 +5,9 @@ const BASE = 'data/angthong/';
 let index = null;
 const fileCache = new Map(); // file -> Promise<json|null>
 
+/** Home page = this area unless index.json provides `home` (single source for header, router and app). */
+export const HOME_DEFAULT = { level: 'region', code: '4' };
+export const homeOf = (idx) => idx?.home ?? HOME_DEFAULT;
 /** Levels that have a page (country exists only as the 13-region dataset on the home page). */
 export const ROUTE_LEVELS = ['region', 'province', 'district'];
 export const CHILD_LEVEL = { country: 'region', region: 'province', province: 'district', district: 'subdistrict' };
@@ -75,7 +78,7 @@ export function targetFor(ind, year) {
   return t && typeof t.value === 'number' ? t : null;
 }
 
-export function tableLabel(ind, key) {
+function tableLabel(ind, key) {
   return ind.table?.find((c) => c.key === key)?.label ?? key;
 }
 
