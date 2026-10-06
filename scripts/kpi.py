@@ -19,8 +19,8 @@ New fiscal year (sites/<site>.json "autoYear": true; spec §7.3):
     the workflow then dispatches itself with national=true, year=Y.
   * national run (--national, or --national --year Y for a year not in the config): DSPM of Y for all 77 provinces
     (-> data/cache/dspm/Y/provinces.json), Coverage of Y (0 rows = warning), units; only once the DSPM national
-    summary of Y exists is Y added to "years" (currentYear = Y) and reported as "newYears": [Y] (workflow -> Issue
-    "กรุณาใส่เป้าหมาย"). A failed DSPM fetch of Y = hard error, config untouched; no DSPM rows at all = warning.
+    summary of Y exists is Y added to "years" (currentYear = Y); a missing target of Y is copied from the previous
+    year ("inheritedFrom") and reported as "newYears": [Y] + "inheritedTargets" (workflow -> Issue "กรุณาตรวจเป้าหมาย"). A failed DSPM fetch of Y = hard error, config untouched; no DSPM rows at all = warning.
 
 Exit code: 0 ok · 1 hard verify errors · 2 fetch failed · 3 --fail-test.
 Writes data/cache/pipeline_status.json (read by the GitHub Actions workflow).
@@ -192,6 +192,26 @@ def fetch_new_year(ctx, indicators, year, refresh, log=print) -> tuple[bool, lis
     return True, hard, warns
 
 
+def inherit_targets(site, years) -> dict:
+    """For every indicator and new year without a target, copy the newest earlier year's target
+    (targets[ind][y] = {"value": v, "inheritedFrom": prev}). Returns {year: {ind: value}} of what was copied."""
+    out: dict = {}
+    targets = site.setdefault("targets", {})
+    for ind in site["indicators"]:
+        t = targets.setdefault(ind, {})
+        for y in years:
+            if isinstance(t.get(str(y)), dict) and t[str(y)].get("value") is not None:
+                continue
+            prev = [int(k) for k, v in t.items() if k.isdigit() and int(k) < y
+                    and isinstance(v, dict) and v.get("value") is not None]
+            if not prev:
+                continue
+            src = max(prev)
+            t[str(y)] = {"value": t[str(src)]["value"], "inheritedFrom": src}
+            out.setdefault(str(y), {})[ind] = t[str(y)]["value"]
+    return out
+
+
 def hospcodes_in_caches(ctx, years) -> dict:
     """Every DSPM hospcode of the drill provinces (all years) with its target by areacode6 (fallback info)."""
     out: dict = {}
@@ -289,6 +309,7 @@ def main(argv=None):
             print(f"  auto-year: pendingYears={pending} - not fetched by a daily run; the workflow dispatches "
                   f"a national run (national=true, year={pending[0]}); this run continues with {years}")
     new_years: list[int] = []
+    inherited_targets: dict = {}
     hard: list[str] = []
     fetch_warnings: list[str] = []
     plan: dict = {}
@@ -296,6 +317,7 @@ def main(argv=None):
 
     def status(ok, **kw):
         write_status(command=a.command, ok=ok, years=years, newYears=new_years, pendingYears=pending,
+                     inheritedTargets=inherited_targets,
                      national=a.national, fetchPlan={str(y): m for y, m in plan.items()},
                      fetchWarnings=fetch_warnings, **kw)
 
@@ -321,14 +343,17 @@ def main(argv=None):
         if a.command in ("update", "fetch", "units"):
             do_units(ctx, years, refresh=a.refresh and a.command == "units")
         if available:
-            # the DSPM national summary of each available new year exists -> publish it (targets not set yet)
+            # the DSPM national summary of each available new year exists -> publish it; a year without a target
+            # inherits the previous year's target (Save 2026-10-06) so the web keeps its colours; the Issue asks
+            # to confirm/correct it on /admin/
             site["years"] = sorted({int(y) for y in site["years"]} | set(available))
             site["currentYear"] = max(int(site["currentYear"]), *available)
+            inherited_targets.update(inherit_targets(site, available))
             B.save_site(site)
             ctx = B.make_context(site)
             new_years = available
             print(f"  auto-year: fiscal year(s) {available} added to sites/{site['site']}.json "
-                  f"(currentYear = {site['currentYear']}, targets not set) -> newYears={available}")
+                  f"(currentYear = {site['currentYear']}, inherited targets {inherited_targets}) -> newYears={available}")
         built = None
         files = None
         if a.command in ("update", "build"):

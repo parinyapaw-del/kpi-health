@@ -8,7 +8,7 @@
 #   2. รอบรายวันที่พบข้อมูล DSPM ของปีใหม่ -> ไม่ดึงปีนั้น, เขียน pendingYears ใน pipeline_status.json
 #      -> step "dispatch รอบระดับประเทศ" สั่ง workflow นี้ใหม่ด้วย national=true, year=<ปี> (ถ้ายังไม่มีรอบของปีนั้นค้างอยู่)
 #   3. รอบระดับประเทศของปีนั้น: ดึง DSPM ทั้ง 77 จังหวัด + Coverage (0 แถว = เตือน) -> เมื่อมีสรุประดับประเทศแล้ว
-#      จึงเพิ่มปีใน sites/angthong.json (currentYear = ปีใหม่) -> newYears -> Issue "พบข้อมูลปีงบ <ปี> — กรุณาใส่เป้าหมาย"
+#      จึงเพิ่มปีใน sites/angthong.json (currentYear = ปีใหม่, เป้าที่ยังไม่มี = คัดลอกจากปีก่อน) -> newYears -> Issue "พบข้อมูลปีงบ <ปี> — กรุณาตรวจ/แก้เป้าหมาย"
 #      ดึงไม่สำเร็จ -> ล้ม (Issue) และ config ไม่เปลี่ยน
 name: update-data
 run-name: "update-data${{ inputs.year && format(' ปีงบ {0}', inputs.year) || '' }}${{ inputs.national && ' (national)' || '' }}"
@@ -138,8 +138,9 @@ jobs:
             # ปีงบใหม่ที่ถูกเพิ่มใน config รอบนี้ -> ปีละ 1 Issue (ค้นทั้งที่เปิด/ปิดแล้ว)
             YEARS=$(python3 -c "import json; s=json.load(open('data/cache/pipeline_status.json')); print(' '.join(str(y) for y in s.get('newYears') or []))" 2>/dev/null || true)
             for Y in $YEARS; do
-              TITLE="พบข้อมูลปีงบ $Y — กรุณาใส่เป้าหมาย"
-              BODY=$(printf 'GitHub Actions พบข้อมูลปีงบ %s ใน MOPH Open Data API แล้ว (ดึง DSPM ทั้ง 77 จังหวัดสำเร็จ) และเพิ่มปีนี้ใน `sites/angthong.json` (currentYear = %s) โดยยังไม่มีเป้าหมาย → เว็บแสดง "เป้าหมาย: ยังไม่กำหนด"\n\nใส่เป้าหมายได้ 2 ทาง\n1. แก้ `sites/angthong.json` → `targets.dspm.%s.value` และ `targets.coverage.%s.value` แล้ว push\n2. หน้า admin (Phase 2b)\n\nปิด Issue นี้เมื่อใส่เป้าหมายแล้ว' "$Y" "$Y" "$Y" "$Y")
+              TITLE="พบข้อมูลปีงบ $Y — กรุณาตรวจ/แก้เป้าหมาย"
+              TARGETS=$(python3 -c "import json; s=json.load(open('sites/angthong.json')); print(' · '.join(f\"{i} = {s['targets'][i]['$Y']['value']}\" + (f\" (คัดลอกจากปี {s['targets'][i]['$Y']['inheritedFrom']})\" if s['targets'][i]['$Y'].get('inheritedFrom') else '') for i in s['indicators'] if s['targets'].get(i,{}).get('$Y',{}).get('value') is not None)" 2>/dev/null || true)
+              BODY=$(printf 'GitHub Actions พบข้อมูลปีงบ %s ใน MOPH Open Data API แล้ว (ดึง DSPM ทั้ง 77 จังหวัดสำเร็จ) และเพิ่มปีนี้ใน `sites/angthong.json` (currentYear = %s)\n\nเป้าหมายที่ใช้อยู่ตอนนี้: %s\n(ปีใหม่ที่ยังไม่มีเป้าจะใช้เป้าของปีก่อนหน้าไปก่อน — Save 2026-10-06)\n\nแก้เป้าหมายได้ 2 ทาง\n1. หน้า `/admin/` → เป้าหมายปี %s (ค่าใน KV ทับค่า repo)\n2. แก้ `sites/angthong.json` → `targets.dspm.%s.value` และ `targets.coverage.%s.value` แล้ว push\n\nปิด Issue นี้เมื่อตรวจเป้าหมายแล้ว' "$Y" "$Y" "${TARGETS:-ยังไม่กำหนด}" "$Y" "$Y" "$Y")
               pipeline_issue all "$TITLE" "$TITLE" "$BODY" skip
             done
           else
