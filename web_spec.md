@@ -5,7 +5,7 @@
 | Version | **1.1** (Phase 0 ล็อกหลัง grilling 40 ข้อ · แก้จาก 1.0 เพราะพบ MOPH Open Data API ใช้แทน Excel ได้) |
 | วันที่ | 2026-09-29 |
 | ผู้สั่ง | Save (Parinya Pawenawan) — สำหรับ รพ.อ่างทอง (พี่ต้อง) |
-| สถานะ | **approved → Phase 1 execute ใน session ใหม่** ที่เปิดใน `~/Desktop/Claude/web project/kpi-health/` ด้วยคำสั่ง "execute web_spec.md" |
+| สถานะ | **approved → Phase 1 execute ใน session ใหม่** ที่เปิดใน `~/Desktop/Claude/web project/kpi-health/` (ย้ายไป `~/Projects/kpi-health/` เมื่อ 2026-10-06 — Desktop sync กับ iCloud ทำให้เกิดไฟล์ซ้ำ) ด้วยคำสั่ง "execute web_spec.md" |
 | Model | Orchestrator = Fable (หรือ Opus) อ่าน spec นี้ทั้งไฟล์ก่อน · Sonnet = pipeline ข้อมูล + โลโก้ · Opus = หน้าเว็บ · Orchestrator ตรวจทุกขั้น |
 
 > **Phase 1 snapshot (2026-09-29) — เก็บไว้เป็น reference** · ฉบับที่ใช้งานจริงคือ [`web_spec_phase2.md`](web_spec_phase2.md) + `README.md` · path ปัจจุบัน: เครื่องมือครั้งเดียวอยู่ใน `scripts/tools/` (`process_logo.py` ฯลฯ)

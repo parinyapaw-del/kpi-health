@@ -5,7 +5,7 @@
 | Version | **2.0** (ล็อกหลัง grilling 39 ข้อ · ต่อจาก `web_spec.md` v1.1 ซึ่งคงไว้เป็น reference ของ Phase 1) |
 | วันที่ | 2026-09-30 |
 | ผู้สั่ง | Save (Parinya Pawenawan) — จัดทำโดย รพ.อ่างทอง สำหรับเขตสุขภาพที่ 4 |
-| สถานะ | **approved → Phase 2 execute ใน session ใหม่** ที่เปิดใน `~/Desktop/Claude/web project/kpi-health/` ด้วยคำสั่ง "execute web_spec_phase2.md" · Phase 2b (admin) execute เป็น session ถัดไปด้วยคำสั่ง "execute web_spec_phase2.md phase 2b" |
+| สถานะ | **approved → Phase 2 execute ใน session ใหม่** ที่เปิดใน `~/Desktop/Claude/web project/kpi-health/` (ย้ายไป `~/Projects/kpi-health/` เมื่อ 2026-10-06 — Desktop sync กับ iCloud ทำให้เกิดไฟล์ซ้ำ) ด้วยคำสั่ง "execute web_spec_phase2.md" · Phase 2b (admin) execute เป็น session ถัดไปด้วยคำสั่ง "execute web_spec_phase2.md phase 2b" |
 | Model | **Fable = plan + ตรวจทุกขั้น** (อ่าน spec นี้ทั้งไฟล์ก่อน) · **Sonnet = pipeline ข้อมูล + โลโก้ + Actions** · **Opus = หน้าเว็บ + Pages Functions + admin** |
 
 > spec นี้เขียนให้ session ใหม่ทำงานได้โดยไม่ต้องรู้บทสนทนา · อ่านคู่กับ `web_spec.md` (โครงข้อมูล/สูตร/API ยังใช้ของเดิมทุกข้อที่ไม่ได้เขียนทับในนี้) และ `README.md` · ห้ามเดาตัวเลข (CLAUDE.md rule 4) · ถ้าอะไรใน spec ขัดกับของจริงในเครื่อง ให้หยุดรายงาน ไม่แก้เอง

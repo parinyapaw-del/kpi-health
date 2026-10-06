@@ -68,6 +68,8 @@ git add -A && git commit -m "data: update" && git push
 
 ## 2. โครงสร้าง repo
 
+โฟลเดอร์ในเครื่อง Save: `~/Projects/kpi-health/` (ย้ายจาก `~/Desktop/Claude/web project/` เมื่อ 2026-10-06 เพราะ Desktop sync กับ iCloud Drive แล้วสร้างไฟล์ซ้ำ `… 2.json`) · repo พี่น้อง `~/Projects/primary-care-health/` ต้องอยู่ข้างกัน (อ้างด้วย `../`)
+
 ```
 kpi-health/
 ├── README.md · web_spec_phase2.md · web_spec.md
