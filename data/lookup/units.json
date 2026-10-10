@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "source": "https://opendata-service.moph.go.th/gis/v1/getgis/hoscode/{hoscode}",
- "fetchedAt": "2026-10-08T00:08:26+00:00",
+ "fetchedAt": "2026-10-10T03:31:54+00:00",
  "units": {
   "00993": {
    "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลตลาดขวัญ",
@@ -5423,9 +5423,9 @@
   },
   "15238": {
    "maxTargetArea": "120105",
-   "target": 61,
+   "target": 43,
    "areas": {
-    "120105": 61
+    "120105": 43
    }
   },
   "15240": {
@@ -5459,9 +5459,9 @@
   },
   "22425": {
    "maxTargetArea": "160115",
-   "target": 102,
+   "target": 101,
    "areas": {
-    "160115": 102
+    "160115": 101
    }
   },
   "22735": {
@@ -5477,8 +5477,8 @@
    "areas": {
     "120102": 4
    },
-   "gisError": "GIS registry failed for 22754: GIS lookup 22754 failed after 4 attempts: ConnectTimeout: HTTPSConnectionPool(host='opendata-service.moph.go.th', port=443): Max retries exceeded with url: /gis/v1/getgis/hoscode/22754 (Caused by ConnectTimeoutError(<HTTPSConnection(host='opendata-service.moph.go.th', port=443) at 0x7f35d4360e10>, 'Connection to opendata-service.moph.go.th timed out. (connect timeout=15)'))",
-   "gisFailedAt": "2026-10-08T00:08:26+00:00"
+   "gisError": "GIS registry failed for 22754: GIS lookup 22754 failed after 4 attempts: ConnectTimeout: HTTPSConnectionPool(host='opendata-service.moph.go.th', port=443): Max retries exceeded with url: /gis/v1/getgis/hoscode/22754 (Caused by ConnectTimeoutError(<HTTPSConnection(host='opendata-service.moph.go.th', port=443) at 0x7f48f3d7ca50>, 'Connection to opendata-service.moph.go.th timed out. (connect timeout=15)'))",
+   "gisFailedAt": "2026-10-10T03:31:54+00:00"
   },
   "22761": {
    "maxTargetArea": "160101",
@@ -5716,9 +5716,9 @@
   },
   "41319": {
    "maxTargetArea": "130111",
-   "target": 523,
+   "target": 522,
    "areas": {
-    "130111": 516,
+    "130111": 515,
     "130112": 7
    }
   },
@@ -5916,9 +5916,9 @@
   },
   "41627": {
    "maxTargetArea": "120402",
-   "target": 292,
+   "target": 291,
    "areas": {
-    "120402": 170,
+    "120402": 169,
     "120404": 3,
     "120405": 15,
     "120406": 4,
@@ -5992,9 +5992,9 @@
   },
   "42288": {
    "maxTargetArea": "140616",
-   "target": 111,
+   "target": 73,
    "areas": {
-    "140616": 111
+    "140616": 73
    }
   },
   "42952": {
