@@ -1,5 +1,5 @@
 # อัปเดตข้อมูลอัตโนมัติ (web_spec_phase2.md §7)
-# ทุกวัน 07:00 ICT (= 00:00 UTC): DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ ของ currentYear และปีก่อนหน้า
+# ทุกวัน 07:17 ICT (= 00:17 UTC — เลี่ยงนาที 00:00 ที่ cron ทั่วโลกยิงพร้อมกันและโควตา API ถูกใช้หมด): DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ ของ currentYear และปีก่อนหน้า
 #   (ปีเก่ากว่านั้นใช้ cache ที่ commit ไว้ ไม่ดึงซ้ำ) · วันจันทร์: + DSPM ทั้ง 77 จังหวัดของ currentYear (ระดับประเทศ/เขต)
 # ผ่าน -> commit "data: auto-update <วันที่>" + push (Cloudflare Pages deploy เอง) · ล้ม/หมดเวลา -> ไม่ commit + เปิด/คอมเมนต์ GitHub Issue
 #
@@ -15,7 +15,7 @@ run-name: "update-data${{ inputs.year && format(' ปีงบ {0}', inputs.year
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "17 0 * * *"
   workflow_dispatch:
     inputs:
       national:

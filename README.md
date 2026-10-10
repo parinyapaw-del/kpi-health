@@ -13,7 +13,7 @@ Dashboard ตัวชี้วัดพัฒนาการเด็กปฐ�
 ## 1. อัปเดตข้อมูล
 
 ### อัตโนมัติ (GitHub Actions — [`.github/workflows/update.yml`](.github/workflows/update.yml))
-- **ทุกวัน 07:00 ICT**: DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ ของ `currentYear` และปีก่อนหน้า (policy `refresh_scope()` ใน `scripts/kpi.py`; ปีที่เก่ากว่านั้นใช้ cache ที่ commit ไว้ ไม่ดึงซ้ำ — ดึงเฉพาะเมื่อ cache หาย) → build → verify → ถ้าผ่านและมีข้อมูลใหม่ commit `data: auto-update <วันที่>` → Cloudflare deploy เอง (≈ 10 นาที) · timeout 40 นาที
+- **ทุกวัน 07:17 ICT**: DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ ของ `currentYear` และปีก่อนหน้า (policy `refresh_scope()` ใน `scripts/kpi.py`; ปีที่เก่ากว่านั้นใช้ cache ที่ commit ไว้ ไม่ดึงซ้ำ — ดึงเฉพาะเมื่อ cache หาย) → build → verify → ถ้าผ่านและมีข้อมูลใหม่ commit `data: auto-update <วันที่>` → Cloudflare deploy เอง (≈ 10 นาที) · timeout 40 นาที
 - **ทุกวันจันทร์** (หรือกด `national`): เพิ่ม DSPM ทั้ง 77 จังหวัดของ `currentYear` (`--national`, ราว 45–85 นาทีต่อปี) สำหรับกราฟ 13 เขต / ยอดเขต 4 · timeout 150 นาที
 - **ปีงบใหม่** (`"autoYear": true` ใน `sites/angthong.json`):
   1. ทุกรอบ `kpi.py` **แค่ probe** API ปี `max(years)+1` (Coverage ทั้งประเทศ + DSPM จังหวัด 15 หรือจังหวัด drill แรก) — ไม่แก้ `sites/angthong.json` · นับว่า "พบปีใหม่" เมื่อ **DSPM มีแถวเท่านั้น** (มีแต่ Coverage = รอ)

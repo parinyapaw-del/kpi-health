@@ -2,6 +2,10 @@
 
 - requests only (python.org Python has no root certs -> urllib fails); certifi bundle is used.
 - one request at a time, timeout 120 s, retry 3x with backoff 5/15/45 s (retry(), also used by the GIS registry)
+- HTTP 429 (NestJS ThrottlerException): the server budget is 10 requests / 60 s (strict 5 / 60 s) and the counter is
+  shared with other traffic reaching the API through the same path (measured 2026-10-10: our own ~11 requests per run,
+  30-45 s apart, still saw random 429s from GitHub runners). A 429 is therefore retried on its own, longer budget
+  (THROTTLE_BACKOFF) and each wait is at least `x-ratelimit-reset` + 1 s so a fresh window has opened.
 - 0 rows -> EmptyResult (subclass of ApiError): callers treat it as 'not available yet', not as an outage
 - default server limit is 1000 -> we send limit=20000 and loop over `offset` until `total` is reached
 - raw responses are cached in data/raw_api/<table>/<year>/<provcode|all>.json (gitignored) and
@@ -21,6 +25,7 @@ URL = "https://opendata.moph.go.th/api/report_data"
 LIMIT = 20000
 TIMEOUT = 120
 BACKOFF = (5, 15, 45)
+THROTTLE_BACKOFF = (61, 61, 61, 61, 61)  # HTTP 429 only: wait out the 60 s window, up to 6 attempts (~5 min)
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw_api"
@@ -35,30 +40,45 @@ class EmptyResult(ApiError):
 
 
 class Retry(Exception):
-    """Raised inside a retry() callable for a retryable failure (e.g. HTTP 5xx); the message is logged."""
+    """Raised inside a retry() callable for a retryable failure (e.g. HTTP 5xx); the message is logged.
+    throttled=True (HTTP 429) counts against the separate, longer throttle budget of retry(); wait = minimum seconds
+    to sleep before the next attempt (the server's x-ratelimit-reset / Retry-After)."""
+
+    def __init__(self, message: str, wait: float | None = None, throttled: bool = False):
+        super().__init__(message)
+        self.wait = wait
+        self.throttled = throttled
 
 
 class RetryExhausted(RuntimeError):
     pass
 
 
-def retry(fn, delays=BACKOFF, what="request", log=print):
+def retry(fn, delays=BACKOFF, what="request", log=print, throttle_delays=()):
     """Call fn() until it returns; network errors (requests.RequestException), bad JSON (ValueError) and Retry are
-    retried after delays[0], delays[1], ... seconds (len(delays)+1 attempts in total). Any other exception
-    propagates at once. Raises RetryExhausted with the last failure after the final attempt.
+    retried after delays[0], delays[1], ... seconds (len(delays)+1 attempts in total). A Retry with throttled=True
+    is retried on its own budget `throttle_delays` instead (len(throttle_delays) extra attempts), sleeping at least
+    Retry.wait seconds. Any other exception propagates at once. Raises RetryExhausted with the last failure when the
+    budget that applies to the failure is used up.
     Shared by the Open Data API (_post) and the GIS registry (build_lookup._gis)."""
     last = None
-    for attempt in range(len(delays) + 1):
+    used = {False: 0, True: 0}            # attempts spent per budget (normal / throttled)
+    budget = {False: delays, True: throttle_delays}
+    while True:
         try:
             return fn()
         except Retry as e:
-            last = str(e)
+            last, throttled, wait = str(e), e.throttled, e.wait
         except (requests.RequestException, ValueError) as e:  # timeouts, conn errors, bad json
-            last = f"{type(e).__name__}: {e}"
-        if attempt < len(delays):
-            log(f"    ! {what} failed ({last}); retry {attempt + 1}/{len(delays)} in {delays[attempt]}s")
-            time.sleep(delays[attempt])
-    raise RetryExhausted(f"{what} failed after {len(delays) + 1} attempts: {last}")
+            last, throttled, wait = f"{type(e).__name__}: {e}", False, None
+        n = used[throttled]
+        if n >= len(budget[throttled]):
+            raise RetryExhausted(f"{what} failed after {used[False] + used[True] + 1} attempts: {last}")
+        delay = max(budget[throttled][n], wait or 0)
+        used[throttled] = n + 1
+        kind = "throttled" if throttled else "failed"
+        log(f"    ! {what} {kind} ({last}); retry {n + 1}/{len(budget[throttled])} in {delay:.0f}s")
+        time.sleep(delay)
 
 
 def _post(body: dict) -> dict:
@@ -67,9 +87,16 @@ def _post(body: dict) -> dict:
                           headers={"Content-Type": "application/json"})
         if r.status_code in (200, 201):  # API answers 201 on success
             return r.json()
+        if r.status_code == 429:  # shared throttle budget (see module docstring): wait for the window to reset
+            reset = r.headers.get("x-ratelimit-reset") or r.headers.get("Retry-After")
+            try:
+                wait = float(reset) + 1
+            except (TypeError, ValueError):
+                wait = None
+            raise Retry(f"HTTP 429: {r.text[:120]}", wait=wait, throttled=True)
         raise Retry(f"HTTP {r.status_code}: {r.text[:200]}")
     try:
-        return retry(once, BACKOFF, "request")
+        return retry(once, BACKOFF, "request", throttle_delays=THROTTLE_BACKOFF)
     except RetryExhausted as e:
         raise ApiError(f"API {e} body={body}") from None
 
