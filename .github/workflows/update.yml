@@ -1,13 +1,15 @@
-# อัปเดตข้อมูลอัตโนมัติ (web_spec_phase2.md §7)
-# ทุกวัน 07:17 ICT (= 00:17 UTC — เลี่ยงนาที 00:00 ที่ cron ทั่วโลกยิงพร้อมกันและโควตา API ถูกใช้หมด): DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ ของ currentYear และปีก่อนหน้า
-#   (ปีเก่ากว่านั้นใช้ cache ที่ commit ไว้ ไม่ดึงซ้ำ) · วันจันทร์: + DSPM ทั้ง 77 จังหวัดของ currentYear (ระดับประเทศ/เขต)
+# อัปเดตข้อมูลอัตโนมัติ (web_spec_phase2.md §7 · เปลี่ยนเป็นรายสัปดาห์ 2026-10-12 ดู web_spec_phase3.md §1)
+# ทุกวันจันทร์ 07:17 ICT (= 00:17 UTC — เลี่ยงนาที 00:00 ที่ cron ทั่วโลกยิงพร้อมกันและโควตา API ถูกใช้หมด) รอบเดียว national เสมอ:
+#   DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ ของ currentYear และปีก่อนหน้า (ปีเก่ากว่านั้นใช้ cache ที่ commit ไว้ ไม่ดึงซ้ำ)
+#   + DSPM ทั้ง 77 จังหวัดของ currentYear (ระดับประเทศ/เขต) ~100 นาที
+# วันอังคาร 07:17 ICT = รอบซ่อม: รันเหมือนวันจันทร์เฉพาะเมื่อรอบ schedule ล่าสุดก่อนหน้าไม่สำเร็จ (ล้ม/หมดเวลา) มิฉะนั้นข้าม (job update ไม่รัน ไม่ยิง API)
 # ผ่าน -> commit "data: auto-update <วันที่>" + push (Cloudflare Pages deploy เอง) · ล้ม/หมดเวลา -> ไม่ commit + เปิด/คอมเมนต์ GitHub Issue
 #
 # ปีงบใหม่ (spec §7.3, sites/angthong.json "autoYear": true):
 #   1. ทุกรอบ kpi.py probe API หาปี max(years)+1 (ไม่แก้ config)
-#   2. รอบรายวันที่พบข้อมูล DSPM ของปีใหม่ -> ไม่ดึงปีนั้น, เขียน pendingYears ใน pipeline_status.json
+#   2. รอบที่ไม่ใช่ national (กดเองโดยไม่ติ๊ก national) ที่พบข้อมูล DSPM ของปีใหม่ -> ไม่ดึงปีนั้น, เขียน pendingYears ใน pipeline_status.json
 #      -> step "dispatch รอบระดับประเทศ" สั่ง workflow นี้ใหม่ด้วย national=true, year=<ปี> (ถ้ายังไม่มีรอบของปีนั้นค้างอยู่)
-#   3. รอบระดับประเทศของปีนั้น: ดึง DSPM ทั้ง 77 จังหวัด + Coverage (0 แถว = เตือน) -> เมื่อมีสรุประดับประเทศแล้ว
+#   3. รอบระดับประเทศ (รอบสัปดาห์ที่ probe พบ หรือรอบที่ dispatch มา): ดึง DSPM ทั้ง 77 จังหวัด + Coverage (0 แถว = เตือน) -> เมื่อมีสรุประดับประเทศแล้ว
 #      จึงเพิ่มปีใน sites/angthong.json (currentYear = ปีใหม่, เป้าที่ยังไม่มี = คัดลอกจากปีก่อน) -> newYears -> Issue "พบข้อมูลปีงบ <ปี> — กรุณาตรวจ/แก้เป้าหมาย"
 #      ดึงไม่สำเร็จ -> ล้ม (Issue) และ config ไม่เปลี่ยน
 name: update-data
@@ -15,7 +17,8 @@ run-name: "update-data${{ inputs.year && format(' ปีงบ {0}', inputs.year
 
 on:
   schedule:
-    - cron: "17 0 * * *"
+    - cron: "17 0 * * 1"   # จันทร์ 07:17 ICT — รอบประจำสัปดาห์ (national)
+    - cron: "17 0 * * 2"   # อังคาร 07:17 ICT — รอบซ่อม เฉพาะเมื่อรอบจันทร์ล้ม
   workflow_dispatch:
     inputs:
       national:
@@ -41,22 +44,36 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       national: ${{ steps.p.outputs.national }}
+      skip: ${{ steps.p.outputs.skip }}
       today: ${{ steps.p.outputs.today }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - id: p
         run: |
-          # วันจันทร์ (ICT) = รอบระดับประเทศ · หรือกดเลือกเอง
-          DOW=$(TZ=Asia/Bangkok date +%u)
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$DOW" = "1" ]; then N=true; else N=false; fi
+          # รอบ schedule = national เสมอ (สัปดาห์ละครั้ง) · กดเอง = ตาม input
+          N=false; SKIP=false
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            N=true
+            if [ "${{ github.event.schedule }}" = "17 0 * * 2" ]; then
+              # รอบซ่อมวันอังคาร: ดูผลรอบ schedule ล่าสุดที่จบแล้ว (ปกติ = รอบจันทร์) — สำเร็จ = ข้ามรอบนี้
+              LAST=$(gh run list --workflow update.yml --event schedule --status completed --limit 1 --json conclusion --jq '.[0].conclusion // "none"' 2>/dev/null || echo unknown)
+              echo "รอบ schedule ล่าสุด: $LAST"
+              if [ "$LAST" = "success" ]; then SKIP=true; fi
+            fi
+          fi
           if [ "${{ inputs.national }}" = "true" ]; then N=true; fi
           echo "national=$N" >> "$GITHUB_OUTPUT"
+          echo "skip=$SKIP" >> "$GITHUB_OUTPUT"
           echo "today=$(TZ=Asia/Bangkok date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
-          echo "national=$N dow=$DOW year=${{ inputs.year }}"
+          echo "national=$N skip=$SKIP schedule='${{ github.event.schedule }}' year=${{ inputs.year }}"
 
   update:
     needs: plan
+    if: needs.plan.outputs.skip != 'true'
     runs-on: ubuntu-latest
-    # รอบระดับประเทศ ~85 นาทีต่อปี (+ ปีใหม่) · รอบรายวัน ~10 นาที
+    # รอบระดับประเทศ ~85–100 นาทีต่อปี (+ ปีใหม่) · รอบกดเองแบบ 8 จังหวัด ~10 นาที
     timeout-minutes: ${{ needs.plan.outputs.national == 'true' && 150 || 40 }}
     env:
       GH_TOKEN: ${{ github.token }}
