@@ -1,7 +1,7 @@
 {
  "schema": 1,
  "source": "https://opendata-service.moph.go.th/gis/v1/getgis/hoscode/{hoscode}",
- "fetchedAt": "2026-10-12T02:19:28+00:00",
+ "fetchedAt": "2026-10-19T02:16:38+00:00",
  "units": {
   "00993": {
    "name": "โรงพยาบาลส่งเสริมสุขภาพตำบลตลาดขวัญ",
@@ -5347,9 +5347,9 @@
   },
   "14342": {
    "maxTargetArea": "130101",
-   "target": 170,
+   "target": 169,
    "areas": {
-    "130101": 170
+    "130101": 169
    }
   },
   "14344": {
@@ -5400,9 +5400,9 @@
   },
   "14O3F": {
    "maxTargetArea": "150102",
-   "target": 33,
+   "target": 34,
    "areas": {
-    "150102": 26,
+    "150102": 27,
     "150108": 3,
     "150111": 4
    }
@@ -5423,9 +5423,9 @@
   },
   "15238": {
    "maxTargetArea": "120105",
-   "target": 43,
+   "target": 25,
    "areas": {
-    "120105": 43
+    "120105": 25
    }
   },
   "15240": {
@@ -5477,8 +5477,8 @@
    "areas": {
     "120102": 4
    },
-   "gisError": "GIS registry failed for 22754: GIS lookup 22754 failed after 4 attempts: ConnectTimeout: HTTPSConnectionPool(host='opendata-service.moph.go.th', port=443): Max retries exceeded with url: /gis/v1/getgis/hoscode/22754 (Caused by ConnectTimeoutError(<HTTPSConnection(host='opendata-service.moph.go.th', port=443) at 0x7fa45db20a50>, 'Connection to opendata-service.moph.go.th timed out. (connect timeout=15)'))",
-   "gisFailedAt": "2026-10-12T02:19:28+00:00"
+   "gisError": "GIS registry failed for 22754: GIS lookup 22754 failed after 4 attempts: ConnectTimeout: HTTPSConnectionPool(host='opendata-service.moph.go.th', port=443): Max retries exceeded with url: /gis/v1/getgis/hoscode/22754 (Caused by ConnectTimeoutError(<HTTPSConnection(host='opendata-service.moph.go.th', port=443) at 0x7f77c0a6ca50>, 'Connection to opendata-service.moph.go.th timed out. (connect timeout=15)'))",
+   "gisFailedAt": "2026-10-19T02:16:38+00:00"
   },
   "22761": {
    "maxTargetArea": "160101",
@@ -5524,9 +5524,9 @@
   },
   "23567": {
    "maxTargetArea": "130606",
-   "target": 200,
+   "target": 199,
    "areas": {
-    "130606": 200
+    "130606": 199
    }
   },
   "23763": {
@@ -5552,9 +5552,9 @@
   },
   "23821": {
    "maxTargetArea": "120102",
-   "target": 9,
+   "target": 8,
    "areas": {
-    "120102": 8,
+    "120102": 7,
     "120105": 1
    }
   },
@@ -5610,9 +5610,9 @@
   },
   "24924": {
    "maxTargetArea": "130601",
-   "target": 47,
+   "target": 46,
    "areas": {
-    "130601": 47
+    "130601": 46
    }
   },
   "25052": {
@@ -5645,9 +5645,9 @@
   },
   "31157": {
    "maxTargetArea": "130201",
-   "target": 156,
+   "target": 152,
    "areas": {
-    "130201": 156
+    "130201": 152
    }
   },
   "33160": {
@@ -5660,9 +5660,9 @@
   },
   "40753": {
    "maxTargetArea": "120304",
-   "target": 462,
+   "target": 461,
    "areas": {
-    "120304": 462
+    "120304": 461
    }
   },
   "40855": {
@@ -5709,31 +5709,31 @@
   },
   "41306": {
    "maxTargetArea": "130601",
-   "target": 189,
+   "target": 190,
    "areas": {
-    "130601": 189
+    "130601": 190
    }
   },
   "41319": {
    "maxTargetArea": "130111",
-   "target": 522,
+   "target": 511,
    "areas": {
-    "130111": 515,
+    "130111": 504,
     "130112": 7
    }
   },
   "41330": {
    "maxTargetArea": "130201",
-   "target": 171,
+   "target": 170,
    "areas": {
-    "130201": 171
+    "130201": 170
    }
   },
   "41332": {
    "maxTargetArea": "130201",
-   "target": 100,
+   "target": 102,
    "areas": {
-    "130201": 100
+    "130201": 102
    }
   },
   "41358": {
@@ -5773,20 +5773,20 @@
   },
   "41433": {
    "maxTargetArea": "120102",
-   "target": 90,
+   "target": 92,
    "areas": {
-    "120102": 61,
+    "120102": 63,
     "120103": 7,
     "120104": 22
    }
   },
   "41434": {
    "maxTargetArea": "120109",
-   "target": 233,
+   "target": 235,
    "areas": {
-    "120109": 102,
-    "120110": 68,
-    "120607": 63
+    "120109": 101,
+    "120110": 69,
+    "120607": 65
    }
   },
   "41435": {
@@ -5794,8 +5794,8 @@
    "target": 231,
    "areas": {
     "120206": 21,
-    "120208": 85,
-    "120209": 96,
+    "120208": 84,
+    "120209": 97,
     "120301": 13,
     "120305": 16
    }
@@ -5809,10 +5809,10 @@
   },
   "41439": {
    "maxTargetArea": "130602",
-   "target": 474,
+   "target": 475,
    "areas": {
     "130302": 7,
-    "130601": 131,
+    "130601": 132,
     "130602": 336
    }
   },
@@ -5832,9 +5832,9 @@
   },
   "41605": {
    "maxTargetArea": "130304",
-   "target": 93,
+   "target": 92,
    "areas": {
-    "130304": 93
+    "130304": 92
    }
   },
   "41609": {
@@ -5853,16 +5853,16 @@
   },
   "41611": {
    "maxTargetArea": "120603",
-   "target": 172,
+   "target": 174,
    "areas": {
-    "120603": 172
+    "120603": 174
    }
   },
   "41612": {
    "maxTargetArea": "120207",
-   "target": 68,
+   "target": 67,
    "areas": {
-    "120207": 68
+    "120207": 67
    }
   },
   "41613": {
@@ -5898,9 +5898,9 @@
   },
   "41625": {
    "maxTargetArea": "120107",
-   "target": 48,
+   "target": 47,
    "areas": {
-    "120107": 30,
+    "120107": 29,
     "120108": 7,
     "120203": 3,
     "120303": 8
@@ -5908,35 +5908,35 @@
   },
   "41626": {
    "maxTargetArea": "120408",
-   "target": 220,
+   "target": 222,
    "areas": {
     "120401": 4,
-    "120408": 216
+    "120408": 218
    }
   },
   "41627": {
    "maxTargetArea": "120402",
-   "target": 310,
+   "target": 329,
    "areas": {
-    "120402": 179,
+    "120402": 186,
     "120404": 3,
-    "120405": 15,
+    "120405": 17,
     "120406": 4,
-    "120407": 17,
-    "120408": 2,
-    "120501": 74,
+    "120407": 19,
+    "120408": 3,
+    "120501": 79,
     "120502": 1,
     "120503": 1,
     "120505": 2,
-    "120506": 8,
+    "120506": 10,
     "120507": 4
    }
   },
   "41675": {
    "maxTargetArea": "120304",
-   "target": 79,
+   "target": 78,
    "areas": {
-    "120304": 79
+    "120304": 78
    }
   },
   "41709": {
