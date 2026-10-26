@@ -324,7 +324,7 @@ def main(argv=None):
     try:
         if fetching:
             # a run that fetches a NEW year nationally (~60 min) keeps the configured years on the drill refresh
-            # (their weekly national refresh waits for the next Monday) so one job stays inside timeout-minutes
+            # (their weekly national refresh waits for the next Saturday) so one job stays inside timeout-minutes
             plan = refresh_scope(site, [y for y in (explicit or years) if y not in new_targets],
                                  a.national and not new_targets, explicit)
             h, w = do_fetch(ctx, inds, plan, a.refresh)

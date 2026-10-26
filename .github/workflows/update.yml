@@ -1,8 +1,8 @@
 # อัปเดตข้อมูลอัตโนมัติ (web_spec_phase2.md §7 · เปลี่ยนเป็นรายสัปดาห์ 2026-10-12 ดู web_spec_phase3.md §1)
-# ทุกวันจันทร์ 07:17 ICT (= 00:17 UTC — เลี่ยงนาที 00:00 ที่ cron ทั่วโลกยิงพร้อมกันและโควตา API ถูกใช้หมด) รอบเดียว national เสมอ:
+# ทุกวันเสาร์ 07:17 ICT (ย้ายจากจันทร์ 2026-10-26) (= 00:17 UTC — เลี่ยงนาที 00:00 ที่ cron ทั่วโลกยิงพร้อมกันและโควตา API ถูกใช้หมด) รอบเดียว national เสมอ:
 #   DSPM 8 จังหวัดเขต 4 + Coverage ทั้งประเทศ ของ currentYear และปีก่อนหน้า (ปีเก่ากว่านั้นใช้ cache ที่ commit ไว้ ไม่ดึงซ้ำ)
 #   + DSPM ทั้ง 77 จังหวัดของ currentYear (ระดับประเทศ/เขต) ~100 นาที
-# วันอังคาร 07:17 ICT = รอบซ่อม: รันเหมือนวันจันทร์เฉพาะเมื่อรอบ schedule ล่าสุดก่อนหน้าไม่สำเร็จ (ล้ม/หมดเวลา) มิฉะนั้นข้าม (job update ไม่รัน ไม่ยิง API)
+# วันอาทิตย์ 07:17 ICT = รอบซ่อม: รันเหมือนวันเสาร์เฉพาะเมื่อรอบ schedule ล่าสุดก่อนหน้าไม่สำเร็จ (ล้ม/หมดเวลา) มิฉะนั้นข้าม (job update ไม่รัน ไม่ยิง API)
 # ผ่าน -> commit "data: auto-update <วันที่>" + push (Cloudflare Pages deploy เอง) · ล้ม/หมดเวลา -> ไม่ commit + เปิด/คอมเมนต์ GitHub Issue
 #
 # ปีงบใหม่ (spec §7.3, sites/angthong.json "autoYear": true):
@@ -17,12 +17,12 @@ run-name: "update-data${{ inputs.year && format(' ปีงบ {0}', inputs.year
 
 on:
   schedule:
-    - cron: "17 0 * * 1"   # จันทร์ 07:17 ICT — รอบประจำสัปดาห์ (national)
-    - cron: "17 0 * * 2"   # อังคาร 07:17 ICT — รอบซ่อม เฉพาะเมื่อรอบจันทร์ล้ม
+    - cron: "17 0 * * 6"   # เสาร์ 07:17 ICT — รอบประจำสัปดาห์ (national)
+    - cron: "17 0 * * 0"   # อาทิตย์ 07:17 ICT — รอบซ่อม เฉพาะเมื่อรอบเสาร์ล้ม
   workflow_dispatch:
     inputs:
       national:
-        description: "ดึง DSPM ทั้ง 77 จังหวัด (ระดับประเทศ/เขต) ด้วย — ปกติทำเองทุกวันจันทร์"
+        description: "ดึง DSPM ทั้ง 77 จังหวัด (ระดับประเทศ/เขต) ด้วย — ปกติทำเองทุกวันเสาร์"
         type: boolean
         default: false
       year:
@@ -56,8 +56,8 @@ jobs:
           N=false; SKIP=false
           if [ "${{ github.event_name }}" = "schedule" ]; then
             N=true
-            if [ "${{ github.event.schedule }}" = "17 0 * * 2" ]; then
-              # รอบซ่อมวันอังคาร: ดูผลรอบ schedule ล่าสุดที่จบแล้ว (ปกติ = รอบจันทร์) — สำเร็จ = ข้ามรอบนี้
+            if [ "${{ github.event.schedule }}" = "17 0 * * 0" ]; then
+              # รอบซ่อมวันอาทิตย์: ดูผลรอบ schedule ล่าสุดที่จบแล้ว (ปกติ = รอบเสาร์) — สำเร็จ = ข้ามรอบนี้
               LAST=$(gh run list --workflow update.yml --event schedule --status completed --limit 1 --json conclusion --jq '.[0].conclusion // "none"' 2>/dev/null || echo unknown)
               echo "รอบ schedule ล่าสุด: $LAST"
               if [ "$LAST" = "success" ]; then SKIP=true; fi
