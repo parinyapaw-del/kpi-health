@@ -30,9 +30,10 @@
     "coverage"
   ],
   "years": [
-    2569
+    2569,
+    2570
   ],
-  "currentYear": 2569,
+  "currentYear": 2570,
   "autoYear": true,
   "targets": {
     "dspm": {
